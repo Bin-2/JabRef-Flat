@@ -20,19 +20,13 @@ This fork seeks to mitigate that.
 #### Main changes
 
 - **FlatLaf integration** for improved theming and HiDPI scalability via [FlatLaf GitHub](https://github.com/JFormDesigner/FlatLaf)  
-- **Toolbar icon scaling control** — add a toolbar button to toggle icon sizes: Small (16×16), Medium (24×24), Large (32×32)  
-- **SVG icon usage** — replace all toolbar icons with the LibreOffice SVG icon set  
+- **Toolbar icon scaling control** â€” add a toolbar button to toggle icon sizes: Small (16Ã—16), Medium (24Ã—24), Large (32Ã—32)  
+- **SVG icon usage** â€” replace all toolbar icons with the LibreOffice SVG icon set  
 - **New themes** (via FlatLaf):  
   - FlatLight  
   - FlatDark  
   - FlatSolarizedLight IJTheme  
   - FlatCarbon IJTheme  
-
-#### Technical / minor enhancements
-
-- Replaced `Vector` with `ArrayList` and added caching mechanisms to speed file load & parsing  
-- Resolved Java type warnings and other compiler-level issues  
-- Fixed problems in arXiv and DOI search integration  
 
 ---
 
@@ -61,6 +55,6 @@ This fork retains the GNU GPL v2 license, consistent with the original JabRef 2.
 
 ### Credits & References
 
-- Original JabRef project: **JabRef / jabref** on GitHub — https://github.com/JabRef/jabref
-- Look & Feel library: **FlatLaf** on GitHub — https://github.com/JFormDesigner/FlatLaf
-- **LibreOffice** icon set (SVG icons) on GitHub — https://github.com/LibreOffice/core
+- Original JabRef project: **JabRef / jabref** on GitHub â€” https://github.com/JabRef/jabref
+- Look & Feel library: **FlatLaf** on GitHub â€” https://github.com/JFormDesigner/FlatLaf
+- **LibreOffice** icon set (SVG icons) on GitHub â€” https://github.com/LibreOffice/core
