@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.io.IOException;
@@ -28,11 +28,11 @@ import com.jgoodies.forms.layout.FormLayout;
  */
 public class PushToLatexEditor implements PushToApplication {
 
-    private boolean couldNotCall=false;
-    private boolean notDefined=false;
+    private boolean couldNotCall = false;
+    private boolean notDefined = false;
     private JPanel settings = null;
     private JTextField ledPath = new JTextField(30),
-        citeCommand = new JTextField(30);
+            citeCommand = new JTextField(30);
 
     public String getName() {
         return Globals.menuTitle("Insert selected citations into LatexEditor");
@@ -47,7 +47,7 @@ public class PushToLatexEditor implements PushToApplication {
     }
 
     public Icon getIcon() {
-        return GUIGlobals.getImage("edit");
+        return GUIGlobals.getImage("latex");
     }
 
     public String getKeyStrokeName() {
@@ -69,9 +69,7 @@ public class PushToLatexEditor implements PushToApplication {
         try {
             Runtime.getRuntime().exec(led + " " + "-i " + Globals.prefs.get("citeCommandLed") + "{" + keyString + "}");
 
-        }
-
-        catch (IOException excep) {
+        } catch (IOException excep) {
             couldNotCall = true;
             excep.printStackTrace();
         }
@@ -79,15 +77,14 @@ public class PushToLatexEditor implements PushToApplication {
 
     public void operationCompleted(BasePanel panel) {
         if (notDefined) {
-            panel.output(Globals.lang("Error") + ": "+
-                    Globals.lang("Path to %0 not defined", getApplicationName())+".");
-        }
-        else if (couldNotCall) {
+            panel.output(Globals.lang("Error") + ": "
+                    + Globals.lang("Path to %0 not defined", getApplicationName()) + ".");
+        } else if (couldNotCall) {
             panel.output(Globals.lang("Error") + ": " + Globals.lang("Could not call executable") + " '"
-                    +Globals.prefs.get("latexEditorPath") + "'.");
-        }
-        else
+                    + Globals.prefs.get("latexEditorPath") + "'.");
+        } else {
             Globals.lang("Pushed citations to %0", "LatexEditor");
+        }
     }
 
     public boolean requiresBibtexKeys() {
@@ -95,8 +92,9 @@ public class PushToLatexEditor implements PushToApplication {
     }
 
     public JPanel getSettingsPanel() {
-        if (settings == null)
+        if (settings == null) {
             initSettingsPanel();
+        }
         ledPath.setText(Globals.prefs.get("latexEditorPath"));
         citeCommand.setText(Globals.prefs.get("citeCommandLed"));
         return settings;

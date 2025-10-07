@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
@@ -28,11 +30,11 @@ import net.sf.jabref.specialfields.SpecialFieldsUtils;
  * Prevents dragging of the first header column ("#"). Prevents dragging of
  * unnamed (aka special) header columns. This is needed to prevent the user from
  * putting the gui table in an inconsistent state.<br/>
- * 
+ *
  * This might not be the best way to solve this problem. Overriding
  * <code>getDraggedColumn</code> produces some ugly gui dragging artifacts if a
  * user attempts to drag something before the first columns.
- * 
+ *
  * @author Daniel Waeber
  * @author Fabian Bieker
  * @since 12/2008
@@ -44,8 +46,8 @@ public class PreventDraggingJTableHeader extends JTableHeader {
     }
 
     /**
-     * Overridden to prevent dragging of first column ("#") and special (unnamed)
-     * columns.
+     * Overridden to prevent dragging of first column ("#") and special
+     * (unnamed) columns.
      */
     @Override
     public void setDraggedColumn(TableColumn column) {
@@ -65,20 +67,20 @@ public class PreventDraggingJTableHeader extends JTableHeader {
             if (isUnnamed(column)) {
                 return;
             }
-            
+
             // prevent dragging of special field columns
             String headerValue = column.getHeaderValue().toString();
             if (headerValue.equals("P") || headerValue.equals("Q") || headerValue.equals("R")) {
-            	// the letters are guessed. Don't know, where they are set in the code.
-            	return;
+                // the letters are guessed. Don't know, where they are set in the code.
+                return;
             }
-            
+
             // other icon columns should also not be dragged
             // note that "P" is used for "PDF" and "Priority"
             if (headerValue.equals("F") || headerValue.equals("U")) {
-            	return;
+                return;
             }
-            
+
         }
 
         super.setDraggedColumn(column);
@@ -87,7 +89,8 @@ public class PreventDraggingJTableHeader extends JTableHeader {
     /**
      * Overridden to prevent dragging of an other column before the first
      * columns ("#" and the unnamed ones).
-     * */
+     *
+     */
     @Override
     public TableColumn getDraggedColumn() {
         TableColumn column = super.getDraggedColumn();
@@ -102,7 +105,7 @@ public class PreventDraggingJTableHeader extends JTableHeader {
     /**
      * Note: used to prevent dragging of other columns before the special
      * columns.
-     * 
+     *
      * @return count of special columns
      */
     private int getSpecialColumnsCount() {
@@ -121,23 +124,29 @@ public class PreventDraggingJTableHeader extends JTableHeader {
         }
 
         if (Globals.prefs.getBoolean("extraFileColumns")) {
-            count+=Globals.prefs.getStringArray("listOfFileColumns").length;
+            count += Globals.prefs.getStringArray("listOfFileColumns").length;
         }
-        
+
         // special field columns may also not be dragged
         if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SPECIALFIELDSENABLED)) {
-	        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_RANKING))
-	            count++;
-	        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_RELEVANCE))
-	            count++;
-	        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_QUALITY))
-	            count++;
-	        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRIORITY))
-	            count++;
-	        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRINTED))
-	            count++;
-	        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_READ))
-	            count++;
+            if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_RANKING)) {
+                count++;
+            }
+            if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_RELEVANCE)) {
+                count++;
+            }
+            if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_QUALITY)) {
+                count++;
+            }
+            if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRIORITY)) {
+                count++;
+            }
+            if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRINTED)) {
+                count++;
+            }
+            if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_READ)) {
+                count++;
+            }
         }
 
         return count;

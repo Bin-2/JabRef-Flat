@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.io.IOException;
@@ -21,6 +21,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.JOptionPane;
@@ -35,289 +36,338 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * 
+ *
  * This class can be used to access any archive offering an OAI2 interface. By
  * default it will access ArXiv.org
- * 
+ *
  * @author Ulrich St&auml;rk
  * @author Christian Kopf
- * 
+ *
  * @version $Revision$ ($Date$)
- * 
+ *
  */
 public class OAI2Fetcher implements EntryFetcher {
 
-    public static final String OAI2_ARXIV_PREFIXIDENTIFIER = "oai%3AarXiv.org%3A";
-
     public static final String OAI2_ARXIV_HOST = "export.arxiv.org";
-
     public static final String OAI2_ARXIV_SCRIPT = "oai2";
-
     public static final String OAI2_ARXIV_METADATAPREFIX = "arXiv";
-
     public static final String OAI2_ARXIV_ARCHIVENAME = "ArXiv.org";
-
     public static final String OAI2_IDENTIFIER_FIELD = "oai2identifier";
+    private static final String IDENTIFIER_PREFIX = "oai:arXiv.org:";
+
+    private static final int CONNECT_TIMEOUT_MS = 10_000;
+    private static final int READ_TIMEOUT_MS = 20_000;
 
     private SAXParserFactory parserFactory;
-
     private SAXParser saxParser;
 
     private String oai2Host;
-
     private String oai2Script;
-
     private String oai2MetaDataPrefix;
-
-    private String oai2PrefixIdentifier;
-
     private String oai2ArchiveName;
 
     private boolean shouldContinue = true;
-
     private OutputPrinter status;
 
     /**
-     * some archives - like ArXiv.org - might expect of you to wait some time 
+     * spacing between calls; arXiv is conservative
      */
-    private boolean shouldWait() {
-        return waitTime > 0;
-    }
-
-    private long waitTime = -1;
-
+    private long waitTime = 20_000L;
     private Date lastCall;
 
-    /**
-     * 
-     * 
-     * @param oai2Host
-     *            the host to query without leading http:// and without trailing /
-     * @param oai2Script
-     *            the relative location of the oai2 interface without leading
-     *            and trailing /
-     * @param oai2Metadataprefix
-     *            the urlencoded metadataprefix
-     * @param oai2Prefixidentifier
-     *            the urlencoded prefix identifier
-     * @param waitTimeMs
-     *            Time to wait in milliseconds between query-requests.
-     */
     public OAI2Fetcher(String oai2Host, String oai2Script, String oai2Metadataprefix,
-        String oai2Prefixidentifier, String oai2ArchiveName, long waitTimeMs) {
+            String oai2ArchiveName, long waitTimeMs) {
         this.oai2Host = oai2Host;
         this.oai2Script = oai2Script;
         this.oai2MetaDataPrefix = oai2Metadataprefix;
-        this.oai2PrefixIdentifier = oai2Prefixidentifier;
         this.oai2ArchiveName = oai2ArchiveName;
         this.waitTime = waitTimeMs;
         try {
             parserFactory = SAXParserFactory.newInstance();
             saxParser = parserFactory.newSAXParser();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
+        } catch (ParserConfigurationException | SAXException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * Default Constructor. The archive queried will be ArXiv.org
-     * 
+     * Default: ArXiv.org
      */
     public OAI2Fetcher() {
         this(OAI2_ARXIV_HOST, OAI2_ARXIV_SCRIPT, OAI2_ARXIV_METADATAPREFIX,
-            OAI2_ARXIV_PREFIXIDENTIFIER, OAI2_ARXIV_ARCHIVENAME, 20000L);
+                OAI2_ARXIV_ARCHIVENAME, 20_000L);
+    }
+
+    private boolean shouldWait() {
+        return waitTime > 0;
     }
 
     /**
-     * Construct the query URL
-     * 
-     * @param key
-     *            The key of the OAI2 entry that the url should point to.
-     *            
-     * @return a String denoting the query URL
+     * Construct the query URL for GetRecord. Encode parameters, not the whole
+     * URL; constants remain un-encoded.
      */
-    public String constructUrl(String key) {
-        String identifier = "";
+    public String constructUrl(String normalizedKey) {
         try {
-            identifier = URLEncoder.encode(key, "UTF-8");
+            String identifier = IDENTIFIER_PREFIX + normalizedKey;
+            String encIdentifier = URLEncoder.encode(identifier, "UTF-8");
+            String encPrefix = URLEncoder.encode(oai2MetaDataPrefix, "UTF-8");
+            return "https://" + oai2Host + "/" + oai2Script
+                    + "?verb=GetRecord"
+                    + "&identifier=" + encIdentifier
+                    + "&metadataPrefix=" + encPrefix;
         } catch (UnsupportedEncodingException e) {
+            // UTF-8 always present
             return "";
         }
-        return "http://" + oai2Host + "/" + oai2Script + "?" + "verb=GetRecord" + "&identifier=" + oai2PrefixIdentifier + identifier + "&metadataPrefix=" + oai2MetaDataPrefix;
     }
-    
+
+    /**
+     * Remove "arxiv:" (case-insensitive), strip trailing version "v\\d+", then
+     * apply legacy fixKey.
+     */
+    private static String normalizeArxivKey(String raw) {
+        String k = raw.trim();
+        if (k.regionMatches(true, 0, "arxiv:", 0, 6)) {
+            k = k.substring(6).trim();
+        }
+        // Strip version suffix (e.g., 1234.5678v2 -> 1234.5678)
+        k = k.replaceFirst("v\\d+$", "");
+        // Legacy normalization (keeps old category scheme behavior)
+        return fixKey(k);
+    }
+
     /**
      * Strip subcategories from ArXiv key.
-     * 
+     *
      * @param key The key to fix.
      * @return Fixed key.
      */
-    public static String fixKey(String key){
-        
-        if (key.toLowerCase().startsWith("arxiv:")){
+    public static String fixKey(String key) {
+        if (key.toLowerCase().startsWith("arxiv:")) {
             key = key.substring(6);
         }
-        
         int dot = key.indexOf('.');
         int slash = key.indexOf('/');
-        
-        if (dot > -1 && dot < slash) {
-            key = key.substring(0, dot) + key.substring(slash, key.length());
+        if (dot > -1 && slash > -1 && dot < slash) {
+            key = key.substring(0, dot) + key.substring(slash);
         }
-    
         return key;
     }
 
-    public static String correctLineBreaks(String s){
+    public static String correctLineBreaks(String s) {
         s = s.replaceAll("\\n(?!\\s*\\n)", " ");
         s = s.replaceAll("\\s*\\n\\s*", "\n");
         return s.replaceAll(" {2,}", " ").replaceAll("(^\\s*|\\s+$)", "");
     }
-    
+
     /**
      * Import an entry from an OAI2 archive. The BibtexEntry provided has to
      * have the field OAI2_IDENTIFIER_FIELD set to the search string.
-     * 
-     * @param key
-     *            The OAI2 key to fetch from ArXiv.
+     *
+     * @param key The OAI2 key to fetch from ArXiv.
      * @return The imported BibtexEntry or null if none.
      */
-    public BibtexEntry importOai2Entry(String key) {
-        /**
-         * Fix for problem reported in mailing-list: 
-         *   https://sourceforge.net/forum/message.php?msg_id=4087158
-         */
-        key = fixKey(key);
-        
+    public BibtexEntry importOai2Entry(String rawKey) {
+        String key = normalizeArxivKey(rawKey);
         String url = constructUrl(key);
+
+        HttpURLConnection conn = null;
         try {
             URL oai2Url = new URL(url);
-            HttpURLConnection oai2Connection = (HttpURLConnection) oai2Url.openConnection();
-            oai2Connection.setRequestProperty("User-Agent", "Jabref");
-            InputStream inputStream = oai2Connection.getInputStream();
-    
-            /* create an empty BibtexEntry and set the oai2identifier field */
-            BibtexEntry be = new BibtexEntry(Util.createNeutralId(), BibtexEntryType.ARTICLE);
-            be.setField(OAI2_IDENTIFIER_FIELD, key);
-            DefaultHandler handlerBase = new OAI2Handler(be);
-            /* parse the result */
-            saxParser.parse(inputStream, handlerBase);
-            
-            /* Correct line breaks and spacing */
-            for (String name : be.getAllFields()){
-                be.setField(name, OAI2Fetcher.correctLineBreaks(be.getField(name)));
-            }
-            
-            if (key.matches("\\d\\d\\d\\d\\..*")){
-                be.setField("year", "20" + key.substring(0,2));
+            conn = (HttpURLConnection) oai2Url.openConnection();
+            conn.setInstanceFollowRedirects(true);
+            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            conn.setReadTimeout(READ_TIMEOUT_MS);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/xml, text/xml;q=0.9, */*;q=0.8");
+            conn.setRequestProperty("User-Agent", "OAI2Fetcher/2.0 (+your-email-or-site)");
 
-                int monthNumber = Integer.parseInt(key.substring(2,4));
-                MonthUtil.Month month = MonthUtil.getMonthByNumber(monthNumber);
-                if (month.isValid()) {
-                    be.setField("month", month.bibtexFormat);
+            // Handle 503 Retry-After (arXiv rate-limit)
+            int code = conn.getResponseCode();
+            if (code == 503) {
+                String retry = conn.getHeaderField("Retry-After");
+                int waitSec = 0;
+                if (retry != null) {
+                    try {
+                        waitSec = Integer.parseInt(retry.trim());
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+                if (waitSec > 0) {
+                    if (status != null) {
+                        status.setStatus("Server asked to wait " + waitSec + " s (Retry-After).");
+                    }
+                    try {
+                        Thread.sleep(waitSec * 1000L);
+                    } catch (InterruptedException ignored) {
+                    }
+                    conn.disconnect();
+                    conn = (HttpURLConnection) oai2Url.openConnection();
+                    conn.setInstanceFollowRedirects(true);
+                    conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+                    conn.setReadTimeout(READ_TIMEOUT_MS);
+                    conn.setRequestMethod("GET");
+                    conn.setRequestProperty("Accept", "application/xml, text/xml;q=0.9, */*;q=0.8");
+                    conn.setRequestProperty("User-Agent", "OAI2Fetcher/2.0 (+your-email-or-site)");
                 }
             }
-            
-            return be;
+
+            // Success path
+            code = conn.getResponseCode();
+            if (code != 200) {
+                if (status != null) {
+                    status.showMessage(Globals.lang("OAI2 request failed: HTTP %0", String.valueOf(code))
+                            + "\n" + url, Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
+                }
+                return null;
+            }
+
+            try (InputStream inputStream = conn.getInputStream()) {
+                // Create BibTeX entry and seed the identifier
+                BibtexEntry be = new BibtexEntry(Util.createNeutralId(), BibtexEntryType.ARTICLE);
+                be.setField(OAI2_IDENTIFIER_FIELD, key);
+
+                DefaultHandler handlerBase = new OAI2Handler(be); // your existing handler
+                saxParser.parse(inputStream, handlerBase);
+
+                // Normalize whitespace in all fields
+                for (String name : be.getAllFields()) {
+                    String v = be.getField(name);
+                    if (v != null) {
+                        be.setField(name, correctLineBreaks(v));
+                    }
+                }
+
+                // Build arXiv URL and journal fields from the normalized key
+                // Assumption: 'key' is the normalized ID used in constructUrl() (no "arXiv:" prefix, no trailing vN)
+                String arxivId = key;
+
+                // URL: arXiv abstract page; supports both new and legacy IDs
+                String arxivAbsUrl = "https://arxiv.org/abs/" + arxivId;
+                be.setField("url", arxivAbsUrl);
+                be.setField("eprint", arxivId);
+                be.setField("eprinttype", "arxiv");
+
+                // Journal: requested pattern "arXiv preprint arXiv:<ID>"
+                be.setField("journal", "arXiv preprint arXiv:" + arxivId);
+
+                // Infer year/month for new-style ids (yymm.nnnnn)
+                if (key.matches("\\d\\d\\d\\d\\..*")) {
+                    be.setField("year", "20" + key.substring(0, 2));
+                    int monthNumber = Integer.parseInt(key.substring(2, 4));
+                    MonthUtil.Month month = MonthUtil.getMonthByNumber(monthNumber);
+                    if (month.isValid()) {
+                        be.setField("month", month.bibtexFormat);
+                    }
+                }
+
+                // Add timestamp field
+                SimpleDateFormat fmt = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+                be.setField("timestamp", fmt.format(new Date()));
+
+                return be;
+            }
         } catch (IOException e) {
-            status.showMessage(Globals.lang(
-                "An Exception ocurred while accessing '%0'", url)
-                + "\n\n" + e.toString(), Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
+            if (status != null) {
+                status.showMessage(Globals.lang("An exception occurred while accessing '%0'", url)
+                        + "\n\n" + e.toString(), Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
+            }
         } catch (SAXException e) {
-            status.showMessage(Globals.lang(
-                "An SAXException ocurred while parsing '%0':", new String[]{url})
-                + "\n\n" + e.getMessage(), Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
-        } catch (RuntimeException e){
-            status.showMessage(Globals.lang(
-                "An Error occurred while fetching from OAI2 source (%0):", new String[]{url})
-                + "\n\n" + e.getMessage(), Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
-        } 
+            if (status != null) {
+                status.showMessage(Globals.lang("A SAXException occurred while parsing '%0':", new String[]{url})
+                        + "\n\n" + e.getMessage(), Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (RuntimeException e) {
+            if (status != null) {
+                status.showMessage(Globals.lang("An error occurred while fetching from OAI2 source (%0):", new String[]{url})
+                        + "\n\n" + e.getMessage(), Globals.lang(getKeyName()), JOptionPane.ERROR_MESSAGE);
+            }
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
         return null;
     }
 
+    @Override
     public String getHelpPage() {
-        // there is no helppage
         return null;
     }
 
+    @Override
     public URL getIcon() {
         return GUIGlobals.getIconUrl("www");
     }
 
+    @Override
     public String getKeyName() {
         return oai2ArchiveName;
     }
 
+    @Override
     public JPanel getOptionsPanel() {
-        // we have no additional options
         return null;
     }
 
+    @Override
     public String getTitle() {
         return Globals.menuTitle(getKeyName());
     }
 
+    @Override
     public boolean processQuery(String query, ImportInspector dialog, OutputPrinter status) {
-
         this.status = status;
-
         try {
             shouldContinue = true;
-            
-            /* multiple keys can be delimited by ; or space */
-            query = query.replaceAll(" ", ";");
-            String[] keys = query.split(";");
+
+            // accept ; or space between keys
+            String[] keys = query.replace(' ', ';').split(";");
             for (int i = 0; i < keys.length; i++) {
-                String key = keys[i];
-                
-                /*
-                 * some archives - like arxive.org - might expect of you to wait
-                 * some time
-                 */
+                String key = keys[i].trim();
+                if (key.isEmpty()) {
+                    continue;
+                }
+
+                // Polite delay between calls if configured
                 if (shouldWait() && lastCall != null) {
-
-                    long elapsed = new Date().getTime() - lastCall.getTime();
-
-                    while (elapsed < waitTime) {
-                        status.setStatus(Globals.lang("Waiting for ArXiv...") + ((waitTime - elapsed) / 1000) + " s");
-                        Thread.sleep(1000);
-                        elapsed = new Date().getTime() - lastCall.getTime();
+                    long elapsed = System.currentTimeMillis() - lastCall.getTime();
+                    while (elapsed < waitTime && shouldContinue) {
+                        long remain = waitTime - elapsed;
+                        status.setStatus(Globals.lang("Waiting for ArXiv...") + (remain / 1000) + " s");
+                        try {
+                            Thread.sleep(Math.min(1000, remain));
+                        } catch (InterruptedException ignored) {
+                        }
+                        elapsed = System.currentTimeMillis() - lastCall.getTime();
                     }
                 }
 
-                status.setStatus(Globals.lang("Processing ") + key);
-
-                /* the cancel button has been hit */
                 if (!shouldContinue) {
                     break;
                 }
-                
-                /* query the archive and load the results into the BibtexEntry */
+
+                status.setStatus(Globals.lang("Processing ") + key);
                 BibtexEntry be = importOai2Entry(key);
 
                 if (shouldWait()) {
                     lastCall = new Date();
                 }
-                
-                /* add the entry to the inspection dialog */
+
                 if (be != null) {
                     dialog.addEntry(be);
                 }
-
-                /* update the dialogs progress bar */
                 dialog.setProgress(i + 1, keys.length);
             }
-            
             return true;
         } catch (Exception e) {
-            status.setStatus(Globals.lang("Error while fetching from OAI2")+ ": " + e.getMessage());
+            status.setStatus(Globals.lang("Error while fetching from OAI2") + ": " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
 
+    @Override
     public void stopFetching() {
         shouldContinue = false;
     }

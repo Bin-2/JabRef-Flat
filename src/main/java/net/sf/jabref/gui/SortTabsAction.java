@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.event.ActionEvent;
 import java.util.Comparator;
@@ -27,10 +29,11 @@ import net.sf.jabref.JabRefFrame;
 import net.sf.jabref.MnemonicAwareAction;
 
 /**
- * This action rearranges all tabs in the main tabbed pane of the given JabRefFrame
- * in alphabetical order.
+ * This action rearranges all tabs in the main tabbed pane of the given
+ * JabRefFrame in alphabetical order.
  */
 public class SortTabsAction extends MnemonicAwareAction implements Comparator<String> {
+
     private JabRefFrame frame;
 
     public SortTabsAction(JabRefFrame frame) {
@@ -41,11 +44,11 @@ public class SortTabsAction extends MnemonicAwareAction implements Comparator<St
 
     public void actionPerformed(ActionEvent e) {
         JTabbedPane tabbedPane = frame.getTabbedPane();
-       // Make a sorted Map that compares case-insensitively:
+        // Make a sorted Map that compares case-insensitively:
         TreeMap<String, BasePanel> map = new TreeMap<String, BasePanel>(this);
 
-        for (int i=0; i<tabbedPane.getTabCount(); i++) {
-            BasePanel panel = (BasePanel)tabbedPane.getComponent(i);
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            BasePanel panel = (BasePanel) tabbedPane.getComponent(i);
             map.put(tabbedPane.getTitleAt(i), panel);
         }
         tabbedPane.removeAll();

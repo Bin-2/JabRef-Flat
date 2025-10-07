@@ -55,7 +55,7 @@ public class BibtexNameFormatter {
 	 */
 	public static String formatName(Author author, String format, Warn warn) {
 		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		char[] c = format.toCharArray();
 		int n = c.length;
@@ -148,7 +148,7 @@ public class BibtexNameFormatter {
 						}
 						if (j+1 < d.length){
 							if (d[j+1] == '{'){
-								StringBuffer interTokenSb = new StringBuffer();
+								StringBuilder interTokenSb = new StringBuilder();
 								j = consumeToMatchingBrace(interTokenSb, d, j+1);
 								interToken = interTokenSb.substring(1,interTokenSb.length()-1);
 							}
@@ -159,7 +159,7 @@ public class BibtexNameFormatter {
 							if (abbreviateThatIsSingleLetter){
 								String[] dashes = token.split("-");
 								
-								StringBuffer abbToken = new StringBuffer();
+								StringBuilder abbToken = new StringBuilder();
 								for (int t = 0; t < dashes.length - 1; t++){
 									abbToken.append(getFirstCharOfString(dashes[t])).append(".-");
 								}
@@ -237,7 +237,7 @@ public class BibtexNameFormatter {
 	 * 
 	 * assert c[pos] == '{'
 	 */
-	public static int consumeToMatchingBrace(StringBuffer sb, char[] c, int pos){
+	public static int consumeToMatchingBrace(StringBuilder sb, char[] c, int pos){
 		
 		int braceLevel = 0;
 
@@ -272,7 +272,7 @@ public class BibtexNameFormatter {
 			}
 			if (c[i] == '{'){
 				if (i+1 < c.length && c[i+1] == '\\'){
-					StringBuffer sb = new StringBuffer();
+					StringBuilder sb = new StringBuilder();
 					consumeToMatchingBrace(sb, c, i);
 					return sb.toString();
 				}

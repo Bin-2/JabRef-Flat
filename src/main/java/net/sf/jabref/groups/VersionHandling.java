@@ -12,11 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
-import java.util.Vector;
-
+import java.util.List;
 import net.sf.jabref.BibtexDatabase;
 import net.sf.jabref.Globals;
 import net.sf.jabref.Util;
@@ -24,19 +23,20 @@ import net.sf.jabref.Util;
 /**
  * Handles versioning of groups, e.g. automatic conversion from previous to
  * current versions, or import of flat groups (JabRef <= 1.6) to tree.
- * 
+ *
  * @author jzieren (10.04.2005)
  */
 public class VersionHandling {
+
     public static final int CURRENT_VERSION = 3;
 
     /**
      * Imports old (flat) groups data and converts it to a 2-level tree with an
      * AllEntriesGroup at the root.
-     * 
+     *
      * @return the root of the generated tree.
      */
-    public static GroupTreeNode importFlatGroups(Vector<String> groups)
+    public static GroupTreeNode importFlatGroups(List<String> groups)
             throws IllegalArgumentException {
         GroupTreeNode root = new GroupTreeNode(new AllEntriesGroup());
         final int number = groups.size() / 3;
@@ -51,30 +51,32 @@ public class VersionHandling {
         return root;
     }
 
-    public static GroupTreeNode importGroups(Vector<String> orderedData,
+    public static GroupTreeNode importGroups(List<String> orderedData,
             BibtexDatabase db, int version) throws Exception {
         switch (version) {
-        case 0:
-        case 1:
-            return Version0_1.fromString(orderedData.firstElement(),
-                    db, version);
-        case 2:
-        case 3:
-            return Version2_3.fromString(orderedData, db, version);
-        default:
-            throw new IllegalArgumentException(Globals.lang("Failed to read groups data (unsupported version: %0)", Integer.toString(version)));
+            case 0:
+            case 1:
+                return Version0_1.fromString(orderedData.get(0),
+                        db, version);
+            case 2:
+            case 3:
+                return Version2_3.fromString(orderedData, db, version);
+            default:
+                throw new IllegalArgumentException(Globals.lang("Failed to read groups data (unsupported version: %0)", Integer.toString(version)));
         }
     }
 
-    /** Imports groups version 0 and 1. */
+    /**
+     * Imports groups version 0 and 1.
+     */
     private static class Version0_1 {
+
         /**
          * Parses the textual representation obtained from
          * GroupTreeNode.toString() and recreates that node and all of its
          * children from it.
-         * 
-         * @throws Exception
-         *             When a group could not be recreated
+         *
+         * @throws Exception When a group could not be recreated
          */
         private static GroupTreeNode fromString(String s, BibtexDatabase db,
                 int version) throws Exception {
@@ -95,17 +97,20 @@ public class VersionHandling {
                 } else {
                     i = indexOfUnquoted(s, ',');
                     g = i < 0 ? s : s.substring(0, i);
-                    if (i >= 0)
+                    if (i >= 0) {
                         s = s.substring(i + 1);
-                    else
+                    } else {
                         s = "";
+                    }
                     newNode = new GroupTreeNode(AbstractGroup.fromString(Util
                             .unquote(g, '\\'), db, version));
                 }
                 if (root == null) // first node will be root
+                {
                     root = newNode;
-                else
+                } else {
                     root.add(newNode);
+                }
             }
             return root;
         }
@@ -113,7 +118,7 @@ public class VersionHandling {
         /**
          * Returns the substring delimited by a pair of matching braces, with
          * the first brace at index 0. Quoted characters are skipped.
-         * 
+         *
          * @return the matching substring, or "" if not found.
          */
         private static String getSubtree(String s) {
@@ -121,17 +126,18 @@ public class VersionHandling {
             int level = 1;
             while (i < s.length()) {
                 switch (s.charAt(i)) {
-                case '\\':
-                    ++i;
-                    break;
-                case '(':
-                    ++level;
-                    break;
-                case ')':
-                    --level;
-                    if (level == 0)
-                        return s.substring(1, i);
-                    break;
+                    case '\\':
+                        ++i;
+                        break;
+                    case '(':
+                        ++level;
+                        break;
+                    case ')':
+                        --level;
+                        if (level == 0) {
+                            return s.substring(1, i);
+                        }
+                        break;
                 }
                 ++i;
             }
@@ -141,13 +147,11 @@ public class VersionHandling {
         /**
          * Returns the index of the first occurence of c, skipping quoted
          * special characters (escape character: '\\').
-         * 
-         * @param s
-         *            The String to search in.
-         * @param c
-         *            The character to search
+         *
+         * @param s The String to search in.
+         * @param c The character to search
          * @return The index of the first unescaped occurence of c in s, or -1
-         *         if not found.
+         * if not found.
          */
         private static int indexOfUnquoted(String s, char c) {
             int i = 0;
@@ -155,17 +159,19 @@ public class VersionHandling {
                 if (s.charAt(i) == '\\') {
                     ++i; // skip quoted special
                 } else {
-                    if (s.charAt(i) == c)
+                    if (s.charAt(i) == c) {
                         return i;
+                    }
                 }
                 ++i;
             }
             return -1;
         }
     }
-    
+
     private static class Version2_3 {
-        private static GroupTreeNode fromString(Vector<String> data, BibtexDatabase db,
+
+        private static GroupTreeNode fromString(List<String> data, BibtexDatabase db,
                 int version) throws Exception {
             GroupTreeNode cursor = null;
             GroupTreeNode root = null;
@@ -175,16 +181,18 @@ public class VersionHandling {
             int level;
             String s;
             for (int i = 0; i < data.size(); ++i) {
-                s = data.elementAt(i);
-                
+                s = data.get(i);
+
                 // This allows to read databases that have been modified by, e.g., BibDesk
                 s = s.trim();
-                if (s.length() == 0)
-                	continue;
-                
+                if (s.length() == 0) {
+                    continue;
+                }
+
                 spaceIndex = s.indexOf(' ');
-                if (spaceIndex <= 0)
+                if (spaceIndex <= 0) {
                     throw new Exception("bad format"); // JZTODO lyrics
+                }
                 level = Integer.parseInt(s.substring(0, spaceIndex));
                 group = AbstractGroup.fromString(s.substring(spaceIndex + 1),
                         db, version);
@@ -195,8 +203,9 @@ public class VersionHandling {
                     root = cursor;
                 } else {
                     // insert at desired location
-                    while (level <= cursor.getLevel())
+                    while (level <= cursor.getLevel()) {
                         cursor = (GroupTreeNode) cursor.getParent();
+                    }
                     cursor.add(newNode);
                     cursor = newNode;
                 }

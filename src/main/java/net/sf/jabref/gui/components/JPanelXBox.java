@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui.components;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.Component;
 import javax.swing.BoxLayout;
@@ -23,13 +25,17 @@ import javax.swing.JPanel;
  * A JPanel that by default uses a BoxLayout.X_AXIS
  */
 public class JPanelXBox extends JPanel {
-	/** Create the panel and set BoxLayout.X_AXIS */
-	public JPanelXBox() {
-		super();
-		setLayout(new BoxLayout(this,BoxLayout.X_AXIS));
-	}
-	public JPanelXBox(Component comp) {
-		this();
-		add(comp);
-	}
+
+    /**
+     * Create the panel and set BoxLayout.X_AXIS
+     */
+    public JPanelXBox() {
+        super();
+        setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
+    }
+
+    public JPanelXBox(Component comp) {
+        this();
+        add(comp);
+    }
 }

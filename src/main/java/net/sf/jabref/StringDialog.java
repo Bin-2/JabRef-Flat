@@ -12,10 +12,11 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -72,400 +73,405 @@ public class StringDialog extends JDialog {
     HelpAction helpAction;
 
     public StringDialog(JabRefFrame frame, BasePanel panel,
-			BibtexDatabase base, JabRefPreferences prefs) {
-	super(frame);
-	this.frame = frame;
-	this.panel = panel;
-	this.base = base;
-	this.prefs = prefs;
+            BibtexDatabase base, JabRefPreferences prefs) {
+        super(frame);
+        this.frame = frame;
+        this.panel = panel;
+        this.base = base;
+        this.prefs = prefs;
 
-	sortStrings();
+        sortStrings();
 
-	helpAction = new HelpAction
-	    (frame.helpDiag, GUIGlobals.stringEditorHelp, "Help");
+        helpAction = new HelpAction(frame.helpDiag, GUIGlobals.stringEditorHelp, "Help");
 
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                closeAction.actionPerformed(null);
+            }
+        });
 
-	addWindowListener(new WindowAdapter() {
-		public void windowClosing(WindowEvent e) {
-		    closeAction.actionPerformed(null);
-		}
-	    });
+        // We replace the default FocusTraversalPolicy with a subclass
+        // that only allows the StringTable to gain keyboard focus.
+        setFocusTraversalPolicy(new LayoutFocusTraversalPolicy() {
+            protected boolean accept(Component c) {
+                return (super.accept(c) && (c instanceof StringTable));
+            }
+        });
 
-	// We replace the default FocusTraversalPolicy with a subclass
-	// that only allows the StringTable to gain keyboard focus.
-	setFocusTraversalPolicy(new LayoutFocusTraversalPolicy() {
-		protected boolean accept(Component c) {
-		    return (super.accept(c) && (c instanceof StringTable));
-		}
-	    });
+        setLocation(prefs.getInt("stringsPosX"), prefs.getInt("stringsPosY"));
+        setSize(prefs.getInt("stringsSizeX"), prefs.getInt("stringsSizeY"));
 
-	setLocation(prefs.getInt("stringsPosX"), prefs.getInt("stringsPosY"));
-	setSize(prefs.getInt("stringsSizeX"), prefs.getInt("stringsSizeY"));
+        pan.setLayout(gbl);
+        con.fill = GridBagConstraints.BOTH;
+        con.weighty = 1;
+        con.weightx = 1;
 
-	pan.setLayout(gbl);
-	con.fill = GridBagConstraints.BOTH;
-	con.weighty = 1;
-	con.weightx = 1;
+        StringTableModel stm = new StringTableModel(this, base);
+        table = new StringTable(stm);
+        if (base.getStringCount() > 0) {
+            table.setRowSelectionInterval(0, 0);
+        }
 
-	StringTableModel stm = new StringTableModel(this, base);
-	table = new StringTable(stm);
-	if (base.getStringCount() > 0)
-	    table.setRowSelectionInterval(0,0);
+        gbl.setConstraints(table.getPane(), con);
+        pan.add(table.getPane());
 
-	gbl.setConstraints(table.getPane(), con);
-	pan.add(table.getPane());
+        InputMap im = tlb.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap am = tlb.getActionMap();
+        im.put(prefs.getKey("String dialog, add string"), "add");
+        am.put("add", newStringAction);
+        im.put(prefs.getKey("String dialog, remove string"), "remove");
+        am.put("remove", removeStringAction);
+        //im.put(prefs.getKey("String dialog, move string up"), "up");
+        //am.put("up", stringUpAction);
+        //im.put(prefs.getKey("String dialog, move string down"), "down");
+        //am.put("down", stringDownAction);
+        im.put(prefs.getKey("Close dialog"), "close");
+        am.put("close", closeAction);
+        im.put(prefs.getKey("Help"), "help");
+        am.put("help", helpAction);
+        im.put(prefs.getKey("Undo"), "undo");
+        am.put("undo", undoAction);
+        im.put(prefs.getKey("Redo"), "redo");
+        am.put("redo", redoAction);
 
-	InputMap im = tlb.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-	ActionMap am = tlb.getActionMap();
-	im.put(prefs.getKey("String dialog, add string"), "add");
-	am.put("add", newStringAction);
-	im.put(prefs.getKey("String dialog, remove string"), "remove");
-	am.put("remove", removeStringAction);
-	//im.put(prefs.getKey("String dialog, move string up"), "up");
-	//am.put("up", stringUpAction);
-	//im.put(prefs.getKey("String dialog, move string down"), "down");
-	//am.put("down", stringDownAction);
-	im.put(prefs.getKey("Close dialog"), "close");
-	am.put("close", closeAction);
-	im.put(prefs.getKey("Help"), "help");
-	am.put("help", helpAction);
-	im.put(prefs.getKey("Undo"), "undo");
-	am.put("undo", undoAction);
-	im.put(prefs.getKey("Redo"), "redo");
-	am.put("redo", redoAction);
+        //tlb.add(closeAction);
+        //tlb.addSeparator();
+        tlb.add(newStringAction);
+        tlb.add(removeStringAction);
+        tlb.addSeparator();
+        //tlb.add(stringUpAction);
+        //tlb.add(stringDownAction);
+        tlb.addSeparator();
+        tlb.add(helpAction);
+        conPane.add(tlb, BorderLayout.NORTH);
+        conPane.add(pan, BorderLayout.CENTER);
 
-	//tlb.add(closeAction);
-	//tlb.addSeparator();
-	tlb.add(newStringAction);
-	tlb.add(removeStringAction);
-	tlb.addSeparator();
-	//tlb.add(stringUpAction);
-	//tlb.add(stringDownAction);
-	tlb.addSeparator();
-	tlb.add(helpAction);
-	conPane.add(tlb, BorderLayout.NORTH);
-	conPane.add(pan, BorderLayout.CENTER);
-
-	if (panel.getFile() != null)
-	    setTitle(Globals.lang(GUIGlobals.stringsTitle)+": "+panel.getFile().getName());
-	else
-	    setTitle(Globals.lang(GUIGlobals.stringsTitle)+": "+Globals.lang(GUIGlobals.untitledTitle));
+        if (panel.getFile() != null) {
+            setTitle(Globals.lang(GUIGlobals.stringsTitle) + ": " + panel.getFile().getName());
+        } else {
+            setTitle(Globals.lang(GUIGlobals.stringsTitle) + ": " + Globals.lang(GUIGlobals.untitledTitle));
+        }
 
     }
 
     class StringTable extends JTable {
-	JScrollPane sp = new JScrollPane(this);
-	public StringTable(StringTableModel stm) {
-	    super(stm);
-	    setShowVerticalLines(true);
-	    setShowHorizontalLines(true);
-	    setColumnSelectionAllowed(true);
-	    DefaultCellEditor dce = new DefaultCellEditor(new JTextField());
-	    dce.setClickCountToStart(2);
-	    setDefaultEditor(String.class, dce);
-	    TableColumnModel cm = getColumnModel();
-	    cm.getColumn(0).setPreferredWidth(800);
-	    cm.getColumn(1).setPreferredWidth(2000);
-	    sp.getViewport().setBackground(Globals.prefs.getColor("tableBackground"));
-	    // getInputMap().remove(GUIGlobals.exitDialog);
-	    getInputMap().put(frame.prefs.getKey("Close dialog"), "close");
-	    getActionMap().put("close", closeAction);
-	    getInputMap().put(frame.prefs.getKey("Help"), "help");
-	    getActionMap().put("help", helpAction);
 
-	}
+        JScrollPane sp = new JScrollPane(this);
 
-	public JComponent getPane() {
-	    return sp;
-	}
+        public StringTable(StringTableModel stm) {
+            super(stm);
+            setShowVerticalLines(true);
+            setShowHorizontalLines(true);
+            setColumnSelectionAllowed(true);
+//            setBackground(new Color(249, 250, 251));
+            DefaultCellEditor dce = new DefaultCellEditor(new JTextField());
+            dce.setClickCountToStart(2);
+            setDefaultEditor(String.class, dce);
+            TableColumnModel cm = getColumnModel();
+            cm.getColumn(0).setPreferredWidth(800);
+            cm.getColumn(1).setPreferredWidth(2000);
+//            sp.getViewport().setBackground(Globals.prefs.getColor("tableBackground"));
+            // getInputMap().remove(GUIGlobals.exitDialog);
+            getInputMap().put(frame.prefs.getKey("Close dialog"), "close");
+            getActionMap().put("close", closeAction);
+            getInputMap().put(frame.prefs.getKey("Help"), "help");
+            getActionMap().put("help", helpAction);
+
+        }
+
+        public JComponent getPane() {
+            return sp;
+        }
 
     }
 
     private void sortStrings() {
-	// Rebuild our sorted set of strings:
-	stringsSet = new TreeSet<BibtexString>(new BibtexStringComparator(false));
-	for (String s : base.getStringKeySet()){
-	    stringsSet.add(base.getString(s));
-	}
-	strings = stringsSet.toArray();
+        // Rebuild our sorted set of strings:
+        stringsSet = new TreeSet<BibtexString>(new BibtexStringComparator(false));
+        for (String s : base.getStringKeySet()) {
+            stringsSet.add(base.getString(s));
+        }
+        strings = stringsSet.toArray();
     }
 
     public void refreshTable() {
-	sortStrings();
-	table.revalidate();
-	table.clearSelection();
-	table.repaint();
+        sortStrings();
+        table.revalidate();
+        table.clearSelection();
+        table.repaint();
     }
 
     class StringTableModel extends AbstractTableModel {
 
-	BibtexDatabase base;
-	StringDialog parent;
+        BibtexDatabase base;
+        StringDialog parent;
 
-	public StringTableModel(StringDialog parent, BibtexDatabase base) {
-	    this.parent = parent;
-	    this.base = base;
-	}
+        public StringTableModel(StringDialog parent, BibtexDatabase base) {
+            this.parent = parent;
+            this.base = base;
+        }
 
-	public Object getValueAt(int row, int col) {
-	    return ((col == 0) ?
-		    ((BibtexString)strings[row]).getName() :
-		    ((BibtexString)strings[row]).getContent());
-	}
+        public Object getValueAt(int row, int col) {
+            return ((col == 0)
+                    ? ((BibtexString) strings[row]).getName()
+                    : ((BibtexString) strings[row]).getContent());
+        }
 
-	public void setValueAt(Object value, int row, int col) {
-	    //	    if (row >= base.getStringCount())
-	    //	return; // After a Remove operation the program somehow
-	                // thinks the user is still editing an entry,
-	                // which might now be outside
-	    if (col == 0) {
-		// Change name of string.
-		if (!value.equals(((BibtexString) strings[row]).getName())) {
-		    if (base.hasStringLabel((String)value))
-			JOptionPane.showMessageDialog(parent,
-						      Globals.lang("A string with that label "
-								   +"already exists"),
-						      Globals.lang("Label"),
-						      JOptionPane.ERROR_MESSAGE);
-                      else if (((String) value).contains(" ")) {
-                        JOptionPane.showMessageDialog
-                            (parent,
-                             Globals.lang("The label of the string can not contain spaces."),
-                             Globals.lang("Label"),
-                             JOptionPane.ERROR_MESSAGE);
-                      }
-                      else if (((String) value).contains("#")) {
-                        JOptionPane.showMessageDialog
-                            (parent,
-                            Globals.lang("The label of the string can not contain the '#' character."),
-                            Globals.lang("Label"),
-                            JOptionPane.ERROR_MESSAGE);
-                      }   
-                      else if (isNumber((String)value)) {
-                          JOptionPane.showMessageDialog
-                              (parent,
-                               Globals.lang("The label of the string can not be a number."),
-                               Globals.lang("Label"),
-                               JOptionPane.ERROR_MESSAGE);
-		    }
-		    else {
-			// Store undo information.
-			BibtexString subject = (BibtexString)strings[row];
-			panel.undoManager.addEdit
-			    (new UndoableStringChange
-			     (panel, subject, true,
-			      subject.getName(), (String)value));
-			subject.setName((String)value);
-			panel.markBaseChanged();
-			refreshTable();
-		    }
-		}
-	    } else {
-		// Change content of string.
-		BibtexString subject = (BibtexString)strings[row];
+        public void setValueAt(Object value, int row, int col) {
+            //	    if (row >= base.getStringCount())
+            //	return; // After a Remove operation the program somehow
+            // thinks the user is still editing an entry,
+            // which might now be outside
+            if (col == 0) {
+                // Change name of string.
+                if (!value.equals(((BibtexString) strings[row]).getName())) {
+                    if (base.hasStringLabel((String) value)) {
+                        JOptionPane.showMessageDialog(parent,
+                                Globals.lang("A string with that label "
+                                        + "already exists"),
+                                Globals.lang("Label"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } else if (((String) value).contains(" ")) {
+                        JOptionPane.showMessageDialog(parent,
+                                Globals.lang("The label of the string can not contain spaces."),
+                                Globals.lang("Label"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } else if (((String) value).contains("#")) {
+                        JOptionPane.showMessageDialog(parent,
+                                Globals.lang("The label of the string can not contain the '#' character."),
+                                Globals.lang("Label"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } else if (isNumber((String) value)) {
+                        JOptionPane.showMessageDialog(parent,
+                                Globals.lang("The label of the string can not be a number."),
+                                Globals.lang("Label"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        // Store undo information.
+                        BibtexString subject = (BibtexString) strings[row];
+                        panel.undoManager.addEdit(new UndoableStringChange(panel, subject, true,
+                                subject.getName(), (String) value));
+                        subject.setName((String) value);
+                        panel.markBaseChanged();
+                        refreshTable();
+                    }
+                }
+            } else {
+                // Change content of string.
+                BibtexString subject = (BibtexString) strings[row];
 
-		if (!value.equals(subject.getContent())) {
+                if (!value.equals(subject.getContent())) {
                     try {
-                        (new LatexFieldFormatter()).format((String)value, "__dummy");
+                        (new LatexFieldFormatter()).format((String) value, "__dummy");
                     } catch (IllegalArgumentException ex) {
                         return;
                     }
-		    // Store undo information.
-		    panel.undoManager.addEdit
-			(new UndoableStringChange
-			 (panel, subject, false,
-			  subject.getContent(), (String)value));
+                    // Store undo information.
+                    panel.undoManager.addEdit(new UndoableStringChange(panel, subject, false,
+                            subject.getContent(), (String) value));
 
-		    subject.setContent((String)value);
-		    panel.markBaseChanged();
-		}
-	    }
-	}
+                    subject.setContent((String) value);
+                    panel.markBaseChanged();
+                }
+            }
+        }
 
-	public int getColumnCount() {
-	    return 2;
-	}
+        public int getColumnCount() {
+            return 2;
+        }
 
-	public int getRowCount() {
-	    return strings.length; //base.getStringCount();
-	}
+        public int getRowCount() {
+            return strings.length; //base.getStringCount();
+        }
 
-	public String getColumnName(int col) {
-	    return ((col == 0) ?
-		    Globals.lang("Name") : Globals.lang("Content"));
-	}
+        public String getColumnName(int col) {
+            return ((col == 0)
+                    ? Globals.lang("Name") : Globals.lang("Content"));
+        }
 
-	public boolean isCellEditable(int row, int col) {
-	    return true;
-	}
+        public boolean isCellEditable(int row, int col) {
+            return true;
+        }
     }
 
     protected boolean isNumber(String name) {
-	// A pure integer number can not be used as a string label,
-	// since Bibtex will read it as a number.
-	try {
-	    Integer.parseInt(name);
-	    return true;
-	} catch (NumberFormatException ex) {
-	    return false;
-	}
+        // A pure integer number can not be used as a string label,
+        // since Bibtex will read it as a number.
+        try {
+            Integer.parseInt(name);
+            return true;
+        } catch (NumberFormatException ex) {
+            return false;
+        }
 
     }
 
     protected void assureNotEditing() {
-	if (table.isEditing()) {
-	    int col = table.getEditingColumn(),
-		row = table.getEditingRow();
-	    table.getCellEditor(row, col).stopCellEditing();
-	}
+        if (table.isEditing()) {
+            int col = table.getEditingColumn(),
+                    row = table.getEditingRow();
+            table.getCellEditor(row, col).stopCellEditing();
+        }
     }
 
     // The action concerned with closing the window.
     CloseAction closeAction = new CloseAction(this);
+
     class CloseAction extends AbstractAction {
-	StringDialog parent;
-	public CloseAction(StringDialog parent) {
-	    super("Close window");
-	    //, new ImageIcon(GUIGlobals.closeIconFile));
-	    putValue(SHORT_DESCRIPTION, Globals.lang("Close dialog"));
-	    this.parent = parent;
-	}
-	public void actionPerformed(ActionEvent e) {
-	    panel.stringsClosing();
-	    dispose();
-	    Point p = getLocation();
-	    Dimension d = getSize();
-	    prefs.putInt("stringsPosX", p.x);
-	    prefs.putInt("stringsPosY", p.y);
-	    prefs.putInt("stringsSizeX", d.width);
-	    prefs.putInt("stringsSizeY", d.height);
-	}
+
+        StringDialog parent;
+
+        public CloseAction(StringDialog parent) {
+            super("Close window");
+            //, new ImageIcon(GUIGlobals.closeIconFile));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Close dialog"));
+            this.parent = parent;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            panel.stringsClosing();
+            dispose();
+            Point p = getLocation();
+            Dimension d = getSize();
+            prefs.putInt("stringsPosX", p.x);
+            prefs.putInt("stringsPosY", p.y);
+            prefs.putInt("stringsSizeX", d.width);
+            prefs.putInt("stringsSizeY", d.height);
+        }
     }
 
     NewStringAction newStringAction = new NewStringAction(this);
+
     class NewStringAction extends AbstractAction {
-	StringDialog parent;
-	public NewStringAction(StringDialog parent) {
-	    super("New string",
-		  GUIGlobals.getImage("add"));
-	    putValue(SHORT_DESCRIPTION, Globals.lang("New string"));
-	    this.parent = parent;
-	}
-	public void actionPerformed(ActionEvent e) {
-	    String name =
-		JOptionPane.showInputDialog(parent,
-					    Globals.lang("Please enter the string's label"));
-	    if (name == null)
-		return;
-	    if (isNumber(name)) {
-		JOptionPane.showMessageDialog
-		    (parent,
-		     Globals.lang("The label of the string can not be a number."),
-		     Globals.lang("Label"),
-		     JOptionPane.ERROR_MESSAGE);
-		return;
-	    }
+
+        StringDialog parent;
+
+        public NewStringAction(StringDialog parent) {
+            super("New string",
+                    GUIGlobals.getImage("add"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("New string"));
+            this.parent = parent;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            String name
+                    = JOptionPane.showInputDialog(parent,
+                            Globals.lang("Please enter the string's label"));
+            if (name == null) {
+                return;
+            }
+            if (isNumber(name)) {
+                JOptionPane.showMessageDialog(parent,
+                        Globals.lang("The label of the string can not be a number."),
+                        Globals.lang("Label"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             if (name.contains("#")) {
-             JOptionPane.showMessageDialog
-                 (parent,
-                  Globals.lang("The label of the string can not contain the '#' character."),
-                  Globals.lang("Label"),
-                  JOptionPane.ERROR_MESSAGE);
-             return;
-           }           
-           if (name.contains(" ")) {
-             JOptionPane.showMessageDialog
-                 (parent,
-                  Globals.lang("The label of the string can not contain spaces."),
-                  Globals.lang("Label"),
-                  JOptionPane.ERROR_MESSAGE);
-             return;
-           }
-	    try {
-		String newId = Util.createNeutralId();
-		BibtexString bs = new BibtexString(newId, name, "");
+                JOptionPane.showMessageDialog(parent,
+                        Globals.lang("The label of the string can not contain the '#' character."),
+                        Globals.lang("Label"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            if (name.contains(" ")) {
+                JOptionPane.showMessageDialog(parent,
+                        Globals.lang("The label of the string can not contain spaces."),
+                        Globals.lang("Label"),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            try {
+                String newId = Util.createNeutralId();
+                BibtexString bs = new BibtexString(newId, name, "");
 
-		// Store undo information:
-		panel.undoManager.addEdit
-		    (new UndoableInsertString
-		     (panel, panel.database, bs));
+                // Store undo information:
+                panel.undoManager.addEdit(new UndoableInsertString(panel, panel.database, bs));
 
-		base.addString(bs);
-		refreshTable();
-		//		table.revalidate();
-		panel.markBaseChanged();
-	    } catch (KeyCollisionException ex) {
-		JOptionPane.showMessageDialog(parent,
-					      Globals.lang("A string with that label "
-							   +"already exists"),
-					      Globals.lang("Label"),
-					      JOptionPane.ERROR_MESSAGE);
-	    }
-	}
+                base.addString(bs);
+                refreshTable();
+                //		table.revalidate();
+                panel.markBaseChanged();
+            } catch (KeyCollisionException ex) {
+                JOptionPane.showMessageDialog(parent,
+                        Globals.lang("A string with that label "
+                                + "already exists"),
+                        Globals.lang("Label"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     StoreContentAction storeContentAction = new StoreContentAction(this);
+
     class StoreContentAction extends AbstractAction {
-	StringDialog parent;
-	public StoreContentAction(StringDialog parent) {
-	    super("Store string",
-		  GUIGlobals.getImage("add"));
-	    putValue(SHORT_DESCRIPTION, Globals.lang("Store string"));
-	    this.parent = parent;
-	}
-	public void actionPerformed(ActionEvent e) {
-	}
+
+        StringDialog parent;
+
+        public StoreContentAction(StringDialog parent) {
+            super("Store string",
+                    GUIGlobals.getImage("add"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Store string"));
+            this.parent = parent;
+        }
+
+        public void actionPerformed(ActionEvent e) {
+        }
     }
 
     RemoveStringAction removeStringAction = new RemoveStringAction(this);
+
     class RemoveStringAction extends AbstractAction {
-	StringDialog parent;
-	public RemoveStringAction(StringDialog parent) {
-	    super("Remove selected strings",
-		  GUIGlobals.getImage("remove"));
-	    putValue(SHORT_DESCRIPTION, Globals.lang("Remove selected strings"));
-	    this.parent = parent;
-	}
-	public void actionPerformed(ActionEvent e) {
-	    int[] sel = table.getSelectedRows();
-	    if (sel.length > 0) {
 
-		// Make sure no cell is being edited, as caused by the
-		// keystroke. This makes the content hang on the screen.
-		assureNotEditing();
+        StringDialog parent;
 
-		String msg = Globals.lang("Really delete the selected")+" "+
-		    ((sel.length>1) ? sel.length+" "+Globals.lang("entries")
-		     : Globals.lang("entry"))+"?";
-		int answer = JOptionPane.showConfirmDialog(parent, msg, Globals.lang("Delete strings"),
-							   JOptionPane.YES_NO_OPTION,
-							   JOptionPane.QUESTION_MESSAGE);
-		if (answer == JOptionPane.YES_OPTION) {
-		    CompoundEdit ce = new CompoundEdit();
-		    for (int i=sel.length-1; i>=0; i--) {
-			// Delete the strings backwards to avoid moving indexes.
+        public RemoveStringAction(StringDialog parent) {
+            super("Remove selected strings",
+                    GUIGlobals.getImage("remove"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Remove selected strings"));
+            this.parent = parent;
+        }
 
-			BibtexString subject = (BibtexString)strings[sel[i]];
+        public void actionPerformed(ActionEvent e) {
+            int[] sel = table.getSelectedRows();
+            if (sel.length > 0) {
 
-			// Store undo information:
-			ce.addEdit(new UndoableRemoveString
-				   (panel, base,
-				    subject));
+                // Make sure no cell is being edited, as caused by the
+                // keystroke. This makes the content hang on the screen.
+                assureNotEditing();
 
-			base.removeString(subject.getId());
-		    }
-		    ce.end();
-		    panel.undoManager.addEdit(ce);
+                String msg = Globals.lang("Really delete the selected") + " "
+                        + ((sel.length > 1) ? sel.length + " " + Globals.lang("entries")
+                                : Globals.lang("entry")) + "?";
+                int answer = JOptionPane.showConfirmDialog(parent, msg, Globals.lang("Delete strings"),
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE);
+                if (answer == JOptionPane.YES_OPTION) {
+                    CompoundEdit ce = new CompoundEdit();
+                    for (int i = sel.length - 1; i >= 0; i--) {
+                        // Delete the strings backwards to avoid moving indexes.
 
-		    //table.revalidate();
-		    refreshTable();
-		    if (base.getStringCount() > 0)
-			table.setRowSelectionInterval(0,0);
-		    //table.repaint();
-		    //panel.markBaseChanged();
-		}
-	    }
-	}
+                        BibtexString subject = (BibtexString) strings[sel[i]];
+
+                        // Store undo information:
+                        ce.addEdit(new UndoableRemoveString(panel, base,
+                                subject));
+
+                        base.removeString(subject.getId());
+                    }
+                    ce.end();
+                    panel.undoManager.addEdit(ce);
+
+                    //table.revalidate();
+                    refreshTable();
+                    if (base.getStringCount() > 0) {
+                        table.setRowSelectionInterval(0, 0);
+                    }
+                    //table.repaint();
+                    //panel.markBaseChanged();
+                }
+            }
+        }
     }
 
     /*    StringUpAction stringUpAction = new StringUpAction();
@@ -533,32 +539,38 @@ public class StringDialog extends JDialog {
 
 	}
     }*/
-
     UndoAction undoAction = new UndoAction();
+
     class UndoAction extends AbstractAction {
-	public UndoAction() {
-	    super("Undo", GUIGlobals.getImage("undo"));
-	    putValue(SHORT_DESCRIPTION, Globals.lang("Undo"));
-	}
-	public void actionPerformed(ActionEvent e) {
-	    try {
-		panel.runCommand("undo");
-	    } catch (Throwable ignored) {}
-	}
+
+        public UndoAction() {
+            super("Undo", GUIGlobals.getImage("undo"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Undo"));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            try {
+                panel.runCommand("undo");
+            } catch (Throwable ignored) {
+            }
+        }
     }
 
     RedoAction redoAction = new RedoAction();
-    class RedoAction extends AbstractAction {
-	public RedoAction() {
-	    super("Undo", GUIGlobals.getImage("redo"));
-	    putValue(SHORT_DESCRIPTION, Globals.lang("Redo"));
-	}
-	public void actionPerformed(ActionEvent e) {
-	    try {
-		panel.runCommand("redo");
-	    } catch (Throwable ignored) {}
-	}
-    }
 
+    class RedoAction extends AbstractAction {
+
+        public RedoAction() {
+            super("Undo", GUIGlobals.getImage("redo"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Redo"));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            try {
+                panel.runCommand("redo");
+            } catch (Throwable ignored) {
+            }
+        }
+    }
 
 }

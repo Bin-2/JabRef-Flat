@@ -12,14 +12,15 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 /**
- * BaseAction is used to define actions that are called from the
- * base frame through runCommand(). runCommand() finds the
- * appropriate BaseAction object, and runs its action() method.
+ * BaseAction is used to define actions that are called from the base frame
+ * through runCommand(). runCommand() finds the appropriate BaseAction object,
+ * and runs its action() method.
  */
 public abstract class BaseAction {//implements Runnable {
+
     public abstract void action() throws Throwable;
 }

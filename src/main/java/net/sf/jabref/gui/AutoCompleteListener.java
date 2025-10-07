@@ -15,6 +15,8 @@
 */
 package net.sf.jabref.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import javax.swing.text.JTextComponent;
 import javax.swing.text.BadLocationException;
 

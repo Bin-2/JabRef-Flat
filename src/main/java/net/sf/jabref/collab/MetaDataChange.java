@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.collab;
 
 import net.sf.jabref.BasePanel;
@@ -22,18 +22,17 @@ import net.sf.jabref.Globals;
 import net.sf.jabref.undo.NamedCompound;
 
 import javax.swing.*;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 
+ *
  */
 public class MetaDataChange extends Change {
 
-    static final int
-        ADD = 1,
-        REMOVE = 2,
-        MODIFY = 3;
+    static final int ADD = 1,
+            REMOVE = 2,
+            MODIFY = 3;
 
     InfoPane tp = new InfoPane();
     JScrollPane sp = new JScrollPane(tp);
@@ -46,14 +45,14 @@ public class MetaDataChange extends Change {
         this.md = md;
         this.mdSecondary = mdSecondary;
 
-        tp.setText("<html>"+Globals.lang("Metadata change")+"</html>");
+        tp.setText("<html>" + Globals.lang("Metadata change") + "</html>");
     }
 
     public int getChangeCount() {
         return changes.size();
     }
 
-    public void insertMetaDataAddition(String key, Vector<String> value) {
+    public void insertMetaDataAddition(String key, List<String> value) {
         changes.add(new MetaDataChangeUnit(ADD, key, value));
     }
 
@@ -61,12 +60,12 @@ public class MetaDataChange extends Change {
         changes.add(new MetaDataChangeUnit(REMOVE, key, null));
     }
 
-    public void insertMetaDataChange(String key, Vector<String> value) {
+    public void insertMetaDataChange(String key, List<String> value) {
         changes.add(new MetaDataChangeUnit(MODIFY, key, value));
     }
 
     JComponent description() {
-        StringBuilder sb = new StringBuilder("<html>"+Globals.lang("Changes have been made to the following metadata elements")+":<p>");
+        StringBuilder sb = new StringBuilder("<html>" + Globals.lang("Changes have been made to the following metadata elements") + ":<p>");
         for (MetaDataChangeUnit unit : changes) {
             sb.append("<br>&nbsp;&nbsp;");
             sb.append(unit.key);
@@ -108,11 +107,12 @@ public class MetaDataChange extends Change {
     }
 
     class MetaDataChangeUnit {
+
         int type;
         String key;
-        Vector<String> value;
+        List<String> value;
 
-        public MetaDataChangeUnit(int type, String key, Vector<String> value) {
+        public MetaDataChangeUnit(int type, String key, List<String> value) {
             this.type = type;
             this.key = key;
             this.value = value;

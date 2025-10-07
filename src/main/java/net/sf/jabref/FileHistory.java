@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.event.ActionEvent;
@@ -20,6 +20,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Iterator;
 import java.util.LinkedList;
+import javax.swing.Icon;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -38,8 +39,22 @@ public class FileHistory extends JMenu implements ActionListener {
             setText(name.substring(0, i) + name.substring(i + 1));
             char mnemonic = Character.toUpperCase(name.charAt(i + 1));
             setMnemonic((int) mnemonic);
-        } else
+        } else {
             setText(name);
+        }
+
+        // Add SVG icon using GUIGlobals
+        Icon historyIcon = GUIGlobals.getIcon("fileHistory");
+        if (historyIcon != null) {
+            setIcon(historyIcon);
+        } else {
+            // Fallback: try alternative icon names
+            Icon fallbackIcon = GUIGlobals.getIcon("history");
+            if (fallbackIcon != null) {
+                setIcon(fallbackIcon);
+            }
+            // If no icon found, it will just display without an icon
+        }
 
         this.prefs = prefs;
         this.frame = frame;
@@ -49,21 +64,23 @@ public class FileHistory extends JMenu implements ActionListener {
                 history.addFirst(old[i]);
             }
             setItems();
-        } else
+        } else {
             setEnabled(false);
+        }
     }
 
     /**
-     * Adds the file name to the top of the menu. If it already is in
-     * the menu, it is merely moved to the top.
+     * Adds the file name to the top of the menu. If it already is in the menu,
+     * it is merely moved to the top.
      *
      * @param filename a <code>String</code> value
      */
     public void newFile(String filename) {
         int i = 0;
         while (i < history.size()) {
-            if (history.get(i).equals(filename))
+            if (history.get(i).equals(filename)) {
                 history.remove(i--);
+            }
             i++;
         }
         history.addFirst(filename);
@@ -71,8 +88,9 @@ public class FileHistory extends JMenu implements ActionListener {
             history.removeLast();
         }
         setItems();
-        if (!isEnabled())
+        if (!isEnabled()) {
             setEnabled(true);
+        }
     }
 
     private void setItems() {
@@ -95,7 +113,7 @@ public class FileHistory extends JMenu implements ActionListener {
     }
 
     private void removeItem(String filename) {
-        int i=0;
+        int i = 0;
         while (i < history.size()) {
             if (history.get(i).equals(filename)) {
                 history.remove(i);
@@ -109,8 +127,9 @@ public class FileHistory extends JMenu implements ActionListener {
     public void storeHistory() {
         if (history.size() > 0) {
             String[] names = new String[history.size()];
-            for (int i = 0; i < names.length; i++)
+            for (int i = 0; i < names.length; i++) {
                 names[i] = history.get(i);
+            }
             prefs.putStringArray("recentFiles", names);
         }
     }
@@ -123,7 +142,7 @@ public class FileHistory extends JMenu implements ActionListener {
         final File fileToOpen = new File(name);
 
         if (!fileToOpen.exists()) {
-            JOptionPane.showMessageDialog(frame, Globals.lang("File not found")+": "+fileToOpen.getName(),
+            JOptionPane.showMessageDialog(frame, Globals.lang("File not found") + ": " + fileToOpen.getName(),
                     "Error", JOptionPane.ERROR_MESSAGE);
             removeItem(name);
             return;
@@ -135,6 +154,5 @@ public class FileHistory extends JMenu implements ActionListener {
         }).start();
 
     }
-
 
 }

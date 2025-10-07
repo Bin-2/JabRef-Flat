@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -41,52 +43,51 @@ import ca.odell.glazedlists.matchers.Matcher;
 import ca.odell.glazedlists.swing.EventSelectionModel;
 import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
+import static com.formdev.flatlaf.util.ColorFunctions.lighten;
+import java.awt.Component;
 
 /**
  * The central table which displays the bibtex entries.
- * 
- * User: alver
- * Date: Oct 12, 2005
- * Time: 10:29:39 PM
- * 
+ *
+ * User: alver Date: Oct 12, 2005 Time: 10:29:39 PM
+ *
  */
-public class MainTable extends JTable {
-	
+public class MainTable extends JTable implements ThemeAwareComponent {
+
     private MainTableFormat tableFormat;
     private BasePanel panel;
     private SortedList<BibtexEntry> sortedForMarking, sortedForTable, sortedForSearch, sortedForGrouping;
-    private boolean tableColorCodes, showingFloatSearch=false, showingFloatGrouping=false;
+    private boolean tableColorCodes, showingFloatSearch = false, showingFloatGrouping = false;
     private EventSelectionModel<BibtexEntry> selectionModel;
     private TableComparatorChooser<BibtexEntry> comparatorChooser;
     private JScrollPane pane;
     private Comparator<BibtexEntry> searchComparator, groupComparator,
             markingComparator = new IsMarkedComparator();
     private Matcher<BibtexEntry> searchMatcher, groupMatcher;
-    
+
     // needed to activate/deactivate the listener
     private final PersistenceTableColumnListener tableColumnListener;
 
     // Constants used to define how a cell should be rendered.
     public static final int REQUIRED = 1, OPTIONAL = 2,
-      REQ_STRING = 1,
-      REQ_NUMBER = 2,
-      OPT_STRING = 3,
-      OTHER = 3,
-      BOOLEAN = 4,
-      ICON_COL = 8; // Constant to indicate that an icon cell renderer should be used.
+            REQ_STRING = 1,
+            REQ_NUMBER = 2,
+            OPT_STRING = 3,
+            OTHER = 3,
+            BOOLEAN = 4,
+            ICON_COL = 8; // Constant to indicate that an icon cell renderer should be used.
 
     static {
         updateRenderers();
     }
 
-
     public MainTable(MainTableFormat tableFormat, EventList<BibtexEntry> list, JabRefFrame frame,
-                     BasePanel panel) {
+            BasePanel panel) {
         super();
 
         addFocusListener(Globals.focusListener);
         setAutoResizeMode(Globals.prefs.getInt("autoResizeMode"));
-      
+
         this.tableFormat = tableFormat;
         this.panel = panel;
         // This SortedList has a Comparator controlled by the TableComparatorChooser
@@ -98,7 +99,6 @@ public class MainTable extends JTable {
         sortedForSearch = new SortedList<BibtexEntry>(sortedForMarking, null);
         // This SortedList applies afterwards, and can float grouping hits:
         sortedForGrouping = new SortedList<BibtexEntry>(sortedForSearch, null);
-
 
         searchMatcher = null;
         groupMatcher = null;
@@ -113,14 +113,13 @@ public class MainTable extends JTable {
         setSelectionModel(selectionModel);
         pane = new JScrollPane(this);
         pane.setBorder(BorderFactory.createEmptyBorder());
-        pane.getViewport().setBackground(Globals.prefs.getColor("tableBackground"));
-        setGridColor(Globals.prefs.getColor("gridColor"));
-        if(Globals.prefs.getBoolean("tableShowGrid"))
-        	setShowGrid(true);
-        else
-        {
-	        setShowGrid(false);
-	        setIntercellSpacing(new Dimension(0, 0));
+//        pane.getViewport().setBackground(Globals.prefs.getColor("tableBackground"));
+//        setGridColor(Globals.prefs.getColor("gridColor"));
+        if (Globals.prefs.getBoolean("tableShowGrid")) {
+            setShowGrid(true);
+        } else {
+            setShowGrid(false);
+            setIntercellSpacing(new Dimension(0, 0));
         }
 
         this.setTableHeader(new PreventDraggingJTableHeader(this.getColumnModel()));
@@ -128,7 +127,7 @@ public class MainTable extends JTable {
         comparatorChooser = this.createTableComparatorChooser(this, sortedForTable,
                 TableComparatorChooser.MULTIPLE_COLUMN_KEYBOARD);
 
-        this.tableColumnListener =  new PersistenceTableColumnListener(this);
+        this.tableColumnListener = new PersistenceTableColumnListener(this);
         /*if (Globals.prefs.getBoolean(PersistenceTableColumnListener.ACTIVATE_PREF_KEY)) {
             getColumnModel().addColumnModelListener(this.tableColumnListener );
         }*/
@@ -145,16 +144,22 @@ public class MainTable extends JTable {
         setupComparatorChooser();
         refreshSorting();
         setWidths();
-        
+
+        this.setOpaque(false);
+        // this.setBackground(new Color(249, 250, 251));
+
+        // Register for theme changes
+        ThemeWatcher.register(this);
 
     }
 
     public void refreshSorting() {
         sortedForMarking.getReadWriteLock().writeLock().lock();
-        if (Globals.prefs.getBoolean("floatMarkedEntries"))
+        if (Globals.prefs.getBoolean("floatMarkedEntries")) {
             sortedForMarking.setComparator(markingComparator);
-        else
+        } else {
             sortedForMarking.setComparator(null);
+        }
         sortedForMarking.getReadWriteLock().writeLock().unlock();
         sortedForSearch.getReadWriteLock().writeLock().lock();
         sortedForSearch.setComparator(searchComparator);
@@ -165,7 +170,9 @@ public class MainTable extends JTable {
     }
 
     /**
-     * Adds a sorting rule that floats hits to the top, and causes non-hits to be grayed out:
+     * Adds a sorting rule that floats hits to the top, and causes non-hits to
+     * be grayed out:
+     *
      * @param m The Matcher that determines if an entry is a hit or not.
      */
     public void showFloatSearch(Matcher<BibtexEntry> m) {
@@ -187,8 +194,11 @@ public class MainTable extends JTable {
     }
 
     /**
-     * Adds a sorting rule that floats group hits to the top, and causes non-hits to be grayed out:
-     * @param m The Matcher that determines if an entry is a in the current group selection or not.
+     * Adds a sorting rule that floats group hits to the top, and causes
+     * non-hits to be grayed out:
+     *
+     * @param m The Matcher that determines if an entry is a in the current
+     * group selection or not.
      */
     public void showFloatGrouping(Matcher<BibtexEntry> m) {
         showingFloatGrouping = true;
@@ -196,7 +206,6 @@ public class MainTable extends JTable {
         groupComparator = new HitOrMissComparator(m);
         refreshSorting();
     }
-
 
     public boolean isShowingFloatSearch() {
         return showingFloatSearch;
@@ -215,6 +224,7 @@ public class MainTable extends JTable {
     public EventList<BibtexEntry> getTableRows() {
         return sortedForGrouping;
     }
+
     public void addSelectionListener(ListEventListener<BibtexEntry> listener) {
         getSelected().addListEventListener(listener);
     }
@@ -223,19 +233,19 @@ public class MainTable extends JTable {
         return pane;
     }
 
-    
-
     public TableCellRenderer getCellRenderer(int row, int column) {
-        
+
         int score = -3;
         DefaultTableCellRenderer renderer = defRenderer;
 
         int status = getCellStatus(row, column);
 
-        if (!showingFloatSearch || matches(row, searchMatcher))
+        if (!showingFloatSearch || matches(row, searchMatcher)) {
             score++;
-        if (!showingFloatGrouping || matches(row, groupMatcher))
+        }
+        if (!showingFloatGrouping || matches(row, groupMatcher)) {
             score += 2;
+        }
 
         // Now, a grayed out renderer is for entries with -1, and
         // a very grayed out one for entries with -2
@@ -243,16 +253,17 @@ public class MainTable extends JTable {
             if (column == 0) {
                 veryGrayedOutNumberRenderer.setNumber(row);
                 renderer = veryGrayedOutNumberRenderer;
-            } else renderer = veryGrayedOutRenderer;
-        }
-        else if (score == -1) {
+            } else {
+                renderer = veryGrayedOutRenderer;
+            }
+        } else if (score == -1) {
             if (column == 0) {
                 grayedOutNumberRenderer.setNumber(row);
                 renderer = grayedOutNumberRenderer;
-            } else renderer = grayedOutRenderer;
-        }
-
-        else if (column == 0) {
+            } else {
+                renderer = grayedOutRenderer;
+            }
+        } else if (column == 0) {
             // Return a renderer with red background if the entry is incomplete.
             if (!isComplete(row)) {
                 incRenderer.setNumber(row);
@@ -262,27 +273,28 @@ public class MainTable extends JTable {
                 int marking = isMarked(row);
                 if (marking > 0) {
                     marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
-                    renderer = markedNumberRenderers[marking-1];
-                    markedNumberRenderers[marking-1].setNumber(row);
-                } else
+                    renderer = markedNumberRenderers[marking - 1];
+                    markedNumberRenderers[marking - 1].setNumber(row);
+                } else {
                     renderer = compRenderer;
+                }
             }
-            renderer.setHorizontalAlignment( JLabel.CENTER );
-        }
-        else if (tableColorCodes) {
-            if (status == REQUIRED)
+            renderer.setHorizontalAlignment(JLabel.CENTER);
+        } else if (tableColorCodes) {
+            if (status == REQUIRED) {
                 renderer = reqRenderer;
-            else if (status == OPTIONAL)
+            } else if (status == OPTIONAL) {
                 renderer = optRenderer;
-            else if (status == BOOLEAN)
+            } else if (status == BOOLEAN) {
                 renderer = (DefaultTableCellRenderer) getDefaultRenderer(Boolean.class);
+            }
         }
 
         // For MARKED feature:
         int marking = isMarked(row);
         if ((column != 0) && (marking > 0)) {
             marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
-            renderer = markedRenderers[marking-1];
+            renderer = markedRenderers[marking - 1];
         }
 
         return renderer;
@@ -296,22 +308,22 @@ public class MainTable extends JTable {
         TableColumnModel cm = getColumnModel();
         cm.getColumn(0).setPreferredWidth(ncWidth);
         for (int i = 1; i < tableFormat.padleft; i++) {
-        	
-        	// Check if the Column is an extended RankingColumn (and not a compact-ranking column) 
-        	// If this is the case, set a certain Column-width,
-        	// because the RankingIconColumn needs some more width
-        	if (tableFormat.isRankingColumn(i) && !Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_RANKING_COMPACT)) {
-        		// Lock the width of ranking icon column.
+
+            // Check if the Column is an extended RankingColumn (and not a compact-ranking column) 
+            // If this is the case, set a certain Column-width,
+            // because the RankingIconColumn needs some more width
+            if (tableFormat.isRankingColumn(i) && !Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_RANKING_COMPACT)) {
+                // Lock the width of ranking icon column.
                 cm.getColumn(i).setPreferredWidth(GUIGlobals.WIDTH_ICON_COL_RANKING);
                 cm.getColumn(i).setMinWidth(GUIGlobals.WIDTH_ICON_COL_RANKING);
                 cm.getColumn(i).setMaxWidth(GUIGlobals.WIDTH_ICON_COL_RANKING);
-        	} else {
-        		// Lock the width of icon columns.
+            } else {
+                // Lock the width of icon columns.
                 cm.getColumn(i).setPreferredWidth(GUIGlobals.WIDTH_ICON_COL);
                 cm.getColumn(i).setMinWidth(GUIGlobals.WIDTH_ICON_COL);
-                cm.getColumn(i).setMaxWidth(GUIGlobals.WIDTH_ICON_COL);	
-        	}
-        	
+                cm.getColumn(i).setMaxWidth(GUIGlobals.WIDTH_ICON_COL);
+            }
+
         }
         for (int i = tableFormat.padleft; i < getModel().getColumnCount(); i++) {
             try {
@@ -350,21 +362,22 @@ public class MainTable extends JTable {
         List<String> fields = new ArrayList<String>();
         for (Integer i : sortCols) {
             String name = tableFormat.getColumnType(i);
-            if (name != null)
+            if (name != null) {
                 fields.add(name.toLowerCase());
+            }
         }
         return fields;
     }
 
-
     /**
-     * This method sets up what Comparators are used for the various table columns.
-     * The ComparatorChooser enables and disables such Comparators as the user clicks
-     * columns, but this is where the Comparators are defined. Also, the ComparatorChooser
-     * is initialized with the sort order defined in Preferences.
+     * This method sets up what Comparators are used for the various table
+     * columns. The ComparatorChooser enables and disables such Comparators as
+     * the user clicks columns, but this is where the Comparators are defined.
+     * Also, the ComparatorChooser is initialized with the sort order defined in
+     * Preferences.
      */
     @SuppressWarnings("unchecked")
-	private void setupComparatorChooser() {
+    private void setupComparatorChooser() {
         // First column:
         List<Comparator> comparators = comparatorChooser.getComparatorsForColumn(0);
         comparators.clear();
@@ -375,11 +388,11 @@ public class MainTable extends JTable {
             comparators = comparatorChooser.getComparatorsForColumn(i);
             comparators.clear();
             String[] iconField = tableFormat.getIconTypeForColumn(i);
-            
+
             if (iconField[0].equals(SpecialFieldsUtils.FIELDNAME_RANKING)) {
-            	comparators.add(new RankingFieldComparator());
+                comparators.add(new RankingFieldComparator());
             } else {
-            	comparators.add(new IconComparator(iconField));
+                comparators.add(new IconComparator(iconField));
             }
         }
         // Remaining columns:
@@ -390,10 +403,9 @@ public class MainTable extends JTable {
         }
 
         // Set initial sort columns:
-
         // Default sort order:
-        String[] sortFields = new String[] {
-            Globals.prefs.get(JabRefPreferences.PRIMARY_SORT_FIELD), 
+        String[] sortFields = new String[]{
+            Globals.prefs.get(JabRefPreferences.PRIMARY_SORT_FIELD),
             Globals.prefs.get(JabRefPreferences.SECONDARY_SORT_FIELD),
             Globals.prefs.get(JabRefPreferences.TERTIARY_SORT_FIELD)
         };
@@ -404,12 +416,12 @@ public class MainTable extends JTable {
         }; // descending
 
         sortedForTable.getReadWriteLock().writeLock().lock();
-        for (int i=0; i<sortFields.length; i++) {
+        for (int i = 0; i < sortFields.length; i++) {
             int index = -1;
-            if (!sortFields[i].startsWith(MainTableFormat.ICON_COLUMN_PREFIX))
+            if (!sortFields[i].startsWith(MainTableFormat.ICON_COLUMN_PREFIX)) {
                 index = tableFormat.getColumnIndex(sortFields[i]);
-            else {
-                for (int j=0; j<tableFormat.getColumnCount(); j++) {
+            } else {
+                for (int j = 0; j < tableFormat.getColumnCount(); j++) {
                     if (sortFields[i].equals(tableFormat.getColumnType(j))) {
                         index = j;
                         break;
@@ -426,7 +438,7 @@ public class MainTable extends JTable {
         comparatorChooser.addSortActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 // Get the information about the current sort order:
-                List<String> fields = getCurrentSortFields(); 
+                List<String> fields = getCurrentSortFields();
                 List<Boolean> order = getCurrentSortOrder();
                 // Update preferences:
                 int count = Math.min(fields.size(), order.size());
@@ -437,23 +449,20 @@ public class MainTable extends JTable {
                 if (count >= 2) {
                     Globals.prefs.put(JabRefPreferences.SECONDARY_SORT_FIELD, fields.get(1));
                     Globals.prefs.putBoolean(JabRefPreferences.SECONDARY_SORT_DESCENDING, order.get(1));
-                }
-                else {
+                } else {
                     Globals.prefs.put(JabRefPreferences.SECONDARY_SORT_FIELD, "");
                     Globals.prefs.putBoolean(JabRefPreferences.SECONDARY_SORT_DESCENDING, false);
                 }
                 if (count >= 3) {
                     Globals.prefs.put(JabRefPreferences.TERTIARY_SORT_FIELD, fields.get(2));
                     Globals.prefs.putBoolean(JabRefPreferences.TERTIARY_SORT_DESCENDING, order.get(2));
-                }
-                else {
+                } else {
                     Globals.prefs.put(JabRefPreferences.TERTIARY_SORT_FIELD, "");
                     Globals.prefs.putBoolean(JabRefPreferences.TERTIARY_SORT_DESCENDING, false);
                 }
             }
 
         });
-
 
     }
 
@@ -476,11 +485,12 @@ public class MainTable extends JTable {
     }
 
     /**
-     * Use with caution! If you modify an entry in the table, the selection changes
-     * 
+     * Use with caution! If you modify an entry in the table, the selection
+     * changes
+     *
      * You can avoid it with
-     *   <code>.getSelected().getReadWriteLock().writeLock().lock()</code>
-     *   and then <code>.unlock()</code>
+     * <code>.getSelected().getReadWriteLock().writeLock().lock()</code> and
+     * then <code>.unlock()</code>
      */
     public EventList<BibtexEntry> getSelected() {
         return selectionModel.getSelected();
@@ -492,15 +502,16 @@ public class MainTable extends JTable {
      * @param row the row to select
      */
     public void setSelected(int row) {
-    	selectionModel.setSelectionInterval(row, row);
+        selectionModel.setSelectionInterval(row, row);
     }
 
     /**
      * Adds the given row to the selection
+     *
      * @param row the row to add to the selection
      */
-    public void addSelection(int row)  {
-    	this.selectionModel.addSelectionInterval(row, row);
+    public void addSelection(int row) {
+        this.selectionModel.addSelectionInterval(row, row);
     }
 
     public int findEntry(BibtexEntry entry) {
@@ -536,7 +547,6 @@ public class MainTable extends JTable {
         }
     }
 
-
     public void scrollTo(int y) {
         JScrollBar scb = pane.getVerticalScrollBar();
         scb.setValue(y * scb.getUnitIncrement(1));
@@ -553,10 +563,10 @@ public class MainTable extends JTable {
     public void ensureVisible(int row) {
         JScrollBar vert = pane.getVerticalScrollBar();
         int y = row * getRowHeight();
-		if ((y < vert.getValue()) || (y > vert.getValue() + vert.getVisibleAmount()) && !showingFloatSearch) {
-			scrollToCenter(row, 1);
-		}
-            
+        if ((y < vert.getValue()) || (y > vert.getValue() + vert.getVisibleAmount()) && !showingFloatSearch) {
+            scrollToCenter(row, 1);
+        }
+
     }
 
     public void scrollToCenter(int rowIndex, int vColIndex) {
@@ -599,56 +609,218 @@ public class MainTable extends JTable {
         repaint();
     }
 
-
     private static GeneralRenderer defRenderer, reqRenderer, optRenderer, grayedOutRenderer,
-        veryGrayedOutRenderer;
+            veryGrayedOutRenderer;
 
     private static GeneralRenderer[] markedRenderers;
 
     private static IncompleteRenderer incRenderer;
-    private static CompleteRenderer
-            compRenderer,
+    private static CompleteRenderer compRenderer,
             grayedOutNumberRenderer,
             veryGrayedOutNumberRenderer;
 
     private static CompleteRenderer[] markedNumberRenderers;
 
+//    public static void updateRenderers() {
+//        defRenderer = new GeneralRenderer(
+//                Globals.prefs.getColor("tableBackground"),
+//                Globals.prefs.getColor("tableText"));
+//
+//        // --- Get selection colors from the LAF (FlatLaf supplies both keys) ---
+//        Color selActive = UIManager.getColor("Table.selectionBackground");
+//        Color selInactive = UIManager.getColor("Table.selectionInactiveBackground");
+//
+//        // Fallbacks for old LAFs
+//        if (selActive == null) {
+//            selActive = new JTable().getSelectionBackground();
+//        }
+//        if (selInactive == null) {
+//            // make inactive slightly lighter than active
+//            selInactive = lighten(selActive, 0.30f);
+//        }
+//
+//        // Base table background (what your highlights are painted over)
+//        Color tableBg = Globals.prefs.getColor("tableBackground");
+//        if (tableBg == null) {
+//            tableBg = UIManager.getColor("Table.background");
+//        }
+//
+//        // --- Soften the selection used for mixing highlights ---
+//        // Blend 50% selection into the table bg.
+//        Color selSoft = blend(tableBg, selActive, 0.90f);
+//        Color selInactiveSoft = blend(tableBg, selInactive, 0.90f);
+//
+//        // Now build the renderers using the softened selection color instead of raw `sel`
+//        reqRenderer = new GeneralRenderer(
+//                Globals.prefs.getColor("tableReqFieldBackground"),
+//                Globals.prefs.getColor("tableText"));
+//
+//        optRenderer = new GeneralRenderer(
+//                Globals.prefs.getColor("tableOptFieldBackground"),
+//                Globals.prefs.getColor("tableText"));
+//
+//        incRenderer = new IncompleteRenderer();
+//
+//        compRenderer = new CompleteRenderer(Globals.prefs.getColor("tableBackground"));
+//        grayedOutNumberRenderer = new CompleteRenderer(Globals.prefs.getColor("grayedOutBackground"));
+//        veryGrayedOutNumberRenderer = new CompleteRenderer(Globals.prefs.getColor("veryGrayedOutBackground"));
+//
+//        // Use selSoft for the selected highlight mix
+//        grayedOutRenderer = new GeneralRenderer(
+//                Globals.prefs.getColor("grayedOutBackground"),
+//                Globals.prefs.getColor("grayedOutText"),
+//                mixColors(Globals.prefs.getColor("grayedOutBackground"), selSoft));
+//
+//        veryGrayedOutRenderer = new GeneralRenderer(
+//                Globals.prefs.getColor("veryGrayedOutBackground"),
+//                Globals.prefs.getColor("veryGrayedOutText"),
+//                mixColors(Globals.prefs.getColor("veryGrayedOutBackground"), selSoft));
+//
+//        markedRenderers = new GeneralRenderer[Util.MARK_COLOR_LEVELS];
+//        markedNumberRenderers = new CompleteRenderer[Util.MARK_COLOR_LEVELS];
+//        for (int i = 0; i < Util.MARK_COLOR_LEVELS; i++) {
+//            Color c = Globals.prefs.getColor("markedEntryBackground" + i);
+//            markedRenderers[i] = new GeneralRenderer(
+//                    c,
+//                    Globals.prefs.getColor("tableText"),
+//                    mixColors(c, selSoft)); // <--- softened, not raw selection blue
+//            markedNumberRenderers[i] = new CompleteRenderer(c);
+//        }
+//    }
+    //////////////////////////////////////////////////////////////////////////////
     public static void updateRenderers() {
+        // Always use FlatLaf's current theme colors as base
+        Color tableBackground = UIManager.getColor("Table.background");
+        Color tableForeground = UIManager.getColor("Table.foreground");
+        Color selectionBackground = UIManager.getColor("Table.selectionBackground");
 
-        defRenderer = new GeneralRenderer(Globals.prefs.getColor("tableBackground"),
-                Globals.prefs.getColor("tableText"));
-        Color sel = defRenderer.getTableCellRendererComponent
-                (new JTable(), "", true, false, 0, 0).getBackground();
-        reqRenderer = new GeneralRenderer(Globals.prefs.getColor("tableReqFieldBackground"), Globals.prefs.getColor("tableText"));
-        optRenderer = new GeneralRenderer(Globals.prefs.getColor("tableOptFieldBackground"), Globals.prefs.getColor("tableText"));
+        // If FlatLaf doesn't provide these (shouldn't happen with FlatLaf), use sensible defaults
+        if (tableBackground == null) {
+            tableBackground = Color.WHITE;
+        }
+        if (tableForeground == null) {
+            tableForeground = Color.BLACK;
+        }
+        if (selectionBackground == null) {
+            selectionBackground = new Color(51, 153, 255);
+        }
+
+        defRenderer = new GeneralRenderer(tableBackground, tableForeground);
+
+        // Calculate derived colors that work well with the current theme
+        Color reqFieldBg = calculateRequiredFieldColor(tableBackground);
+        Color optFieldBg = calculateOptionalFieldColor(tableBackground);
+        Color incompleteBg = calculateIncompleteColor(tableBackground);
+        Color grayedOutBg = blend(tableBackground, tableForeground, 0.85f);
+        Color veryGrayedOutBg = blend(tableBackground, tableForeground, 0.70f);
+        Color grayedOutText = blend(tableForeground, tableBackground, 0.5f);
+        Color veryGrayedOutText = blend(tableForeground, tableBackground, 0.3f);
+
+        reqRenderer = new GeneralRenderer(reqFieldBg, tableForeground);
+        optRenderer = new GeneralRenderer(optFieldBg, tableForeground);
+
         incRenderer = new IncompleteRenderer();
-        compRenderer = new CompleteRenderer(Globals.prefs.getColor("tableBackground"));
-        grayedOutNumberRenderer = new CompleteRenderer(Globals.prefs.getColor("grayedOutBackground"));
-        veryGrayedOutNumberRenderer = new CompleteRenderer(Globals.prefs.getColor("veryGrayedOutBackground"));
-        grayedOutRenderer = new GeneralRenderer(Globals.prefs.getColor("grayedOutBackground"),
-            Globals.prefs.getColor("grayedOutText"), mixColors(Globals.prefs.getColor("grayedOutBackground"),
-                sel));
-        veryGrayedOutRenderer = new GeneralRenderer(Globals.prefs.getColor("veryGrayedOutBackground"),
-                Globals.prefs.getColor("veryGrayedOutText"), mixColors(Globals.prefs.getColor("veryGrayedOutBackground"),
-                sel));
+        compRenderer = new CompleteRenderer(tableBackground);
+        grayedOutNumberRenderer = new CompleteRenderer(grayedOutBg);
+        veryGrayedOutNumberRenderer = new CompleteRenderer(veryGrayedOutBg);
 
+        grayedOutRenderer = new GeneralRenderer(grayedOutBg, grayedOutText, selectionBackground);
+        veryGrayedOutRenderer = new GeneralRenderer(veryGrayedOutBg, veryGrayedOutText, selectionBackground);
+
+        // MARKED RENDERERS - Keep as they are (custom user colors)
+        // MARKED RENDERERS - Use the original colors but don't modify preferences
         markedRenderers = new GeneralRenderer[Util.MARK_COLOR_LEVELS];
         markedNumberRenderers = new CompleteRenderer[Util.MARK_COLOR_LEVELS];
-        for (int i=0; i<Util.MARK_COLOR_LEVELS; i++) {
-            Color c = Globals.prefs.getColor("markedEntryBackground"+i);
-            markedRenderers[i] = new GeneralRenderer(c,
-                Globals.prefs.getColor("tableText"), mixColors(Globals.prefs.getColor("markedEntryBackground"+i), sel));
-            markedNumberRenderers[i] = new CompleteRenderer(c);
+        for (int i = 0; i < Util.MARK_COLOR_LEVELS; i++) {
+            Color originalColor = Globals.prefs.getColor("markedEntryBackground" + i);
+
+            // For table rendering, we might adjust the color for theme compatibility
+            Color tableColor = adjustColorForTheme(originalColor);
+
+            markedRenderers[i] = new GeneralRenderer(
+                    tableColor, // Use adjusted color for table
+                    tableForeground,
+                    blend(tableColor, selectionBackground, 0.3f));
+            markedNumberRenderers[i] = new CompleteRenderer(tableColor);
         }
-        
+    }
+
+    private static Color adjustColorForTheme(Color original) {
+        // Adjust the original marking color to work better with current theme
+        // but don't modify the original preference
+        Color tableBg = UIManager.getColor("Table.background");
+        if (tableBg != null && isDarkTheme()) {
+            // Lighten colors for dark theme, darken for light theme
+            return blend(original, tableBg, 0.3f);
+        }
+        return original;
+    }
+
+    private static GeneralRenderer createNewRenderer(Color background, Color foreground) {
+        return new GeneralRenderer(background, foreground);
+    }
+
+    // Helper methods for calculating theme-appropriate colors
+    private static Color calculateRequiredFieldColor(Color base) {
+        // Light red tint for light theme, dark red for dark theme
+        return isDarkTheme()
+                ? blend(base, new Color(255, 100, 100), 0.15f)
+                : blend(base, new Color(255, 200, 200), 0.3f);
+    }
+
+    private static Color calculateOptionalFieldColor(Color base) {
+        // Light yellow tint for light theme, dark yellow for dark theme
+        return isDarkTheme()
+                ? blend(base, new Color(255, 255, 100), 0.1f)
+                : blend(base, new Color(255, 255, 200), 0.3f);
+    }
+
+    private static Color calculateIncompleteColor(Color base) {
+        // More pronounced color for incomplete entries
+        return isDarkTheme()
+                ? blend(base, new Color(255, 100, 100), 0.25f)
+                : blend(base, new Color(255, 150, 150), 0.4f);
+    }
+
+    private static boolean isDarkTheme() {
+        Color bg = UIManager.getColor("Table.background");
+        if (bg == null) {
+            return false;
+        }
+        // Simple luminance calculation
+        double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255;
+        return luminance < 0.5;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+
+    private static Color blend(Color base, Color overlay, float alphaOverlay) {
+        if (base == null) {
+            base = Color.WHITE;
+        }
+        if (overlay == null) {
+            overlay = Color.BLACK;
+        }
+
+        float a = Math.max(0f, Math.min(1f, alphaOverlay));
+        int r = Math.round((1 - a) * base.getRed() + a * overlay.getRed());
+        int g = Math.round((1 - a) * base.getGreen() + a * overlay.getGreen());
+        int b = Math.round((1 - a) * base.getBlue() + a * overlay.getBlue());
+
+        // Ensure values are in valid range
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+
+        return new Color(r, g, b);
     }
 
     private static Color mixColors(Color one, Color two) {
-        return new Color((one.getRed()+two.getRed())/2, (one.getGreen()+two.getGreen())/2,
-                (one.getBlue()+two.getBlue())/2);
+        return new Color((one.getRed() + two.getRed()) / 2, (one.getGreen() + two.getGreen()) / 2,
+                (one.getBlue() + two.getBlue()) / 2);
     }
 
     static class IncompleteRenderer extends GeneralRenderer {
+
         public IncompleteRenderer() {
             super(Globals.prefs.getColor("incompleteEntryBackground"));
             super.setToolTipText(Globals.lang("This entry is incomplete"));
@@ -664,6 +836,7 @@ public class MainTable extends JTable {
     }
 
     static class CompleteRenderer extends GeneralRenderer {
+
         public CompleteRenderer(Color color) {
             super(color);
         }
@@ -678,7 +851,7 @@ public class MainTable extends JTable {
     }
 
     public TableComparatorChooser<BibtexEntry> createTableComparatorChooser(JTable table, SortedList<BibtexEntry> list,
-                                                                            Object sortingStrategy) {
+            Object sortingStrategy) {
         final TableComparatorChooser<BibtexEntry> result = TableComparatorChooser.install(table, list, sortingStrategy);
         result.addSortActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -694,6 +867,7 @@ public class MainTable extends JTable {
      * Morten Alver: This override is a workaround NullPointerException when
      * dragging stuff into the table. I found this in a forum, but have no idea
      * why it works.
+     *
      * @param newUI
      */
     public void setUI(TableUI newUI) {
@@ -701,46 +875,122 @@ public class MainTable extends JTable {
         TransferHandler handler = getTransferHandler();
         setTransferHandler(null);
         setTransferHandler(handler);
-
     }
 
     /**
      * Get the first comparator set up for the given column.
+     *
      * @param index The column number.
      * @return The Comparator, or null if none is set.
      */
     @SuppressWarnings("unchecked")
-	public Comparator<BibtexEntry> getComparatorForColumn(int index) {
+    public Comparator<BibtexEntry> getComparatorForColumn(int index) {
         List<Comparator> l = comparatorChooser.getComparatorsForColumn(index);
         return l.size() == 0 ? null : l.get(0);
     }
 
     /**
      * Find out which column is set as sort column.
-     * @param number The position in the sort hierarchy (primary, secondary, etc.)
+     *
+     * @param number The position in the sort hierarchy (primary, secondary,
+     * etc.)
      * @return The sort column number.
      */
     public int getSortingColumn(int number) {
         List<Integer> l = comparatorChooser.getSortingColumns();
-        if (l.size() <= number)
+        if (l.size() <= number) {
             return -1;
-        else
+        } else {
             return l.get(number);
+        }
     }
-    
-    public PersistenceTableColumnListener getTableColumnListener() {
-		return tableColumnListener; 
-	}
 
+    public PersistenceTableColumnListener getTableColumnListener() {
+        return tableColumnListener;
+    }
 
     /**
      * Returns the List of entries sorted by a user-selected term. This is the
      * sorting before marking, search etc. applies.
      *
      * Note: The returned List must not be modified from the outside
+     *
      * @return The sorted list of entries.
      */
     public SortedList<BibtexEntry> getSortedForTable() {
         return sortedForTable;
     }
+
+    public void forceIconUpdate() {
+        // Clear any cached icons in GUIGlobals
+        GUIGlobals.clearTableIconCache();
+        GUIGlobals.initTableIcons();
+
+        // Force the table format to update
+        if (tableFormat != null) {
+            tableFormat.updateTableFormat();
+        }
+
+        // Force complete table refresh
+        if (getModel() instanceof EventTableModel) {
+            SwingUtilities.invokeLater(() -> {
+                ((EventTableModel<?>) getModel()).fireTableDataChanged();
+            });
+        }
+
+        // Force repaint
+        repaint();
+    }
+
+    @Override
+    public void onThemeChanged() {
+//        System.out.println("=== THEME CHANGE START ===");
+//        System.out.println("Before update - Table.background: " + UIManager.getColor("Table.background"));
+        // Force complete renderer refresh
+        updateRenderers();
+        forceIconUpdate();
+        // Clear the table's renderer cache
+        setDefaultRenderer(Object.class, null);
+
+        // Force the table format to update icons
+        if (tableFormat != null) {
+            tableFormat.updateTableFormat();
+        }
+
+        // Force table model refresh
+        if (getModel() instanceof EventTableModel) {
+            ((EventTableModel<?>) getModel()).fireTableDataChanged();
+        }
+
+        // Force the table to recreate all cell renderers
+        TableColumnModel columnModel = getColumnModel();
+        for (int i = 0; i < columnModel.getColumnCount(); i++) {
+            columnModel.getColumn(i).setCellRenderer(null);
+        }
+
+        // Update the table's own background
+        setBackground(UIManager.getColor("Table.background"));
+        setForeground(UIManager.getColor("Table.foreground"));
+
+        // Update grid color
+        setGridColor(UIManager.getColor("Table.gridColor"));
+
+        // Force the scroll pane background update
+        if (pane != null) {
+            pane.getViewport().setBackground(UIManager.getColor("Table.background"));
+            pane.setBackground(UIManager.getColor("Table.background"));
+        }
+
+//        System.out.println("After update - Table background: " + getBackground());
+        // Force immediate visual update
+        repaint();
+        revalidate();
+
+//        System.out.println("=== THEME CHANGE COMPLETE ===");
+    }
+
+    public void cleanup() {
+        ThemeWatcher.unregister(this);
+    }
+
 }

@@ -15,6 +15,8 @@
 */
 package net.sf.jabref.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;

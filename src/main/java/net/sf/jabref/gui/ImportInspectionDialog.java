@@ -1,5 +1,7 @@
 package net.sf.jabref.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -222,7 +224,7 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
         EventTableModel<BibtexEntry> tableModelGl = new EventTableModel<BibtexEntry>(sortedList,
             new EntryTableFormat());
         glTable = new EntryTable(tableModelGl);
-        GeneralRenderer renderer = new GeneralRenderer(Color.white);
+        GeneralRenderer renderer = new GeneralRenderer(); //Color.white
         glTable.setDefaultRenderer(JLabel.class, renderer);
         glTable.setDefaultRenderer(String.class, renderer);
         glTable.getInputMap().put(Globals.prefs.getKey("Delete"), "delete");
@@ -1356,7 +1358,7 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
 
     class EntryTable extends JTable {
 
-        GeneralRenderer renderer = new GeneralRenderer(Color.white);
+        GeneralRenderer renderer = new GeneralRenderer();//Color.white
 
         public EntryTable(TableModel model) {
             super(model);

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.BorderLayout;
@@ -28,31 +28,25 @@ import net.sf.jabref.undo.NamedCompound;
 import net.sf.jabref.undo.UndoableFieldChange;
 
 /**
- * Dialog for creating or modifying groups. Operates directly on the
- * Vector containing group information.
+ * Dialog for creating or modifying groups. Operates directly on the List
+ * containing group information.
  */
 class ReplaceStringDialog extends JDialog {
 
-    JTextField
-        fields = new JTextField("", 30),
-        from = new JTextField("", 30),
-        to = new JTextField("", 30);
-    JLabel
-        fl = new JLabel(Globals.lang("Search for")+":"),
-        tl = new JLabel(Globals.lang("Replace with")+":");
+    JTextField fields = new JTextField("", 30),
+            from = new JTextField("", 30),
+            to = new JTextField("", 30);
+    JLabel fl = new JLabel(Globals.lang("Search for") + ":"),
+            tl = new JLabel(Globals.lang("Replace with") + ":");
 
-    JButton
-        ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
-    JPanel
-        settings = new JPanel(),
-        main = new JPanel(),
-        opt = new JPanel();
-    JCheckBox
-        selOnly = new JCheckBox(Globals.lang("Limit to selected entries"), false);
-    JRadioButton
-        allFi = new JRadioButton(Globals.lang("All fields"), true),
-        field = new JRadioButton(Globals.lang("Limit to fields")+":", false);
+    JButton ok = new JButton(Globals.lang("Ok")),
+            cancel = new JButton(Globals.lang("Cancel"));
+    JPanel settings = new JPanel(),
+            main = new JPanel(),
+            opt = new JPanel();
+    JCheckBox selOnly = new JCheckBox(Globals.lang("Limit to selected entries"), false);
+    JRadioButton allFi = new JRadioButton(Globals.lang("All fields"), true),
+            field = new JRadioButton(Globals.lang("Limit to fields") + ":", false);
     ButtonGroup bg = new ButtonGroup();
     private boolean ok_pressed = false;
     String[] flds = null;
@@ -67,24 +61,29 @@ class ReplaceStringDialog extends JDialog {
         bg.add(allFi);
         bg.add(field);
         ActionListener okListener = new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    s1 = from.getText();
-                    s2 = to.getText();
-                    if (s1.equals(""))
-                        return;
-                    ok_pressed = true;
-                    flds = Util.delimToStringArray(fields.getText().toLowerCase(), ";");
-                    dispose();
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                s1 = from.getText();
+                s2 = to.getText();
+                if (s1.equals("")) {
+                    return;
                 }
-            };
+                ok_pressed = true;
+                flds = Util.delimToStringArray(fields.getText().toLowerCase(), ";");
+                dispose();
+            }
+        };
         ok.addActionListener(okListener);
         to.addActionListener(okListener);
         fields.addActionListener(okListener);
         AbstractAction cancelAction = new AbstractAction() {
-                public void actionPerformed(ActionEvent e) {
-                    dispose();
-                }
-            };
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        };
         cancel.addActionListener(cancelAction);
 
         // Key bindings:
@@ -98,13 +97,10 @@ class ReplaceStringDialog extends JDialog {
         opt.setLayout(gbl);
         main.setLayout(gbl);
 
-        settings.setBorder(BorderFactory.createTitledBorder
-                       (BorderFactory.createEtchedBorder(),
-                        Globals.lang("Replace string")));
-        main.setBorder(BorderFactory.createTitledBorder
-                       (BorderFactory.createEtchedBorder(),
-                        Globals.lang("Strings")));
-          
+        settings.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+                Globals.lang("Replace string")));
+        main.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+                Globals.lang("Strings")));
 
         // Settings panel:
         /*
@@ -160,7 +156,7 @@ class ReplaceStringDialog extends JDialog {
         gbl.setConstraints(to, con);
         main.add(to);
 
-               // Option buttons:
+        // Option buttons:
         con.gridx = GridBagConstraints.RELATIVE;
         con.gridy = GridBagConstraints.RELATIVE;
         con.weightx = 1;
@@ -184,28 +180,40 @@ class ReplaceStringDialog extends JDialog {
         Util.placeDialog(this, parent_);
     }
 
-    public boolean okPressed() { return ok_pressed; }
-    public boolean allFields() { return allFi.isSelected(); }
-    public boolean selOnly() { return selOnly.isSelected(); }
-    public String[] fields() { return Util.delimToStringArray(field.getText(), ";"); }
+    public boolean okPressed() {
+        return ok_pressed;
+    }
+
+    public boolean allFields() {
+        return allFi.isSelected();
+    }
+
+    public boolean selOnly() {
+        return selOnly.isSelected();
+    }
+
+    public String[] fields() {
+        return Util.delimToStringArray(field.getText(), ";");
+    }
 
     /**
-     * Does the actual operation on a Bibtex entry based on the
-     * settings specified in this same dialog. Returns the number of
-     * occurences replaced.
+     * Does the actual operation on a Bibtex entry based on the settings
+     * specified in this same dialog. Returns the number of occurences replaced.
      */
     public int replace(BibtexEntry be, NamedCompound ce) {
         int counter = 0;
         if (allFields()) {
-        	
-        	for (String s : be.getAllFields()){
-                if (!s.equals(BibtexFields.KEY_FIELD))
+
+            for (String s : be.getAllFields()) {
+                if (!s.equals(BibtexFields.KEY_FIELD)) {
                     counter += replaceField(be, s, ce);
+                }
             }
         } else {
             for (String fld : flds) {
-                if (!fld.equals(BibtexFields.KEY_FIELD))
+                if (!fld.equals(BibtexFields.KEY_FIELD)) {
                     counter += replaceField(be, fld, ce);
+                }
             }
 
         }
@@ -214,15 +222,17 @@ class ReplaceStringDialog extends JDialog {
 
     public int replaceField(BibtexEntry be, String field, NamedCompound ce) {
         Object o = be.getField(field);
-        if (o == null) return 0;
+        if (o == null) {
+            return 0;
+        }
         String txt = o.toString();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int ind = -1, piv = 0, counter = 0, len1 = s1.length();
-        while ((ind=txt.indexOf(s1, piv)) >= 0) {
+        while ((ind = txt.indexOf(s1, piv)) >= 0) {
             counter++;
             sb.append(txt.substring(piv, ind)); // Text leading up to s1
             sb.append(s2);  // Insert s2
-            piv = ind+len1;
+            piv = ind + len1;
         }
         sb.append(txt.substring(piv));
         String newStr = sb.toString();

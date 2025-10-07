@@ -12,17 +12,18 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.Util;
 
 /**
- * Subclass of BibtexEntry for representing entries referenced in a document that can't
- * be found in JabRef's current database.
+ * Subclass of BibtexEntry for representing entries referenced in a document
+ * that can't be found in JabRef's current database.
  */
 public class UndefinedBibtexEntry extends BibtexEntry {
+
     private String key;
 
     public UndefinedBibtexEntry(String key) {

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.labelPattern;
 
 import java.util.ArrayList;
@@ -21,13 +21,13 @@ import java.util.Hashtable;
 /**
  * A small table, where an entry type is associated with a label pattern (an
  * <code>ArrayList</code>). A parent LabelPattern can be set.
- * 
+ *
  * @author Ulrik Stervbo (ulriks AT ruc.dk)
  */
 public class LabelPattern extends Hashtable<String, ArrayList<String>> {
 
     private ArrayList<String> defaultPattern = null;
-    
+
     /**
      * The parent of this LabelPattern.
      */
@@ -42,9 +42,8 @@ public class LabelPattern extends Hashtable<String, ArrayList<String>> {
 
     /**
      * Sets the parent LabelPattern.
-     * 
-     * @param parent
-     *            a <code>String</code>
+     *
+     * @param parent a <code>String</code>
      */
     public void setParent(LabelPattern parent) {
         this.parent = parent;
@@ -52,7 +51,7 @@ public class LabelPattern extends Hashtable<String, ArrayList<String>> {
 
     /**
      * Get the parent LabelPattern
-     * 
+     *
      * @return the parent LabelPattern
      */
     public LabelPattern getParent() {
@@ -67,9 +66,8 @@ public class LabelPattern extends Hashtable<String, ArrayList<String>> {
      * Remove a label pattern from the LabelPattern. No key patterns can be
      * removed from the very parent LabelPattern since is thought of as a
      * default. To do this, use the removeKeyPattern(String type, boolean sure)
-     * 
-     * @param type
-     *            a <code>String</code>
+     *
+     * @param type a <code>String</code>
      */
     public void removeLabelPattern(String type) {
         if (containsKey(type) && parent != null) {
@@ -91,7 +89,7 @@ public class LabelPattern extends Hashtable<String, ArrayList<String>> {
      * If this fails, we try the default.<br />
      * If that fails, we try the parent.<br />
      * If that fails, we return the DEFAULT_LABELPATTERN<br />
-     * 
+     *
      * @param key a <code>String</code>
      * @return the list of Strings for the given key
      */
@@ -124,9 +122,10 @@ public class LabelPattern extends Hashtable<String, ArrayList<String>> {
         Object _obj = get(key);
         return _obj == null;
     }
-    
+
     /**
      * This method is called "...Value" to be in line with the other methods
+     *
      * @return
      */
     public ArrayList<String> getDefaultValue() {
@@ -135,6 +134,7 @@ public class LabelPattern extends Hashtable<String, ArrayList<String>> {
 
     /**
      * Sets the DEFAULT PATTERN for this label pattern
+     *
      * @param labelPattern the pattern to store
      */
     public void setDefaultValue(String labelPattern) {

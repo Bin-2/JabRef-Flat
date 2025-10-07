@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.util.regex.Pattern;
@@ -57,11 +57,11 @@ public class RisImporter extends ImportFormat {
         BufferedReader in = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
         Pattern pat1 = Pattern.compile("TY  - .*");
 
-
         String str;
-        while ((str = in.readLine()) != null){
-            if (pat1.matcher(str).find())
+        while ((str = in.readLine()) != null) {
+            if (pat1.matcher(str).find()) {
                 return true;
+            }
         }
 
         return false;
@@ -73,10 +73,10 @@ public class RisImporter extends ImportFormat {
      */
     public List<BibtexEntry> importEntries(InputStream stream, OutputPrinter status) throws IOException {
         ArrayList<BibtexEntry> bibitems = new ArrayList<BibtexEntry>();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         BufferedReader in = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
         String str;
-        while ((str = in.readLine()) != null){
+        while ((str = in.readLine()) != null) {
             sb.append(str);
             sb.append("\n");
         }
@@ -84,13 +84,13 @@ public class RisImporter extends ImportFormat {
 
         for (String entry1 : entries) {
 
-            if (entry1.trim().length() == 0)
+            if (entry1.trim().length() == 0) {
                 continue;
+            }
 
             String type = "", author = "", editor = "", startPage = "", endPage = "",
                     comment = "";
             HashMap<String, String> hm = new HashMap<String, String>();
-
 
             String[] fields = entry1.split("\n");
 
@@ -101,77 +101,102 @@ public class RisImporter extends ImportFormat {
                     if ((fields[j + 1].length() >= 6) && !fields[j + 1].substring(2, 6).equals("  - ")) {
                         if ((current.length() > 0)
                                 && !Character.isWhitespace(current.charAt(current.length() - 1))
-                                && !Character.isWhitespace(fields[j + 1].charAt(0)))
+                                && !Character.isWhitespace(fields[j + 1].charAt(0))) {
                             current.append(' ');
+                        }
                         current.append(fields[j + 1]);
                         j++;
-                    } else
+                    } else {
                         done = true;
+                    }
                 }
                 String entry = current.toString();
-                if (entry.length() < 6) continue;
-                else {
+                if (entry.length() < 6) {
+                    continue;
+                } else {
                     String lab = entry.substring(0, 2);
                     String val = entry.substring(6).trim();
                     if (lab.equals("TY")) {
-                        if (val.equals("BOOK")) type = "book";
-                        else if (val.equals("JOUR") || val.equals("MGZN")) type = "article";
-                        else if (val.equals("THES")) type = "phdthesis";
-                        else if (val.equals("UNPB")) type = "unpublished";
-                        else if (val.equals("RPRT")) type = "techreport";
-                        else if (val.equals("CONF")) type = "inproceedings";
-                        else if (val.equals("CHAP")) type = "incollection";//"inbook";
-
-                        else type = "other";
+                        if (val.equals("BOOK")) {
+                            type = "book";
+                        } else if (val.equals("JOUR") || val.equals("MGZN")) {
+                            type = "article";
+                        } else if (val.equals("THES")) {
+                            type = "phdthesis";
+                        } else if (val.equals("UNPB")) {
+                            type = "unpublished";
+                        } else if (val.equals("RPRT")) {
+                            type = "techreport";
+                        } else if (val.equals("CONF")) {
+                            type = "inproceedings";
+                        } else if (val.equals("CHAP")) {
+                            type = "incollection";//"inbook";
+                        } else {
+                            type = "other";
+                        }
                     } else if (lab.equals("T1") || lab.equals("TI")) {
                         String oldVal = hm.get("title");
-                        if (oldVal == null)
+                        if (oldVal == null) {
                             hm.put("title", val);
-                        else {
-                            if (oldVal.endsWith(":") || oldVal.endsWith(".") || oldVal.endsWith("?"))
+                        } else {
+                            if (oldVal.endsWith(":") || oldVal.endsWith(".") || oldVal.endsWith("?")) {
                                 hm.put("title", oldVal + " " + val);
-                            else
+                            } else {
                                 hm.put("title", oldVal + ": " + val);
+                            }
                         }
-                    }
-                    // =
+                    } // =
                     // val;
                     else if (lab.equals("T2") || lab.equals("T3") || lab.equals("BT")) {
                         hm.put("booktitle", val);
                     } else if (lab.equals("AU") || lab.equals("A1")) {
                         if (author.equals("")) // don't add " and " for the first author
+                        {
                             author = val;
-                        else author += " and " + val;
+                        } else {
+                            author += " and " + val;
+                        }
                     } else if (lab.equals("A2")) {
                         if (editor.equals("")) // don't add " and " for the first editor
+                        {
                             editor = val;
-                        else editor += " and " + val;
+                        } else {
+                            editor += " and " + val;
+                        }
                     } else if (lab.equals("JA") || lab.equals("JF") || lab.equals("JO")) {
-                        if (type.equals("inproceedings"))
+                        if (type.equals("inproceedings")) {
                             hm.put("booktitle", val);
-                        else
+                        } else {
                             hm.put("journal", val);
-                    } else if (lab.equals("SP")) startPage = val;
-                    else if (lab.equals("PB")) {
-                        if (type.equals("phdthesis"))
+                        }
+                    } else if (lab.equals("SP")) {
+                        startPage = val;
+                    } else if (lab.equals("PB")) {
+                        if (type.equals("phdthesis")) {
                             hm.put("school", val);
-                        else
+                        } else {
                             hm.put("publisher", val);
-                    } else if (lab.equals("AD") || lab.equals("CY"))
+                        }
+                    } else if (lab.equals("AD") || lab.equals("CY")) {
                         hm.put("address", val);
-                    else if (lab.equals("EP")) endPage = val;
-                    else if (lab.equals("SN"))
+                    } else if (lab.equals("EP")) {
+                        endPage = val;
+                    } else if (lab.equals("SN")) {
                         hm.put("issn", val);
-                    else if (lab.equals("VL")) hm.put("volume", val);
-                    else if (lab.equals("IS")) hm.put("number", val);
-                    else if (lab.equals("N2") || lab.equals("AB")) {
+                    } else if (lab.equals("VL")) {
+                        hm.put("volume", val);
+                    } else if (lab.equals("IS")) {
+                        hm.put("number", val);
+                    } else if (lab.equals("N2") || lab.equals("AB")) {
                         String oldAb = hm.get("abstract");
-                        if (oldAb == null)
+                        if (oldAb == null) {
                             hm.put("abstract", val);
-                        else
+                        } else {
                             hm.put("abstract", oldAb + "\n" + val);
-                    } else if (lab.equals("UR")) hm.put("url", val);
-                    else if ((lab.equals("Y1") || lab.equals("PY")) && val.length() >= 4) {
+                        }
+                    } else if (lab.equals("UR")) {
+                        hm.put("url", val);
+                    } else if ((lab.equals("Y1") || lab.equals("PY")) && val.length() >= 4) {
                         String[] parts = val.split("/");
                         hm.put("year", parts[0]);
                         if ((parts.length > 1) && (parts[1].length() > 0)) {
@@ -187,20 +212,21 @@ public class RisImporter extends ImportFormat {
                             }
                         }
                     } else if (lab.equals("KW")) {
-                        if (!hm.containsKey("keywords")) hm.put("keywords", val);
-                        else {
+                        if (!hm.containsKey("keywords")) {
+                            hm.put("keywords", val);
+                        } else {
                             String kw = hm.get("keywords");
                             hm.put("keywords", kw + ", " + val);
                         }
                     } else if (lab.equals("U1") || lab.equals("U2") || lab.equals("N1")) {
-                        if (comment.length() > 0)
+                        if (comment.length() > 0) {
                             comment = comment + "\n";
+                        }
                         comment = comment + val;
-                    }
-                    // Added ID import 2005.12.01, Morten Alver:
-                    else if (lab.equals("ID"))
+                    } // Added ID import 2005.12.01, Morten Alver:
+                    else if (lab.equals("ID")) {
                         hm.put("refid", val);
-                        // Added doi import (sciencedirect.com) 2011.01.10, Alexander Hug <alexander@alexanderhug.info>
+                    } // Added doi import (sciencedirect.com) 2011.01.10, Alexander Hug <alexander@alexanderhug.info>
                     else if (lab.equals("M3")) {
                         String doi = val;
                         if (doi.startsWith("doi:")) {
@@ -231,8 +257,9 @@ public class RisImporter extends ImportFormat {
             ArrayList<Object> toRemove = new ArrayList<Object>();
             for (String key : hm.keySet()) {
                 String content = hm.get(key);
-                if ((content == null) || (content.trim().length() == 0))
+                if ((content == null) || (content.trim().length() == 0)) {
                     toRemove.add(key);
+                }
             }
             for (Object aToRemove : toRemove) {
                 hm.remove(aToRemove);

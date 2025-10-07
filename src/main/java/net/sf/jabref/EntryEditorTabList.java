@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.util.ArrayList;
@@ -32,8 +32,8 @@ public final class EntryEditorTabList {
     }
 
     private void init() {
-        list = new ArrayList<List<String>>();
-        names = new ArrayList<String>();
+        list = new ArrayList<>();
+        names = new ArrayList<>();
         int i = 0;
         String name;
         String[] fields;
@@ -49,7 +49,7 @@ public final class EntryEditorTabList {
             }
         } else {
             // Nothing set, so we use the default values:
-            while (Globals.prefs.get(JabRefPreferences.CUSTOM_TAB_NAME + "_def"+i) != null) {
+            while (Globals.prefs.get(JabRefPreferences.CUSTOM_TAB_NAME + "_def" + i) != null) {
                 name = Globals.prefs.get(JabRefPreferences.CUSTOM_TAB_NAME + "_def" + i);
                 fields = Globals.prefs.get(JabRefPreferences.CUSTOM_TAB_FIELDS + "_def" + i).split(";");
                 List<String> entry = Arrays.asList(fields);

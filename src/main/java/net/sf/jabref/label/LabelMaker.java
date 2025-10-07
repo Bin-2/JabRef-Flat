@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.label;
 
 import java.util.Hashtable;
@@ -22,55 +22,52 @@ import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.BibtexEntryType;
 import net.sf.jabref.Util;
 
-
 /**
- *  This class is the abstract class which contains all of the rules
- *  for making the different types of Rules.
+ * This class is the abstract class which contains all of the rules for making
+ * the different types of Rules.
  */
 public class LabelMaker {
 
-    public BibtexEntry applyRule(BibtexEntry newEntry, BibtexDatabase base){
-	String newKey = "";
-        if(ruleTable.containsKey(newEntry.getType().getName())){
-            newKey = ruleTable.get(newEntry.getType().getName()).applyRule(newEntry) ;
+    public BibtexEntry applyRule(BibtexEntry newEntry, BibtexDatabase base) {
+        String newKey = "";
+        if (ruleTable.containsKey(newEntry.getType().getName())) {
+            newKey = ruleTable.get(newEntry.getType().getName()).applyRule(newEntry);
+        } else {
+            newKey = applyDefaultRule(newEntry);
         }
-        else{
-		newKey = applyDefaultRule(newEntry) ;
+
+        // Remove all illegal characters from the key.
+        newKey = Util.checkLegalKey(newKey);
+
+        // Try new keys until we get a unique one:
+        if (base.setCiteKeyForEntry(newEntry.getId(), newKey)) {
+
+            char c = 'b';
+            String modKey = newKey + "a";
+            while (base.setCiteKeyForEntry(newEntry.getId(), modKey)) {
+                modKey = newKey + ((c++));
+            }
         }
 
-	// Remove all illegal characters from the key.
-	newKey = Util.checkLegalKey(newKey);
-
-	// Try new keys until we get a unique one:
-	if (base.setCiteKeyForEntry(newEntry.getId(), newKey)) {
-	    
-	    char c = 'b';
-	    String modKey = newKey+"a";
-	    while (base.setCiteKeyForEntry(newEntry.getId(), modKey))
-		modKey = newKey+((c++));	    
-	}
-
-	//newEntry.setField(Globals.KEY_FIELD, newKey);
-	// ...
-
-		return newEntry ;
+        //newEntry.setField(Globals.KEY_FIELD, newKey);
+        // ...
+        return newEntry;
     }
 
     public void setDefaultRule(LabelRule newRule) {
-		defaultRule = newRule ;
+        defaultRule = newRule;
     }
 
     public String applyDefaultRule(BibtexEntry newEntry) {
-        return defaultRule.applyRule(newEntry) ;
+        return defaultRule.applyRule(newEntry);
     }
-
 
     // there should be a default rule for any type
-    public void addRule(LabelRule rule,BibtexEntryType type){
-       ruleTable.put(type.getName(),rule) ;
+    public void addRule(LabelRule rule, BibtexEntryType type) {
+        ruleTable.put(type.getName(), rule);
     }
 
-    protected LabelRule defaultRule = new ArticleLabelRule() ;
-    protected Hashtable<String, LabelRule> ruleTable = new Hashtable<String, LabelRule>() ;
+    protected LabelRule defaultRule = new ArticleLabelRule();
+    protected Hashtable<String, LabelRule> ruleTable = new Hashtable<String, LabelRule>();
 
 }

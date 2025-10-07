@@ -11,18 +11,24 @@ import javax.swing.JDialog;
 import net.sf.jabref.undo.NamedCompound;
 
 /**
- * This Action may only be used in a menu or button.
- * Never in the entry editor. FileListEditor and EntryEditor have other ways to update the file links
+ * This Action may only be used in a menu or button. Never in the entry editor.
+ * FileListEditor and EntryEditor have other ways to update the file links
  */
 public class AutoLinkFilesAction extends AbstractAction {
+
     public AutoLinkFilesAction() {
-        putValue(SMALL_ICON, GUIGlobals.getImage("autoGroup"));
+        initializeAction();
+    }
+
+    private void initializeAction() {
+        putValue(SMALL_ICON, GUIGlobals.getImage("linkFile"));
         putValue(NAME, Globals.lang("Automatically set file links"));
         putValue(ACCELERATOR_KEY, Globals.prefs.getKey("Automatically link files"));
     }
 
+    @Override
     public void actionPerformed(ActionEvent event) {
-        ArrayList<BibtexEntry> entries = new ArrayList<BibtexEntry>();
+        ArrayList<BibtexEntry> entries = new ArrayList<>();
         Collections.addAll(entries, JabRef.jrf.basePanel().getSelectedEntries());
         if (entries.isEmpty()) {
             JabRef.jrf.basePanel().output(Globals.lang("No entries selected."));
@@ -31,6 +37,8 @@ public class AutoLinkFilesAction extends AbstractAction {
         JDialog diag = new JDialog(JabRef.jrf, true);
         final NamedCompound nc = new NamedCompound(Globals.lang("Automatically set file links"));
         Util.autoSetLinks(entries, nc, null, null, JabRef.jrf.basePanel().metaData(), new ActionListener() {
+
+            @Override
             public void actionPerformed(ActionEvent e) {
                 if (e.getID() > 0) {
                     // entry has been updated in Util.autoSetLinks, only treat nc and status message
@@ -40,9 +48,10 @@ public class AutoLinkFilesAction extends AbstractAction {
                         JabRef.jrf.basePanel().markBaseChanged();
                     }
                     JabRef.jrf.output(Globals.lang("Finished autosetting external links."));
+                } else {
+                    JabRef.jrf.output(Globals.lang("Finished autosetting external links.")
+                            + " " + Globals.lang("No files found."));
                 }
-                else JabRef.jrf.output(Globals.lang("Finished autosetting external links.")
-                    +" "+Globals.lang("No files found."));
             }
         }, diag);
     }

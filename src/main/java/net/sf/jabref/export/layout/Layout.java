@@ -12,15 +12,14 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout;
 
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.List;
 
 import net.sf.jabref.BibtexDatabase;
 import net.sf.jabref.BibtexEntry;
-
 
 /**
  * Main class for formatting DOCUMENT ME!
@@ -28,8 +27,7 @@ import net.sf.jabref.BibtexEntry;
  * @author $author$
  * @version $Revision$
  */
-public class Layout
-{
+public class Layout {
     //~ Instance fields ////////////////////////////////////////////////////////
 
     private LayoutEntry[] layoutEntries;
@@ -37,13 +35,11 @@ public class Layout
     private ArrayList<String> missingFormatters = new ArrayList<String>();
 
     //~ Constructors ///////////////////////////////////////////////////////////
-
-    public Layout(Vector<StringInt> parsedEntries, String classPrefix)  throws Exception
-    {
+    public Layout(List<StringInt> parsedEntries, String classPrefix) throws Exception {
         StringInt si;
-        Vector<LayoutEntry> tmpEntries = new Vector<LayoutEntry>(parsedEntries.size());
+        List<LayoutEntry> tmpEntries = new ArrayList<>(parsedEntries.size());
 
-        Vector<StringInt> blockEntries = null;
+        List<StringInt> blockEntries = null;
         LayoutEntry le;
         String blockStart = null;
 
@@ -53,7 +49,7 @@ public class Layout
             if (si.i == LayoutHelper.IS_LAYOUT_TEXT) {
             } else if (si.i == LayoutHelper.IS_SIMPLE_FIELD) {
             } else if (si.i == LayoutHelper.IS_FIELD_START) {
-                blockEntries = new Vector<StringInt>();
+                blockEntries = new ArrayList<>();
                 blockStart = si.s;
             } else if (si.i == LayoutHelper.IS_FIELD_END) {
                 if (blockStart != null && blockEntries != null) {
@@ -70,7 +66,7 @@ public class Layout
                     }
                 }
             } else if (si.i == LayoutHelper.IS_GROUP_START) {
-                blockEntries = new Vector<StringInt>();
+                blockEntries = new ArrayList<>();
                 blockStart = si.s;
             } else if (si.i == LayoutHelper.IS_GROUP_END) {
                 if (blockStart != null && blockEntries != null) {
@@ -98,8 +94,7 @@ public class Layout
 
         layoutEntries = new LayoutEntry[tmpEntries.size()];
 
-        for (int i = 0; i < tmpEntries.size(); i++)
-        {
+        for (int i = 0; i < tmpEntries.size(); i++) {
             layoutEntries[i] = tmpEntries.get(i);
             // Note if one of the entries has an invalid formatter:
             if (layoutEntries[i].isInvalidFormatter()) {
@@ -115,20 +110,23 @@ public class Layout
             layoutEntry.setPostFormatter(formatter);
         }
     }
-    
+
     public String doLayout(BibtexEntry bibtex, BibtexDatabase database) {
-    	return doLayout(bibtex, database, null);
+        return doLayout(bibtex, database, null);
     }
 
     /**
-     * Returns the processed bibtex entry. If the database argument is
-     * null, no string references will be resolved. Otherwise all valid
-     * string references will be replaced by the strings' contents. Even
-     * recursive string references are resolved.
+     * Returns the processed bibtex entry.If the database argument is null, no
+     * string references will be resolved.Otherwise all valid string references
+     * will be replaced by the strings' contents.Even recursive string
+     * references are resolved.
+     *
+     * @param bibtex
+     * @param database
+     * @return
      */
-    public String doLayout(BibtexEntry bibtex, BibtexDatabase database, ArrayList<String> wordsToHighlight)
-    {
-        StringBuffer sb = new StringBuffer(100);
+    public String doLayout(BibtexEntry bibtex, BibtexDatabase database, ArrayList<String> wordsToHighlight) {
+        StringBuilder sb = new StringBuilder(100);
 
         for (LayoutEntry layoutEntry : layoutEntries) {
             String fieldText = layoutEntry.doLayout(bibtex, database, wordsToHighlight);
@@ -137,25 +135,29 @@ public class Layout
             // The following change means we treat null fields as "". This is to fix the
             // problem of whitespace disappearing after missing fields. Hoping there are
             // no side effects.
-            if (fieldText == null)
+            if (fieldText == null) {
                 fieldText = "";
+            }
 
             sb.append(fieldText);
         }
 
         return sb.toString();
     }
-    
+
     /**
-     * Returns the processed text. If the database argument is
-     * null, no string references will be resolved. Otherwise all valid
-     * string references will be replaced by the strings' contents. Even
-     * recursive string references are resolved.
+     * Returns the processed text.If the database argument is null, no string
+     * references will be resolved.Otherwise all valid string references will be
+     * replaced by the strings' contents.Even recursive string references are
+     * resolved.
+     *
+     * @param database
+     * @param encoding
+     * @return
      */
-    public String doLayout(BibtexDatabase database, String encoding)
-    {
+    public String doLayout(BibtexDatabase database, String encoding) {
         //System.out.println("LAYOUT: " + bibtex.getId());
-        StringBuffer sb = new StringBuffer(100);
+        StringBuilder sb = new StringBuilder(100);
         String fieldText;
         boolean previousSkipped = false;
 
@@ -167,9 +169,9 @@ public class Layout
                 if (previousSkipped) {
                     int eol = 0;
 
-                    while ((eol < fieldText.length()) &&
-                            ((fieldText.charAt(eol) == '\n') ||
-                                    (fieldText.charAt(eol) == '\r'))) {
+                    while ((eol < fieldText.length())
+                            && ((fieldText.charAt(eol) == '\n')
+                            || (fieldText.charAt(eol) == '\r'))) {
                         eol++;
                     }
 

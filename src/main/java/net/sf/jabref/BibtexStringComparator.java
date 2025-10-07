@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.util.Comparator;
@@ -22,14 +22,14 @@ public class BibtexStringComparator implements Comparator<BibtexString> {
     protected boolean considerRefs;
 
     /**
-     * @param considerRefs Indicates whether the strings should be
-     *                     sorted according to internal references in addition to
-     *                     alphabetical sorting.
+     * @param considerRefs Indicates whether the strings should be sorted
+     * according to internal references in addition to alphabetical sorting.
      */
     public BibtexStringComparator(boolean considerRefs) {
         this.considerRefs = considerRefs;
     }
 
+    @Override
     public int compare(BibtexString s1, BibtexString s2) {
 
         int res = 0;
@@ -40,8 +40,9 @@ public class BibtexStringComparator implements Comparator<BibtexString> {
 
         res = name1.compareTo(name2);
 
-        if (res == 0)
+        if (res == 0) {
             return res;
+        }
 
         // Then, if we are supposed to, see if the ordering needs
         // to be changed because of one string referring to the other.x

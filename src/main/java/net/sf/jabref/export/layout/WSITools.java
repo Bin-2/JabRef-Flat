@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Filename: $RCSfile$
 //  Purpose:  Atom representation.
@@ -40,55 +40,47 @@ package net.sf.jabref.export.layout;
 /*==========================================================================*
  * IMPORTS
  *========================================================================== */
+import java.util.List;
 import java.util.StringTokenizer;
-import java.util.Vector;
-
 
 /*==========================================================================*
  * CLASS DECLARATION
  *========================================================================== */
-
 /**
  * JabRef helper methods.
  *
- * @author     wegnerj
- * @version    $Revision$, $Date$
+ * @author wegnerj
+ * @version $Revision$, $Date$
  */
-public class WSITools
-{
+public class WSITools {
     //~ Constructors ///////////////////////////////////////////////////////////
 
-    private WSITools()
-    {
+    private WSITools() {
     }
 
     //~ Methods ////////////////////////////////////////////////////////////////
-
     /**
-     * @param  vcr  {@link java.util.Vector} of <tt>String</tt>
-     * @param  buf  Description of the Parameter
-     * @return      Description of the Return Value
+     * @param vcr {@link java.util.} of <tt>String</tt>
+     * @param buf Description of the Parameter
+     * @return Description of the Return Value
      */
-    public static boolean tokenize(Vector<String> vcr, String buf)
-    {
+    public static boolean tokenize(List<String> vcr, String buf) {
         return tokenize(vcr, buf, " \t\n");
     }
 
     /**
-     * @param  vcr       {@link java.util.Vector} of <tt>String</tt>
-     * @param  buf       Description of the Parameter
-     * @param  delimstr  Description of the Parameter
-     * @return           Description of the Return Value
+     * @param vcr {@link java.util.} of <tt>String</tt>
+     * @param buf Description of the Parameter
+     * @param delimstr Description of the Parameter
+     * @return Description of the Return Value
      */
-    public static boolean tokenize(Vector<String> vcr, String buf, String delimstr)
-    {
+    public static boolean tokenize(List<String> vcr, String buf, String delimstr) {
         vcr.clear();
         buf = buf + "\n";
 
         StringTokenizer st = new StringTokenizer(buf, delimstr);
 
-        while (st.hasMoreTokens())
-        {
+        while (st.hasMoreTokens()) {
             vcr.add(st.nextToken());
         }
 
@@ -96,15 +88,14 @@ public class WSITools
     }
 
     /**
-     * @param  vcr       {@link java.util.Vector} of <tt>String</tt>
-     * @param  s         Description of the Parameter
-     * @param  delimstr  Description of the Parameter
-     * @param  limit     Description of the Parameter
-     * @return           Description of the Return Value
+     * @param vcr {@link java.util.List} of <tt>String</tt>
+     * @param s Description of the Parameter
+     * @param delimstr Description of the Parameter
+     * @param limit Description of the Parameter
+     * @return Description of the Return Value
      */
-    public static boolean tokenize(Vector<String> vcr, String s, String delimstr,
-        int limit)
-    {
+    public static boolean tokenize(List<String> vcr, String s, String delimstr,
+            int limit) {
         System.out.println("Warning: tokenize \"" + s + "\"");
         vcr.clear();
         s = s + "\n";
@@ -114,15 +105,13 @@ public class WSITools
 
         StringTokenizer st = new StringTokenizer(s, delimstr);
 
-        while (st.hasMoreTokens())
-        {
+        while (st.hasMoreTokens()) {
             String tmp = st.nextToken();
             vcr.add(tmp);
 
             matched++;
 
-            if (matched == limit)
-            {
+            if (matched == limit) {
                 endpos = s.lastIndexOf(tmp);
                 vcr.add(s.substring(endpos + tmp.length()));
 

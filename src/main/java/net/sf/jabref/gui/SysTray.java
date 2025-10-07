@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.Globals;
@@ -68,18 +70,21 @@ public class SysTray {
                 super.mouseReleased(mouseEvent);    //To change body of overridden methods use File | Settings | File Templates.
             }
         });
-        if (SystemTray.isSupported())
+        if (SystemTray.isSupported()) {
             tray = SystemTray.getSystemTray();
+        }
     }
 
     public void setTrayIconVisible(boolean visible) {
-        if (tray == null)
+        if (tray == null) {
             return;
+        }
         try {
-            if (visible)
+            if (visible) {
                 tray.add(icon);
-            else
+            } else {
                 tray.remove(icon);
+            }
         } catch (AWTException e) {
             e.printStackTrace();
         }

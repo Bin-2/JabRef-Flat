@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,9 +31,9 @@ import net.sf.jabref.external.ExternalFileType;
 import net.sf.jabref.external.UnknownExternalFileType;
 
 /**
- * Data structure to contain a list of file links, parseable from a coded string.
- * Doubles as a table model for the file list editor.
-*/
+ * Data structure to contain a list of file links, parseable from a coded
+ * string. Doubles as a table model for the file list editor.
+ */
 public class FileListTableModel extends AbstractTableModel {
 
     private final ArrayList<FileListEntry> list = new ArrayList<FileListEntry>();
@@ -57,10 +59,13 @@ public class FileListTableModel extends AbstractTableModel {
         synchronized (list) {
             FileListEntry entry = list.get(rowIndex);
             switch (columnIndex) {
-                case 0: return entry.getDescription();
-                case 1: return entry.getLink();
-                default: return entry.getType() != null ?
-                        entry.getType().getName() : "";
+                case 0:
+                    return entry.getDescription();
+                case 1:
+                    return entry.getLink();
+                default:
+                    return entry.getType() != null
+                            ? entry.getType().getName() : "";
             }
         }
     }
@@ -80,8 +85,9 @@ public class FileListTableModel extends AbstractTableModel {
     }
 
     /**
-     * Add an entry to the table model, and fire a change event. The change event
-     * is fired on the event dispatch thread.
+     * Add an entry to the table model, and fire a change event. The change
+     * event is fired on the event dispatch thread.
+     *
      * @param index The row index to insert the entry at.
      * @param entry The entry to insert.
      */
@@ -94,8 +100,9 @@ public class FileListTableModel extends AbstractTableModel {
                         fireTableRowsInserted(index, index);
                     }
                 });
-            } else
+            } else {
                 fireTableRowsInserted(index, index);
+            }
         }
 
     }
@@ -104,7 +111,9 @@ public class FileListTableModel extends AbstractTableModel {
     }
 
     /**
-     * Set up the table contents based on the flat string representation of the file list
+     * Set up the table contents based on the flat string representation of the
+     * file list
+     *
      * @param value The string representation
      */
     public void setContent(String value) {
@@ -116,57 +125,58 @@ public class FileListTableModel extends AbstractTableModel {
     }
 
     private FileListEntry setContent(String value, boolean firstOnly, boolean deduceUnknownTypes) {
-        if (value == null)
+        if (value == null) {
             value = "";
+        }
         ArrayList<FileListEntry> newList = new ArrayList<FileListEntry>();
         StringBuilder sb = new StringBuilder();
         ArrayList<String> thisEntry = new ArrayList<String>();
         boolean inXmlChar = false;
         boolean escaped = false;
-        for (int i=0; i<value.length(); i++) {
+        for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if (!escaped && (c == '\\')) {
                 escaped = true;
                 continue;
-            }
-            // Check if we are entering an XML special character construct such
+            } // Check if we are entering an XML special character construct such
             // as "&#44;", because we need to know in order to ignore the semicolon.
             else if (!escaped && (c == '&') && !inXmlChar) {
                 sb.append(c);
-                if ((value.length() > i+1) && (value.charAt(i+1) == '#'))
+                if ((value.length() > i + 1) && (value.charAt(i + 1) == '#')) {
                     inXmlChar = true;
-            }
-            // Check if we are exiting an XML special character construct:
+                }
+            } // Check if we are exiting an XML special character construct:
             else if (!escaped && inXmlChar && (c == ';')) {
                 sb.append(c);
                 inXmlChar = false;
-            }
-            else if (!escaped && (c == ':')) {
+            } else if (!escaped && (c == ':')) {
                 thisEntry.add(sb.toString());
                 sb = new StringBuilder();
-            }
-            else if (!escaped && (c == ';') && !inXmlChar) {
+            } else if (!escaped && (c == ';') && !inXmlChar) {
                 thisEntry.add(sb.toString());
                 sb = new StringBuilder();
-                if (firstOnly)
+                if (firstOnly) {
                     return decodeEntry(thisEntry, deduceUnknownTypes);
-                else {
+                } else {
                     newList.add(decodeEntry(thisEntry, deduceUnknownTypes));
                     thisEntry.clear();
                 }
+            } else {
+                sb.append(c);
             }
-            else sb.append(c);
             escaped = false;
         }
-        if (sb.length() > 0)
+        if (sb.length() > 0) {
             thisEntry.add(sb.toString());
-        if (thisEntry.size() > 0) {
-            if (firstOnly)
-                return decodeEntry(thisEntry, deduceUnknownTypes);
-            else
-                newList.add(decodeEntry(thisEntry, deduceUnknownTypes));
         }
-          
+        if (thisEntry.size() > 0) {
+            if (firstOnly) {
+                return decodeEntry(thisEntry, deduceUnknownTypes);
+            } else {
+                newList.add(decodeEntry(thisEntry, deduceUnknownTypes));
+            }
+        }
+
         synchronized (list) {
             list.clear();
             list.addAll(newList);
@@ -181,40 +191,41 @@ public class FileListTableModel extends AbstractTableModel {
      * this method and using setContent() on an instance of FileListTableModel
      * is a slight optimization: with this method, parsing is discontinued after
      * the first entry has been found.
-     * @param content The file field content, as fed to this class' setContent() method.
-     * @return A JLabel set up with no text and the icon of the first entry's file type,
-     *  or null if no entry was found or the entry had no icon.
+     *
+     * @param content The file field content, as fed to this class' setContent()
+     * method.
+     * @return A JLabel set up with no text and the icon of the first entry's
+     * file type, or null if no entry was found or the entry had no icon.
      */
     public static JLabel getFirstLabel(String content) {
         FileListTableModel tm = new FileListTableModel();
         FileListEntry entry = tm.setContent(content, true, true);
-        if (entry == null || entry.getType()==null )
+        if (entry == null || entry.getType() == null) {
             return null;
+        }
         return entry.getType().getIconLabel();
     }
 
-    
     private FileListEntry decodeEntry(ArrayList<String> contents, boolean deduceUnknownType) {
-        ExternalFileType type = Globals.prefs.getExternalFileTypeByName
-                        (getElementIfAvailable(contents, 2));
+        ExternalFileType type = Globals.prefs.getExternalFileTypeByName(getElementIfAvailable(contents, 2));
 
         if (deduceUnknownType && (type instanceof UnknownExternalFileType)) {
             // No file type was recognized. Try to find a usable file type based
             // on mime type:
-            type = Globals.prefs.getExternalFileTypeByMimeType
-                        (getElementIfAvailable(contents, 2));
+            type = Globals.prefs.getExternalFileTypeByMimeType(getElementIfAvailable(contents, 2));
             if (type == null) {
                 // No type could be found from mime type on the extension:
                 //System.out.println("Not found by mime: '"+getElementIfAvailable(contents, 2));
                 ExternalFileType typeGuess = null;
                 String link = getElementIfAvailable(contents, 1);
                 int index = link.lastIndexOf('.');
-                if ((index >= 0) && (index < link.length()-1)) {
-                    String extension = link.substring(index+1);
+                if ((index >= 0) && (index < link.length() - 1)) {
+                    String extension = link.substring(index + 1);
                     typeGuess = Globals.prefs.getExternalFileTypeByExt(extension);
                 }
-                if (typeGuess != null)
+                if (typeGuess != null) {
                     type = typeGuess;
+                }
             }
         }
 
@@ -223,16 +234,18 @@ public class FileListTableModel extends AbstractTableModel {
                 type);
     }
 
-
     private String getElementIfAvailable(ArrayList<String> contents, int index) {
-        if (index < contents.size())
+        if (index < contents.size()) {
             return contents.get(index);
-        else return "";
+        } else {
+            return "";
+        }
     }
 
     /**
-     * Transform the file list shown in the table into a flat string representable
-     * as a BibTeX field:
+     * Transform the file list shown in the table into a flat string
+     * representable as a BibTeX field:
+     *
      * @return String representation.
      */
     public String getStringRepresentation() {
@@ -240,15 +253,17 @@ public class FileListTableModel extends AbstractTableModel {
         for (Iterator<FileListEntry> iterator = list.iterator(); iterator.hasNext();) {
             FileListEntry entry = iterator.next();
             sb.append(encodeEntry(entry));
-            if (iterator.hasNext())
+            if (iterator.hasNext()) {
                 sb.append(';');
+            }
         }
         return sb.toString();
     }
 
     /**
-     * Transform the file list shown in the table into a HTML string representation
-     * suitable for displaying the contents in a tooltip.
+     * Transform the file list shown in the table into a HTML string
+     * representation suitable for displaying the contents in a tooltip.
+     *
      * @return Tooltip representation.
      */
     public String getToolTipHTMLRepresentation() {
@@ -256,8 +271,9 @@ public class FileListTableModel extends AbstractTableModel {
         for (Iterator<FileListEntry> iterator = list.iterator(); iterator.hasNext();) {
             FileListEntry entry = iterator.next();
             sb.append(entry.getDescription()).append(" (").append(entry.getLink()).append(')');
-            if (iterator.hasNext())
+            if (iterator.hasNext()) {
                 sb.append("<br>");
+            }
         }
         return sb.append("</html>").toString();
     }
@@ -275,5 +291,4 @@ public class FileListTableModel extends AbstractTableModel {
         System.out.println("----");
     }
 
-   
 }

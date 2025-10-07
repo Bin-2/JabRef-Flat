@@ -26,15 +26,15 @@ public class EntryAddChange extends Change {
 
   BibtexEntry diskEntry;
 //  boolean isModifiedLocally, modificationsAgree;[[[[[[
-  PreviewPanel pp;
-  JScrollPane sp;
+  PreviewPanel previewpanel;
+  JScrollPane scrallpane;
 
   public EntryAddChange(BibtexEntry diskEntry) {
     super("Added entry");
     this.diskEntry = diskEntry;
 
-    pp = new PreviewPanel(null, diskEntry, null, new MetaData(), Globals.prefs.get("preview0"));
-    sp = new JScrollPane(pp);
+    previewpanel = new PreviewPanel(null, diskEntry, null, new MetaData(), Globals.prefs.get("preview0"));
+    scrallpane = new JScrollPane(previewpanel);
   }
 
   public boolean makeChange(BasePanel panel, BibtexDatabase secondary, NamedCompound undoEdit) {
@@ -46,6 +46,6 @@ public class EntryAddChange extends Change {
   }
 
   JComponent description() {
-    return sp;
+    return scrallpane;
   }
 }

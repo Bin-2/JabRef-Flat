@@ -12,11 +12,11 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.mods;
 
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import net.sf.jabref.export.layout.WSITools;
 
 import net.sf.jabref.AuthorList;
@@ -26,12 +26,12 @@ import net.sf.jabref.AuthorList;
  *
  * S M Mahbub Murshed : added few functions for convenience. May 15, 2007
  *
- * History
- * Dec 16, 2011 - Changed parseName(String) to export authorname with
- * 				  more than 3 names correctly
+ * History Dec 16, 2011 - Changed parseName(String) to export authorname with
+ * more than 3 names correctly
  *
  */
 public class PersonName {
+
     protected String givenName = null;
     protected String surname = null;
     protected String middleName = null;
@@ -50,91 +50,91 @@ public class PersonName {
     }
 
     protected void parseName(String author) {
-    		Vector<String> v = new Vector<String>();
-            String authorMod = AuthorList.fixAuthor_lastNameFirst(author, false);
-             
-            //Formating names and replacing escape Char for ',' back to a comma
-//            XMLChars xmlChars = new XMLChars();
-//            authorMod = xmlChars.format(authorMod).replace("&#44;", ",");
- 
-            int endOfLastName = authorMod.indexOf(",");
+        List<String> v = new ArrayList<>();
+        String authorMod = AuthorList.fixAuthor_lastNameFirst(author, false);
 
-            // Tokenize just the firstName and middleNames as we have the surname
-            // before the comma.
-            WSITools.tokenize(v, authorMod.substring(endOfLastName+1).trim(), " \n\r");
-            if (endOfLastName>=0) // comma is found
-            	v.add(authorMod.substring(0, endOfLastName));
-            
-            int amountOfNames = v.size();
+        // Formating names and replacing escape Char for ',' back to a comma
+        // XMLChars xmlChars = new XMLChars();
+        // authorMod = xmlChars.format(authorMod).replace("&#44;", ",");
+        int endOfLastName = authorMod.indexOf(",");
 
-            if (amountOfNames == 1)
-                surname = v.get(0);
-            else if (amountOfNames == 2) {
-                givenName = v.get(0);
-                surname = v.get(1);
+        // Tokenize just the firstName and middleNames as we have the surname
+        // before the comma.
+        WSITools.tokenize(v, authorMod.substring(endOfLastName + 1).trim(), " \n\r");
+        if (endOfLastName >= 0) // comma is found
+        {
+            v.add(authorMod.substring(0, endOfLastName));
+        }
+
+        int amountOfNames = v.size();
+
+        if (amountOfNames == 1) {
+            surname = v.get(0);
+        } else if (amountOfNames == 2) {
+            givenName = v.get(0);
+            surname = v.get(1);
+        } else {
+            givenName = v.get(0);
+            middleName = "";
+            for (int i = 1; i < amountOfNames - 1; i++) {
+                middleName += " " + v.get(i);
             }
-            else {
-                givenName = v.get(0);
-                middleName = "";
-                for (int i = 1; i < amountOfNames - 1 ; i++)
-                	middleName += " " + v.get(i);
-                middleName = middleName.trim();
-                surname = v.get(amountOfNames-1);
-                }
+            middleName = middleName.trim();
+            surname = v.get(amountOfNames - 1);
+        }
     }
 
     public String getGivenNames() {
         String result = "";
-        if (givenName != null)
+        if (givenName != null) {
             result += givenName;
-        if (middleName != null)
+        }
+        if (middleName != null) {
             result += " " + middleName;
+        }
         return result;
     }
 
-    public String getSurname()
-    {
+    public String getSurname() {
         return surname;
     }
 
-    public void setSurname(String lastName)
-    {
+    public void setSurname(String lastName) {
         surname = lastName;
     }
 
-    public String getFirstname()
-    {
+    public String getFirstname() {
         return givenName;
     }
 
-    public void setFirstname(String firstName)
-    {
+    public void setFirstname(String firstName) {
         givenName = firstName;
     }
 
-    public String getMiddlename()
-    {
+    public String getMiddlename() {
         return middleName;
     }
 
-    public void setMiddlename(String _middleName)
-    {
+    public void setMiddlename(String _middleName) {
         middleName = _middleName;
     }
 
-    public String getFullname()
-    {
-    	String fullName = "";
-    	if(givenName != null && !givenName.equals(""))
-    		fullName += givenName + " "; 
-    	if(middleName != null && !middleName.equals(""))
-    		fullName += middleName + " ";
-    	if(surname != null && !surname.equals(""))
-    		fullName += surname;
-    	
-    	return fullName.trim();
+    public String getFullname() {
+        String fullName = "";
+        if (givenName != null && !givenName.equals("")) {
+            fullName += givenName + " ";
+        }
+        if (middleName != null && !middleName.equals("")) {
+            fullName += middleName + " ";
+        }
+        if (surname != null && !surname.equals("")) {
+            fullName += surname;
+        }
+
+        return fullName.trim();
     }
 
+    @Override
     public String toString() {
         return surname;
     }

@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -39,17 +41,23 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.TransferHandler;
 import javax.swing.event.UndoableEditListener;
+import javax.swing.UIManager;
 
 import net.sf.jabref.*;
 import net.sf.jabref.external.*;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
+import java.awt.Component;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableCellRenderer;
 
 /**
  * Created by Morten O. Alver 2007.02.22
  */
 public class FileListEditor extends JTable implements FieldEditor,
         DownloadExternalFile.DownloadCallback {
+
     private static final Logger logger = Logger.getLogger(FileListEditor.class.getName());
 
     FieldNameLabel label;
@@ -64,20 +72,37 @@ public class FileListEditor extends JTable implements FieldEditor,
     private JPopupMenu menu = new JPopupMenu();
 
     public FileListEditor(JabRefFrame frame, MetaData metaData, String fieldName, String content,
-                          EntryEditor entryEditor) {
+            EntryEditor entryEditor) {
         this.frame = frame;
         this.metaData = metaData;
         this.fieldName = fieldName;
         this.entryEditor = entryEditor;
+
         label = new FieldNameLabel(" " + Util.nCase(fieldName) + " ");
         tableModel = new FileListTableModel();
         setText(content);
         setModel(tableModel);
+
+        // Add custom cell renderer for FlatLaf compatibility
+        setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                return c;
+            }
+        });
+
         JScrollPane sPane = new JScrollPane(this);
+        // Fix scroll pane background
+//        sPane.getViewport().setBackground(UIManager.getColor("Table.background"));
+//        sPane.setBackground(UIManager.getColor("Table.background"));
+
         setTableHeader(null);
         addMouseListener(new TableClickListener());
 
-        JButton add = new JButton(GUIGlobals.getImage("add"));
+        JButton add = new JButton(GUIGlobals.getIcon("add"));
         add.setToolTipText(Globals.lang("New file link (INSERT)"));
         JButton remove = new JButton(GUIGlobals.getImage("remove"));
         remove.setToolTipText(Globals.lang("Remove file link (DELETE)"));
@@ -120,16 +145,17 @@ public class FileListEditor extends JTable implements FieldEditor,
                 downloadFile();
             }
         });
-        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout
-                ("fill:pref,1dlu,fill:pref,1dlu,fill:pref", "fill:pref,fill:pref"));
+        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("fill:pref,1dlu,fill:pref,1dlu,fill:pref", "fill:pref,fill:pref"));
         builder.append(up);
         builder.append(add);
         builder.append(auto);
         builder.append(down);
         builder.append(remove);
-        builder.append(download);        
+        builder.append(download);
+
         panel = new JPanel();
         panel.setLayout(new BorderLayout());
+
         panel.add(sPane, BorderLayout.CENTER);
         panel.add(builder.getPanel(), BorderLayout.EAST);
 
@@ -143,9 +169,10 @@ public class FileListEditor extends JTable implements FieldEditor,
             public void actionPerformed(ActionEvent actionEvent) {
                 int row = getSelectedRow();
                 removeEntries();
-                row = Math.min(row, getRowCount()-1);
-                if (row >= 0)
+                row = Math.min(row, getRowCount() - 1);
+                if (row >= 0) {
                     setRowSelectionInterval(row, row);
+                }
             }
         });
 
@@ -206,6 +233,58 @@ public class FileListEditor extends JTable implements FieldEditor,
         JMenuItem moveToFileDir = new JMenuItem(Globals.lang("Move to file directory"));
         menu.add(moveToFileDir);
         moveToFileDir.addActionListener(new MoveFileAction(frame, entryEditor, this, true));
+
+        // Ensure inter-cell space exists so grid can show
+        // Make grid obvious
+        setIntercellSpacing(new java.awt.Dimension(2, 2));
+        setShowHorizontalLines(true);
+        setShowVerticalLines(true);
+        setShowGrid(true);
+        setGridColor(UIManager.getColor("Component.borderColor")); //
+
+        // Force table background to gray
+//        setBackground(new Color(242, 242, 242));
+
+        // Fill viewport height so the gray shows below last row too
+        setFillsViewportHeight(true);
+
+        // Optional: also force selection background if you want contrast
+//        setSelectionBackground(java.awt.Color.LIGHT_GRAY);
+        //setSelectionForeground(java.awt.Color.WHITE);
+
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        // sync the surrounding JScrollPane/Viewport so no white shows
+        javax.swing.JScrollPane sp
+                = (javax.swing.JScrollPane) javax.swing.SwingUtilities.getAncestorOfClass(
+                        javax.swing.JScrollPane.class, this);
+//        if (sp != null) {
+//            java.awt.Color bg = getBackground();
+//            javax.swing.JViewport vp = sp.getViewport();
+//            if (vp != null) {
+//                vp.setBackground(bg);
+//            }
+//            sp.setBackground(bg);
+//        }
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        setIntercellSpacing(new java.awt.Dimension(1, 1));
+        setShowHorizontalLines(true);
+        setShowVerticalLines(true);
+        setShowGrid(true);
+//        setGridColor(java.awt.Color.BLACK);
+//        setBackground(java.awt.Color.LIGHT_GRAY);
+        setFillsViewportHeight(true);
+
+        // re-apply selection colors after LAF changes
+//        setSelectionBackground(java.awt.Color.GRAY);
+        // setSelectionForeground(java.awt.Color.BLACK);
     }
 
     private void openSelectedFile() {
@@ -233,14 +312,14 @@ public class FileListEditor extends JTable implements FieldEditor,
     /*
       * Returns the component to be added to a container. Might be a JScrollPane
     * or the component itself.
-    */
+     */
     public JComponent getPane() {
         return panel;
     }
 
     /*
      * Returns the text component itself.
-    */
+     */
     public JComponent getTextComponent() {
         return this;
     }
@@ -250,7 +329,7 @@ public class FileListEditor extends JTable implements FieldEditor,
     }
 
     public void setLabelColor(Color c) {
-        label.setForeground(c);
+//        label.setForeground(c);
     }
 
     public String getText() {
@@ -260,7 +339,6 @@ public class FileListEditor extends JTable implements FieldEditor,
     public void setText(String newText) {
         tableModel.setContent(newText);
     }
-
 
     public void append(String text) {
 
@@ -280,11 +358,13 @@ public class FileListEditor extends JTable implements FieldEditor,
 
     private void addEntry(String initialLink) {
         int row = getSelectedRow();
-        if (row == -1)
+        if (row == -1) {
             row = 0;
+        }
         FileListEntry entry = new FileListEntry("", initialLink, null);
-        if (editListEntry(entry, true))
+        if (editListEntry(entry, true)) {
             tableModel.addEntry(row, entry);
+        }
         entryEditor.updateField(this);
     }
 
@@ -294,22 +374,26 @@ public class FileListEditor extends JTable implements FieldEditor,
 
     private void removeEntries() {
         int[] rows = getSelectedRows();
-        if (rows != null)
-            for (int i = rows.length-1; i>=0; i--) {
+        if (rows != null) {
+            for (int i = rows.length - 1; i >= 0; i--) {
                 tableModel.removeEntry(rows[i]);
             }
+        }
         entryEditor.updateField(this);
     }
 
     private void moveEntry(int i) {
         int[] sel = getSelectedRows();
-        if ((sel.length != 1) || (tableModel.getRowCount() < 2))
+        if ((sel.length != 1) || (tableModel.getRowCount() < 2)) {
             return;
-        int toIdx = sel[0]+i;
-        if (toIdx >= tableModel.getRowCount())
+        }
+        int toIdx = sel[0] + i;
+        if (toIdx >= tableModel.getRowCount()) {
             toIdx -= tableModel.getRowCount();
-        if (toIdx < 0)
+        }
+        if (toIdx < 0) {
             toIdx += tableModel.getRowCount();
+        }
         FileListEntry entry = tableModel.getEntry(sel[0]);
         tableModel.removeEntry(sel[0]);
         tableModel.addEntry(toIdx, entry);
@@ -319,19 +403,22 @@ public class FileListEditor extends JTable implements FieldEditor,
 
     /**
      * Open an editor for this entry.
+     *
      * @param entry The entry to edit.
-     * @param openBrowse True to indicate that a Browse dialog should be immediately opened.
+     * @param openBrowse True to indicate that a Browse dialog should be
+     * immediately opened.
      * @return true if the edit was accepted, false if it was cancelled.
      */
     private boolean editListEntry(FileListEntry entry, boolean openBrowse) {
         if (editor == null) {
             editor = new FileListEntryEditor(frame, entry, false, true, metaData);
-        }
-        else
+        } else {
             editor.setEntry(entry);
+        }
         editor.setVisible(true, openBrowse);
-        if (editor.okPressed())
+        if (editor.okPressed()) {
             tableModel.fireTableDataChanged();
+        }
         entryEditor.updateField(this);
         return editor.okPressed();
     }
@@ -346,9 +433,10 @@ public class FileListEditor extends JTable implements FieldEditor,
                 if (e.getID() > 0) {
                     entryEditor.updateField(FileListEditor.this);
                     frame.output(Globals.lang("Finished autosetting external links."));
+                } else {
+                    frame.output(Globals.lang("Finished autosetting external links.")
+                            + " " + Globals.lang("No files found."));
                 }
-                else frame.output(Globals.lang("Finished autosetting external links.")
-                    +" "+Globals.lang("No files found."));
             }
         }, diag);
 
@@ -380,8 +468,10 @@ public class FileListEditor extends JTable implements FieldEditor,
     }
 
     /**
-     * This is the callback method that the DownloadExternalFile class uses to report the result
-     * of a download operation. This call may never come, if the user cancelled the operation.
+     * This is the callback method that the DownloadExternalFile class uses to
+     * report the result of a download operation. This call may never come, if
+     * the user cancelled the operation.
+     *
      * @param file The FileListEntry linking to the resulting local file.
      */
     public void downloadComplete(FileListEntry file) {
@@ -398,21 +488,22 @@ public class FileListEditor extends JTable implements FieldEditor,
                     FileListEntry entry = tableModel.getEntry(row);
                     editListEntry(entry, false);
                 }
-            }
-            else if (e.isPopupTrigger())
+            } else if (e.isPopupTrigger()) {
                 processPopupTrigger(e);
+            }
         }
-
 
         public void mousePressed(MouseEvent e) {
-            if (e.isPopupTrigger())
+            if (e.isPopupTrigger()) {
                 processPopupTrigger(e);
-        }
-        public void mouseReleased(MouseEvent e) {
-            if (e.isPopupTrigger())
-                processPopupTrigger(e);
+            }
         }
 
+        public void mouseReleased(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                processPopupTrigger(e);
+            }
+        }
 
         private void processPopupTrigger(MouseEvent e) {
             int row = rowAtPoint(e.getPoint());
@@ -447,14 +538,23 @@ public class FileListEditor extends JTable implements FieldEditor,
     }
 
     public void setActiveBackgroundColor() {
+//        setBackground(UIManager.getColor("Table.background"));
+//        panel.setBackground(UIManager.getColor("Panel.background"));
     }
 
     public void setValidBackgroundColor() {
+//        setBackground(UIManager.getColor("Table.background"));
+//        panel.setBackground(UIManager.getColor("Panel.background"));
     }
 
     public void setInvalidBackgroundColor() {
+//        setBackground(UIManager.getColor("Table.background"));
+//        panel.setBackground(UIManager.getColor("Panel.background"));
     }
 
     public void updateFontColor() {
+//        setForeground(UIManager.getColor("Table.foreground"));
+        setFont(UIManager.getFont("Table.font"));
     }
+
 }

@@ -56,9 +56,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,7 +70,7 @@ public class AuxSubGenerator
 
   private HashSet<String> mySet ; // all unique bibtex keys in aux file
 
-  private Vector<String> notFoundList ; // all not solved bibtex keys
+  private List<String> notFoundList ; // all not solved bibtex keys
 
   private BibtexDatabase db ; // reference database
   private BibtexDatabase auxDB ; // contains only the bibtex keys who found in aux file
@@ -80,7 +81,7 @@ public class AuxSubGenerator
   public AuxSubGenerator(BibtexDatabase refDBase)
   {
     mySet = new HashSet<String>(20) ;
-    notFoundList = new Vector<String>() ;
+    notFoundList = new ArrayList<>() ;
     db = refDBase ;
   }
 
@@ -149,7 +150,7 @@ public class AuxSubGenerator
     BufferedReader br = null ;
 
     // filelist, used for nested aux files
-    Vector<String> fileList = new Vector<String>(5) ;
+    List<String> fileList = new ArrayList<>(5) ;
     fileList.add( filename );
 
     // get the file path
@@ -167,7 +168,7 @@ public class AuxSubGenerator
 
     while (fileIndex < fileList.size())
     {
-      String fName = fileList.elementAt( fileIndex ) ;
+      String fName = fileList.get( fileIndex ) ;
       try
       {
 //        System.out.println("read #"+fName +"#") ;
@@ -335,9 +336,9 @@ public class AuxSubGenerator
      *
      * @param auxFileName String
      * @param bibDB BibtexDatabase - reference database
-     * @return Vector - contains all not resolved bibtex entries
+     * @return List - contains all not resolved bibtex entries
      */
-    public final Vector<String> generate(String auxFileName, BibtexDatabase bibDB)
+    public final List<String> generate(String auxFileName, BibtexDatabase bibDB)
     {
       setReferenceDatabase(bibDB);
       parseAuxFile(auxFileName) ;
@@ -389,7 +390,7 @@ public class AuxSubGenerator
   }
 
   /** returns a vector off all not resolved bibtex entries found in auxfile */
-  public Vector<String> getNotFoundList()
+  public List<String> getNotFoundList()
   {
     return notFoundList ;
   }

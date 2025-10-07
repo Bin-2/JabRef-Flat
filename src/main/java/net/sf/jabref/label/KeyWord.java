@@ -12,45 +12,46 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.label;
 
 import java.util.HashSet;
 
 public class KeyWord extends HashSet<String> {
 
-	private static KeyWord singleton;
+    private static KeyWord singleton;
 
-	private KeyWord() {
-		// puts all keywords in
-		add("society");
-		add("transaction");
-		add("transactions");
-		add("journal");
-		add("review");
-		add("revue");
-		add("communication");
-		add("communications");
-		add("letters");
-		add("advances");
-		add("proceedings");
-		add("proceeding");
-		add("international");
-		add("joint");
-		add("conference");
-	}
- 
-	public static KeyWord getKeyWord() {
-		if (singleton == null)
-			singleton = new KeyWord();
-		return singleton;
-	}
+    private KeyWord() {
+        // puts all keywords in
+        add("society");
+        add("transaction");
+        add("transactions");
+        add("journal");
+        add("review");
+        add("revue");
+        add("communication");
+        add("communications");
+        add("letters");
+        add("advances");
+        add("proceedings");
+        add("proceeding");
+        add("international");
+        add("joint");
+        add("conference");
+    }
 
-	public boolean isKeyWord(String matchWord) {
+    public static KeyWord getKeyWord() {
+        if (singleton == null) {
+            singleton = new KeyWord();
+        }
+        return singleton;
+    }
+
+    public boolean isKeyWord(String matchWord) {
         return contains(matchWord.toLowerCase());
     }
 
-	public boolean isKeyWordMatchCase(String matchWord) {
+    public boolean isKeyWordMatchCase(String matchWord) {
         return contains(matchWord);
     }
 

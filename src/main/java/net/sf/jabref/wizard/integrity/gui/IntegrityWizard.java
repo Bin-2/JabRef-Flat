@@ -119,7 +119,7 @@ public class IntegrityWizard extends JDialog implements ActionListener {
         infoText.setPreferredSize( new Dimension(220, 60));
         infoText.setMinimumSize( new Dimension(180, 50));
         infoText.setPage(infoURL);
-        infoText.setBackground(GUIGlobals.infoField);
+//        infoText.setBackground(GUIGlobals.infoField);
         infoText.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
 //        bottomPanel.add( infoText, BorderLayout.CENTER ) ;
       }

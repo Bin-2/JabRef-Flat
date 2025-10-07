@@ -26,13 +26,14 @@
  */
 package net.sf.jabref;
 
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.regex.PatternSyntaxException;
 
 public class SearchRuleSet implements SearchRule {
-    protected Vector<SearchRule> ruleSet = new Vector<SearchRule>();
+
+    protected List<SearchRule> ruleSet = new ArrayList<>();
 
     public void addRule(SearchRule newRule) {
         ruleSet.add(newRule);
@@ -42,21 +43,21 @@ public class SearchRuleSet implements SearchRule {
         ruleSet.clear();
     }
 
-    public int applyRule(Map<String, String> searchString, BibtexEntry bibtexEntry) throws PatternSyntaxException{
+    @Override
+    public int applyRule(Map<String, String> searchString, BibtexEntry bibtexEntry) throws PatternSyntaxException {
         int score = 0;
-        Enumeration<SearchRule> e = ruleSet.elements();
-        while (e.hasMoreElements()) {
-            score += e.nextElement().applyRule(searchString,
-                    bibtexEntry);
+        for (SearchRule rule : ruleSet) {
+            score += rule.applyRule(searchString, bibtexEntry);
         }
         return score;
     }
 
+    @Override
     public boolean validateSearchStrings(Map<String, String> searchStrings) {
-        Enumeration<SearchRule> e = ruleSet.elements();
-        while (e.hasMoreElements()) {
-            if (!e.nextElement().validateSearchStrings(searchStrings))
+        for (SearchRule rule : ruleSet) {
+            if (!rule.validateSearchStrings(searchStrings)) {
                 return false;
+            }
         }
         return true;
     }

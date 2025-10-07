@@ -360,7 +360,7 @@ public class KeywordGroup extends AbstractGroup implements SearchRule {
     }
 
 	public String getShortDescription() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<b>");
 		if (Globals.prefs.getBoolean("groupShowDynamic"))
             sb.append("<i>").append(Util.quoteForHTML(getName())).append("</i>");

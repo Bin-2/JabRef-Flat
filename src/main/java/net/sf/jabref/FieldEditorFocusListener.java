@@ -12,40 +12,39 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import javax.swing.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
-
 /**
  * Focus listener that changes the color of the text area when it has focus.
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: 18.mar.2005
- * Time: 18:20:14
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: 18.mar.2005 Time: 18:20:14 To
+ * change this template use File | Settings | File Templates.
  */
 public class FieldEditorFocusListener implements FocusListener {
 
     public FieldEditorFocusListener() {
     }
 
+    @Override
     public void focusGained(FocusEvent event) {
-        if (event.getSource() instanceof FieldEditor)
-            ((FieldEditor)event.getSource()).setActiveBackgroundColor();
-        else
-            ((JComponent)event.getSource()).setBackground(GUIGlobals.activeBackground);
+//        if (event.getSource() instanceof FieldEditor) {
+//            ((FieldEditor) event.getSource()).setActiveBackgroundColor();
+//        } else {
+//            ((JComponent) event.getSource()).setBackground(GUIGlobals.activeBackground);
+//        }
     }
 
-
+    @Override
     public void focusLost(FocusEvent event) {
-        if (event.getSource() instanceof FieldEditor)
-            ((FieldEditor)event.getSource()).setValidBackgroundColor();
-        else
-            ((JComponent)event.getSource()).setBackground(GUIGlobals.validFieldBackgroundColor);
+//        if (event.getSource() instanceof FieldEditor) {
+//            ((FieldEditor) event.getSource()).setValidBackgroundColor();
+//        } else {
+//            ((JComponent) event.getSource()).setBackground(GUIGlobals.validFieldBackgroundColor);
+//        }
     }
 
 }

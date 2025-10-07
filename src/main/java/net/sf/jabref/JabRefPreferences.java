@@ -46,7 +46,7 @@ import net.sf.jabref.imports.CustomImportList;
 import net.sf.jabref.labelPattern.LabelPattern;
 import net.sf.jabref.specialfields.SpecialFieldsUtils;
 
-public class JabRefPreferences {
+public final class JabRefPreferences {
 
     public final static String CUSTOM_TYPE_NAME = "customTypeName_",
             CUSTOM_TYPE_REQ = "customTypeReq_",
@@ -95,8 +95,7 @@ public class JabRefPreferences {
             EXPORT_TERTIARY_SORT_DESCENDING = "exportTerDescending",
             WRITEFIELD_SORTSTYLE = "writefieldSortStyle",
             WRITEFIELD_USERDEFINEDORDER = "writefieldUserdefinedOrder",
-            WRITEFIELD_WRAPFIELD="wrapFieldLine";
-    
+            WRITEFIELD_WRAPFIELD = "wrapFieldLine";
 
     // This String is used in the encoded list in prefs of external file type
     // modifications, in order to indicate a removed default file type:
@@ -112,11 +111,11 @@ public class JabRefPreferences {
     public String WRAPPED_USERNAME, MARKING_WITH_NUMBER_PATTERN;
 
     Preferences prefs;
-    public HashMap<String, Object> defaults = new HashMap<String, Object>();
-    public HashMap<String, String> keyBinds = new HashMap<String, String>(),
-            defKeyBinds = new HashMap<String, String>();
-    private HashSet<String> putBracesAroundCapitalsFields = new HashSet<String>(4);
-    private HashSet<String> nonWrappableFields = new HashSet<String>(5);
+    public HashMap<String, Object> defaults = new HashMap<>();
+    public HashMap<String, String> keyBinds = new HashMap<>(),
+            defKeyBinds = new HashMap<>();
+    private HashSet<String> putBracesAroundCapitalsFields = new HashSet<>(4);
+    private HashSet<String> nonWrappableFields = new HashSet<>(5);
     private static LabelPattern keyPattern;
 
     // Object containing custom export formats:
@@ -130,7 +129,7 @@ public class JabRefPreferences {
     // Object containing info about customized entry editor tabs.
     private EntryEditorTabList tabList = null;
     // Map containing all registered external file types:
-    private TreeSet<ExternalFileType> externalFileTypes = new TreeSet<ExternalFileType>();
+    private TreeSet<ExternalFileType> externalFileTypes = new TreeSet<>();
 
     public final ExternalFileType HTML_FALLBACK_TYPE
             = new ExternalFileType("URL", "html", "text/html", "", "www");
@@ -187,7 +186,7 @@ public class JabRefPreferences {
                 putBoolean(SAVE_TERTIARY_SORT_DESCENDING, false);
             }
         }
-        
+
         if (prefs.get(EXPORT_IN_SPECIFIED_ORDER, null) == null) {
             if (prefs.getBoolean("exportInStandardOrder", false)) {
                 putBoolean(EXPORT_IN_SPECIFIED_ORDER, true);
@@ -239,6 +238,7 @@ public class JabRefPreferences {
             //defaults.put("psviewer", "cmd.exe /c start /b");
             //defaults.put("htmlviewer", "cmd.exe /c start /b");
             defaults.put("lookAndFeel", "com.jgoodies.looks.windows.WindowsLookAndFeel");
+            defaults.put("Theme", "FlatLight");
             defaults.put("winEdtPath", "C:\\Program Files\\WinEdt Team\\WinEdt\\WinEdt.exe");
             defaults.put("latexEditorPath", "C:\\Program Files\\LEd\\LEd.exe");
             defaults.put(EMACS_PATH, "emacsclient.exe");
@@ -251,6 +251,7 @@ public class JabRefPreferences {
             //defaults.put("psviewer", "gv");
             //defaults.put("htmlviewer", "firefox");
             defaults.put("lookAndFeel", "com.jgoodies.plaf.plastic.Plastic3DLookAndFeel");
+            defaults.put("Theme", "FlatLight");
             defaults.put("fontFamily", "SansSerif");
 
             // linux
@@ -309,7 +310,7 @@ public class JabRefPreferences {
         defaults.put(EXPORT_TERTIARY_SORT_DESCENDING, Boolean.TRUE);
 
         defaults.put(NEWLINE, System.getProperty("line.separator"));
-        
+
         defaults.put("sidePaneComponentNames", "");
         defaults.put("sidePaneComponentPreferredPositions", "");
 
@@ -390,7 +391,7 @@ public class JabRefPreferences {
                 + "pdf;comment;owner");
 
         defaults.put("useCustomIconTheme", Boolean.FALSE);
-        defaults.put("customIconThemeFile", "/home/alver/div/crystaltheme_16/Icons.properties");
+        // defaults.put("customIconThemeFile", "/home/alver/div/crystaltheme_16/Icons.properties");
 
         //defaults.put("recentFiles", "/home/alver/Documents/bibk_dok/hovedbase.bib");
         defaults.put("historySize", 8);
@@ -435,7 +436,7 @@ public class JabRefPreferences {
         defaults.put("arxivColumn", Boolean.FALSE);
 
         defaults.put("extraFileColumns", Boolean.FALSE);
-        defaults.put("listOfFileColumns","");
+        defaults.put("listOfFileColumns", "");
 
         defaults.put(SpecialFieldsUtils.PREF_SPECIALFIELDSENABLED, SpecialFieldsUtils.PREF_SPECIALFIELDSENABLED_DEFAULT);
         defaults.put(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRIORITY, SpecialFieldsUtils.PREF_SHOWCOLUMN_PRIORITY_DEFAULT);
@@ -527,7 +528,7 @@ public class JabRefPreferences {
         // behavior of JabRef before 2.10: both: false
         defaults.put(WRITEFIELD_ADDSPACES, Boolean.TRUE);
         defaults.put(WRITEFIELD_CAMELCASENAME, Boolean.TRUE);
-        
+
         //behavior of JabRef before LWang_AdjustableFieldOrder 1
         //0 sorted order (2.10 default), 1 unsorted order (2.9.2 default), 2 user defined
         defaults.put(WRITEFIELD_SORTSTYLE, 0);
@@ -771,8 +772,11 @@ public class JabRefPreferences {
 
     /**
      * Puts a string array into the Preferences, by linking its elements with
-     * ';' into a single string. Escape characters make the process transparent
+     * ';' into a single string.Escape characters make the process transparent
      * even if strings contain ';'.
+     *
+     * @param key
+     * @param value
      */
     public void putStringArray(String key, String[] value) {
         if (value == null) {
@@ -795,6 +799,9 @@ public class JabRefPreferences {
 
     /**
      * Returns a String[] containing the chosen columns.
+     *
+     * @param key
+     * @return
      */
     public String[] getStringArray(String key) {
         String names = get(key);
@@ -803,7 +810,7 @@ public class JabRefPreferences {
         }
 
         StringReader rd = new StringReader(names);
-        Vector<String> arr = new Vector<String>();
+        List<String> arr = new ArrayList<>();
         String rs;
         try {
             while ((rs = getNextUnit(rd)) != null) {
@@ -813,7 +820,7 @@ public class JabRefPreferences {
         }
         String[] res = new String[arr.size()];
         for (int i = 0; i < res.length; i++) {
-            res[i] = arr.elementAt(i);
+            res[i] = arr.get(i);
         }
 
         return res;
@@ -935,6 +942,8 @@ public class JabRefPreferences {
 
     /**
      * Returns the HashMap containing all key bindings.
+     *
+     * @return
      */
     public HashMap<String, String> getKeyBindings() {
         return keyBinds;
@@ -942,6 +951,8 @@ public class JabRefPreferences {
 
     /**
      * Returns the HashMap containing default key bindings.
+     *
+     * @return
      */
     public HashMap<String, String> getDefaultKeys() {
         return defKeyBinds;
@@ -981,6 +992,8 @@ public class JabRefPreferences {
     /**
      * Stores new key bindings into Preferences, provided they actually differ
      * from the old ones.
+     *
+     * @param newBindings
      */
     public void setNewKeyBindings(HashMap<String, String> newBindings) {
         if (!newBindings.equals(keyBinds)) {
@@ -1191,7 +1204,7 @@ public class JabRefPreferences {
         // true if a ";" is found
         boolean done = false;
 
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
         while (!done && ((c = data.read()) != -1)) {
             if (c == '\\') {
                 if (!escape) {
@@ -1224,7 +1237,7 @@ public class JabRefPreferences {
     }
 
     private String makeEscape(String s) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int c;
         for (int i = 0; i < s.length(); i++) {
             c = s.charAt(i);
@@ -1239,6 +1252,9 @@ public class JabRefPreferences {
     /**
      * Stores all information about the entry type in preferences, with the tag
      * given by number.
+     *
+     * @param tp
+     * @param number
      */
     public void storeCustomEntryType(CustomEntryType tp, int number) {
         String nr = "" + number;
@@ -1252,6 +1268,9 @@ public class JabRefPreferences {
     /**
      * Retrieves all information about the entry type in preferences, with the
      * tag given by number.
+     *
+     * @param number
+     * @return
      */
     public CustomEntryType getCustomEntryType(int number) {
         String nr = "" + number;
@@ -1265,18 +1284,17 @@ public class JabRefPreferences {
         if (priOpt == null) {
             return new CustomEntryType(Util.nCase(name), req, opt);
         }
-        ArrayList<String> secOpt = new ArrayList<String>();
+        ArrayList<String> secOpt = new ArrayList<>();
         Collections.addAll(secOpt, opt);
         for (String aPriOpt : priOpt) {
             secOpt.remove(aPriOpt);
         }
         return new CustomEntryType(Util.nCase(name), req, priOpt,
                 secOpt.toArray(new String[secOpt.size()]));
-
     }
 
     public List<ExternalFileType> getDefaultExternalFileTypes() {
-        List<ExternalFileType> list = new ArrayList<ExternalFileType>();
+        List<ExternalFileType> list = new ArrayList<>();
         list.add(new ExternalFileType("PDF", "pdf", "application/pdf", "evince", "pdfSmall"));
         list.add(new ExternalFileType("PostScript", "ps", "application/postscript", "evince", "psSmall"));
         list.add(new ExternalFileType("Word", "doc", "application/msword", "oowriter", "openoffice"));
@@ -1397,7 +1415,7 @@ public class JabRefPreferences {
         // First find a list of the default types:
         List<ExternalFileType> defTypes = getDefaultExternalFileTypes();
         // Make a list of types that are unchanged:
-        List<ExternalFileType> unchanged = new ArrayList<ExternalFileType>();
+        List<ExternalFileType> unchanged = new ArrayList<>();
 
         externalFileTypes.clear();
         for (ExternalFileType type : types) {
@@ -1519,6 +1537,7 @@ public class JabRefPreferences {
      * Removes all entries keyed by prefix+number, where number is equal to or
      * higher than the given number.
      *
+     * @param prefix
      * @param number or higher.
      */
     public void purgeSeries(String prefix, int number) {
@@ -1543,6 +1562,7 @@ public class JabRefPreferences {
      * Exports Preferences to an XML file.
      *
      * @param filename String File to export to
+     * @throws java.io.IOException
      */
     public void exportPreferences(String filename) throws IOException {
         File f = new File(filename);
@@ -1558,6 +1578,7 @@ public class JabRefPreferences {
      * Imports Preferences from an XML file.
      *
      * @param filename String File to import from
+     * @throws java.io.IOException
      */
     public void importPreferences(String filename) throws IOException {
         File f = new File(filename);
@@ -1579,4 +1600,6 @@ public class JabRefPreferences {
     public boolean isNonWrappableField(String fieldName) {
         return nonWrappableFields.contains(fieldName);
     }
+
+    //**************************************************************************
 }

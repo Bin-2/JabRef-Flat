@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.BorderLayout;
@@ -20,7 +20,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Vector;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -33,290 +32,317 @@ import net.sf.jabref.help.HelpDialog;
 
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NameFormatterTab extends JPanel implements PrefsTab {
 
-	public static final String NAME_FORMATTER_VALUE = "nameFormatterFormats";
+    public static final String NAME_FORMATTER_VALUE = "nameFormatterFormats";
 
-	public static final String NAME_FORMATER_KEY = "nameFormatterNames";
+    public static final String NAME_FORMATER_KEY = "nameFormatterNames";
 
-	public static Map<String, String> getNameFormatters(){
-		
-		Map<String, String> result = new HashMap<String, String>();
+    public static Map<String, String> getNameFormatters() {
 
-		String[] names = Globals.prefs.getStringArray(NAME_FORMATER_KEY);
-		String[] formats = Globals.prefs.getStringArray(NAME_FORMATTER_VALUE);
-		
-		if (names == null){
-			names = new String[]{};
-		}
-		if (formats == null){
-			formats = new String[]{};
-		}
-		
-		for (int i = 0; i < names.length; i++) {
-			if (i < formats.length)
-				result.put(names[i], formats[i]);
-			else
-				result.put(names[i], NameFormat.DEFAULT_FORMAT);
-		}
-		
-		return result;
-	}
-	
-	private boolean tableChanged = false;
+        Map<String, String> result = new HashMap<String, String>();
 
-	private JTable table;
+        String[] names = Globals.prefs.getStringArray(NAME_FORMATER_KEY);
+        String[] formats = Globals.prefs.getStringArray(NAME_FORMATTER_VALUE);
 
-	private int rowCount = -1;
+        if (names == null) {
+            names = new String[]{};
+        }
+        if (formats == null) {
+            formats = new String[]{};
+        }
 
-	private Vector<TableRow> tableRows = new Vector<TableRow>(10);
+        for (int i = 0; i < names.length; i++) {
+            if (i < formats.length) {
+                result.put(names[i], formats[i]);
+            } else {
+                result.put(names[i], NameFormat.DEFAULT_FORMAT);
+            }
+        }
 
-	class TableRow {
-		String name;
+        return result;
+    }
 
-		String format;
+    private boolean tableChanged = false;
 
-		public TableRow() {
-			this("");
-		}
+    private JTable table;
 
-		public TableRow(String name) {
-			this(name, NameFormat.DEFAULT_FORMAT);
-		}
+    private int rowCount = -1;
 
-		public TableRow(String name, String format) {
-			this.name = name;
-			this.format = format;
-		}
-	}
+    private List<TableRow> tableRows = new ArrayList<TableRow>(10);
 
-	/**
-	 * Tab to create custom Name Formatters
-	 * 
-	 */
-	public NameFormatterTab(HelpDialog helpDialog) {
-		setLayout(new BorderLayout());
+    class TableRow {
 
-		TableModel tm = new AbstractTableModel() {
-			public int getRowCount() {
-				return rowCount;
-			}
+        String name;
 
-			public int getColumnCount() {
-				return 2;
-			}
+        String format;
 
-			public Object getValueAt(int row, int column) {
-				if (row >= tableRows.size())
-					return "";
-				TableRow tr = tableRows.elementAt(row);
-				if (tr == null)
-					return "";
-				switch (column) {
-				case 0:
-					return tr.name;
-				case 1:
-					return tr.format;
-				}
-				return null; // Unreachable.
-			}
+        public TableRow() {
+            this("");
+        }
 
-			public String getColumnName(int col) {
-				return (col == 0 ? Globals.lang("Formatter Name") : Globals.lang("Format String"));
-			}
+        public TableRow(String name) {
+            this(name, NameFormat.DEFAULT_FORMAT);
+        }
 
-			public Class<String> getColumnClass(int column) {
-				if (column == 0)
-					return String.class;
-				else
-					return String.class;
-			}
+        public TableRow(String name, String format) {
+            this.name = name;
+            this.format = format;
+        }
+    }
 
-			public boolean isCellEditable(int row, int col) {
-				return true;
-			}
+    /**
+     * Tab to create custom Name Formatters
+     *
+     * @param helpDialog
+     */
+    public NameFormatterTab(HelpDialog helpDialog) {
+        setLayout(new BorderLayout());
 
-			public void setValueAt(Object value, int row, int col) {
-				tableChanged = true;
+        TableModel tm = new AbstractTableModel() {
 
-				// Make sure the vector is long enough.
-				while (row >= tableRows.size())
-					tableRows.add(new TableRow());
+            @Override
+            public int getRowCount() {
+                return rowCount;
+            }
 
-				TableRow rowContent = tableRows.elementAt(row);
+            @Override
+            public int getColumnCount() {
+                return 2;
+            }
 
-				if (col == 0)
-					rowContent.name = value.toString();
-				else
-					rowContent.format = value.toString();
-			}
-		};
+            @Override
+            public Object getValueAt(int row, int column) {
+                if (row >= tableRows.size()) {
+                    return "";
+                }
+                TableRow tr = tableRows.get(row);
+                if (tr == null) {
+                    return "";
+                }
+                switch (column) {
+                    case 0:
+                        return tr.name;
+                    case 1:
+                        return tr.format;
+                }
+                return null; // Unreachable.
+            }
 
-		table = new JTable(tm);
-		TableColumnModel cm = table.getColumnModel();
-		cm.getColumn(0).setPreferredWidth(140);
-		cm.getColumn(1).setPreferredWidth(400);
+            @Override
+            public String getColumnName(int col) {
+                return (col == 0 ? Globals.lang("Formatter Name") : Globals.lang("Format String"));
+            }
 
-		FormLayout layout = new FormLayout("1dlu, 8dlu, left:pref, 4dlu, fill:pref", "");
+            @Override
+            public Class<String> getColumnClass(int column) {
+                if (column == 0) {
+                    return String.class;
+                } else {
+                    return String.class;
+                }
+            }
 
-		DefaultFormBuilder builder = new DefaultFormBuilder(layout);
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return true;
+            }
 
-		JPanel pan = new JPanel();
+            @Override
+            public void setValueAt(Object value, int row, int col) {
+                tableChanged = true;
 
-		JPanel tabPanel = new JPanel();
-		tabPanel.setLayout(new BorderLayout());
-		JScrollPane sp = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		table.setPreferredScrollableViewportSize(new Dimension(250, 200));
-		sp.setMinimumSize(new Dimension(250, 300));
-		sp.setPreferredSize(new Dimension(600, 300));
-		tabPanel.add(sp, BorderLayout.CENTER);
+                // Make sure the vector is long enough.
+                while (row >= tableRows.size()) {
+                    tableRows.add(new TableRow());
+                }
 
-		JToolBar tlb = new JToolBar(SwingConstants.VERTICAL);
-		tlb.setFloatable(false);
-		tlb.setBorder(null);
-		tlb.add(new AddRowAction());
-		tlb.add(new DeleteRowAction());
-		tlb.add(new HelpAction(helpDialog, GUIGlobals.nameFormatterHelp,
-			"Help on Name Formatting", GUIGlobals.getIconUrl("helpSmall")));
+                TableRow rowContent = tableRows.get(row);
 
-		tabPanel.add(tlb, BorderLayout.EAST);
+                if (col == 0) {
+                    rowContent.name = value.toString();
+                } else {
+                    rowContent.format = value.toString();
+                }
+            }
+        };
 
-		builder.appendSeparator(Globals.lang("Special Name Formatters"));
-		builder.nextLine();
-		builder.append(pan);
-		builder.append(tabPanel);
-		builder.nextLine();
+        table = new JTable(tm);
+        TableColumnModel cm = table.getColumnModel();
+        cm.getColumn(0).setPreferredWidth(140);
+        cm.getColumn(1).setPreferredWidth(400);
 
-		pan = builder.getPanel();
-		pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		add(pan, BorderLayout.CENTER);
-	}
+        FormLayout layout = new FormLayout("1dlu, 8dlu, left:pref, 4dlu, fill:pref", "");
 
-	public void setValues() {
-		tableRows.clear();
-		String[] names = Globals.prefs.getStringArray(NAME_FORMATER_KEY);
-		String[] formats = Globals.prefs.getStringArray(NAME_FORMATTER_VALUE);
-		
-		if (names == null){
-			names = new String[]{};
-		}
-		if (formats == null){
-			formats = new String[]{};
-		}
-		
-		for (int i = 0; i < names.length; i++) {
-			if (i < formats.length)
-				tableRows.add(new TableRow(names[i], formats[i]));
-			else
-				tableRows.add(new TableRow(names[i]));
-		}
-		rowCount = tableRows.size() + 5;
-	}
+        DefaultFormBuilder builder = new DefaultFormBuilder(layout);
 
-	class DeleteRowAction extends AbstractAction {
-		
-		public DeleteRowAction() {
-			super("Delete row", GUIGlobals.getImage("remove"));
-			putValue(SHORT_DESCRIPTION, Globals.lang("Delete rows"));
-		}
+        JPanel pan = new JPanel();
 
-		public void actionPerformed(ActionEvent e) {
-			tableChanged = true;
-			
-			int[] selectedRows = table.getSelectedRows();
-		
-			int numberDeleted = 0;
-			
-			for (int i = selectedRows.length - 1; i >= 0; i--) {
-				if (selectedRows[i] < tableRows.size()) {
-					tableRows.remove(selectedRows[i]);
-					numberDeleted++;
-				}
-			}
-			
-			rowCount -= numberDeleted;
-			
-			if (selectedRows.length > 1)
-				table.clearSelection();
-			
-			table.revalidate();
-			table.repaint();
-		}
-	}
+        JPanel tabPanel = new JPanel();
+        tabPanel.setLayout(new BorderLayout());
+        JScrollPane sp = new JScrollPane(table, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        table.setPreferredScrollableViewportSize(new Dimension(250, 200));
+        sp.setMinimumSize(new Dimension(250, 300));
+        sp.setPreferredSize(new Dimension(600, 300));
+        tabPanel.add(sp, BorderLayout.CENTER);
 
-	class AddRowAction extends AbstractAction {
-		public AddRowAction() {
-			super("Add row", GUIGlobals.getImage("add"));
-			putValue(SHORT_DESCRIPTION, Globals.lang("Insert rows"));
-		}
+        JToolBar tlb = new JToolBar(SwingConstants.VERTICAL);
+        tlb.setFloatable(false);
+        tlb.setBorder(null);
+        tlb.add(new AddRowAction());
+        tlb.add(new DeleteRowAction());
+        tlb.add(new HelpAction(helpDialog, GUIGlobals.nameFormatterHelp,
+                "Help on Name Formatting", GUIGlobals.getIconUrl("helpSmall")));
 
-		public void actionPerformed(ActionEvent e) {
-			int[] rows = table.getSelectedRows();
-			if (rows.length == 0) {
-				// No rows selected, so we just add one at the end.
-				rowCount++;
-				table.revalidate();
-				table.repaint();
-				return;
-			}
-			for (int i = 0; i < rows.length; i++) {
-				if (rows[i] + i - 1 < tableRows.size())
-					tableRows.add(Math.max(0, rows[i] + i - 1), new TableRow());
-			}
-			rowCount += rows.length;
-			if (rows.length > 1)
-				table.clearSelection();
-			table.revalidate();
-			table.repaint();
-			tableChanged = true;
-		}
-	}
+        tabPanel.add(tlb, BorderLayout.EAST);
 
-	/**
-	 * Store changes to table preferences. This method is called when the user
-	 * clicks Ok.
-	 * 
-	 */
-	public void storeSettings() {
+        builder.appendSeparator(Globals.lang("Special Name Formatters"));
+        builder.nextLine();
+        builder.append(pan);
+        builder.append(tabPanel);
+        builder.nextLine();
 
-		if (table.isEditing()) {
-			int col = table.getEditingColumn(), row = table.getEditingRow();
-			table.getCellEditor(row, col).stopCellEditing();
-		}
+        pan = builder.getPanel();
+        pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        add(pan, BorderLayout.CENTER);
+    }
 
-		// Now we need to make sense of the contents the user has made to the
-		// table setup table.
-		if (tableChanged) {
-			// First we remove all rows with empty names.
-			int i = 0;
-			while (i < tableRows.size()) {
-				if (tableRows.elementAt(i).name.equals(""))
-					tableRows.removeElementAt(i);
-				else
-					i++;
-			}
-			// Then we make arrays
-			String[] names = new String[tableRows.size()], formats = new String[tableRows.size()];
+    @Override
+    public void setValues() {
+        tableRows.clear();
+        String[] names = Globals.prefs.getStringArray(NAME_FORMATER_KEY);
+        String[] formats = Globals.prefs.getStringArray(NAME_FORMATTER_VALUE);
 
-			for (i = 0; i < tableRows.size(); i++) {
-				TableRow tr = tableRows.elementAt(i);
-				names[i] = tr.name;
-				formats[i] = tr.format;
-			}
+        if (names == null) {
+            names = new String[]{};
+        }
+        if (formats == null) {
+            formats = new String[]{};
+        }
 
-			// Finally, we store the new preferences.
-			Globals.prefs.putStringArray(NAME_FORMATER_KEY, names);
-			Globals.prefs.putStringArray(NAME_FORMATTER_VALUE, formats);
-		}
-	}
+        for (int i = 0; i < names.length; i++) {
+            if (i < formats.length) {
+                tableRows.add(new TableRow(names[i], formats[i]));
+            } else {
+                tableRows.add(new TableRow(names[i]));
+            }
+        }
+        rowCount = tableRows.size() + 5;
+    }
 
-	public boolean readyToClose() {
-		return true;
-	}
+    class DeleteRowAction extends AbstractAction {
 
-	public String getTabName() {
+        public DeleteRowAction() {
+            super("Delete row", GUIGlobals.getImage("remove"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Delete rows"));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            tableChanged = true;
+
+            int[] selectedRows = table.getSelectedRows();
+
+            int numberDeleted = 0;
+
+            for (int i = selectedRows.length - 1; i >= 0; i--) {
+                if (selectedRows[i] < tableRows.size()) {
+                    tableRows.remove(selectedRows[i]);
+                    numberDeleted++;
+                }
+            }
+
+            rowCount -= numberDeleted;
+
+            if (selectedRows.length > 1) {
+                table.clearSelection();
+            }
+
+            table.revalidate();
+            table.repaint();
+        }
+    }
+
+    class AddRowAction extends AbstractAction {
+
+        public AddRowAction() {
+            super("Add row", GUIGlobals.getImage("add"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("Insert rows"));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int[] rows = table.getSelectedRows();
+            if (rows.length == 0) {
+                // No rows selected, so we just add one at the end.
+                rowCount++;
+                table.revalidate();
+                table.repaint();
+                return;
+            }
+            for (int i = 0; i < rows.length; i++) {
+                if (rows[i] + i - 1 < tableRows.size()) {
+                    tableRows.add(Math.max(0, rows[i] + i - 1), new TableRow());
+                }
+            }
+            rowCount += rows.length;
+            if (rows.length > 1) {
+                table.clearSelection();
+            }
+            table.revalidate();
+            table.repaint();
+            tableChanged = true;
+        }
+    }
+
+    /**
+     * Store changes to table preferences. This method is called when the user
+     * clicks Ok.
+     *
+     */
+    public void storeSettings() {
+
+        if (table.isEditing()) {
+            int col = table.getEditingColumn(), row = table.getEditingRow();
+            table.getCellEditor(row, col).stopCellEditing();
+        }
+
+        // Now we need to make sense of the contents the user has made to the
+        // table setup table.
+        if (tableChanged) {
+            // First we remove all rows with empty names.
+            int i = 0;
+            while (i < tableRows.size()) {
+                if (tableRows.get(i).name.equals("")) {
+                    tableRows.remove(i);
+                } else {
+                    i++;
+                }
+            }
+            // Then we make arrays
+            String[] names = new String[tableRows.size()], formats = new String[tableRows.size()];
+
+            for (i = 0; i < tableRows.size(); i++) {
+                TableRow tr = tableRows.get(i);
+                names[i] = tr.name;
+                formats[i] = tr.format;
+            }
+
+            // Finally, we store the new preferences.
+            Globals.prefs.putStringArray(NAME_FORMATER_KEY, names);
+            Globals.prefs.putStringArray(NAME_FORMATTER_VALUE, formats);
+        }
+    }
+
+    public boolean readyToClose() {
+        return true;
+    }
+
+    public String getTabName() {
         return Globals.lang("Name formatter");
-	}
+    }
 }

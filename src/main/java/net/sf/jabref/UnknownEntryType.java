@@ -12,16 +12,16 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 /**
  * This class is used to represent an unknown entry type, e.g. encountered
- * during bibtex parsing. The only known information is the type name.
- * This is useful if the bibtex file contains type definitions that are used
- * in the file - because the entries will be parsed before the type definitions
- * are found. In the meantime, the entries will be assigned an 
- * UnknownEntryType giving the name.
+ * during bibtex parsing. The only known information is the type name. This is
+ * useful if the bibtex file contains type definitions that are used in the file
+ * - because the entries will be parsed before the type definitions are found.
+ * In the meantime, the entries will be assigned an UnknownEntryType giving the
+ * name.
  */
 public class UnknownEntryType extends BibtexEntryType {
 
@@ -29,27 +29,27 @@ public class UnknownEntryType extends BibtexEntryType {
     private String[] fields = new String[0];
 
     public UnknownEntryType(String name_) {
-	name = name_;
+        name = name_;
     }
 
     public String getName() {
-	return name;
+        return name;
     }
 
     public String[] getOptionalFields() {
-	return fields;
-    }
-    public String[] getRequiredFields() {
-	return fields;
+        return fields;
     }
 
+    public String[] getRequiredFields() {
+        return fields;
+    }
 
     public String describeRequiredFields() {
-	return "unknown";
+        return "unknown";
     }
 
     public boolean hasAllRequiredFields(BibtexEntry entry, BibtexDatabase database) {
-	return true;
+        return true;
     }
 
 }

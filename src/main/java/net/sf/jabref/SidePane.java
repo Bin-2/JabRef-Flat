@@ -12,87 +12,92 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.*;
 import java.util.Collection;
+import javax.swing.BorderFactory;
 
 import javax.swing.Box;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
 
 /**
  * The side pane is displayed at the right side of JabRef and shows instances of
  * SidePaneComponents, for instance the GroupSelector, or the SearchManager2.
- * 
+ *
  * @version $Revision$ ($Date$)
- * 
+ *
  */
 public class SidePane extends JPanel {
 
-	final Dimension PREFERRED_SIZE = new Dimension(GUIGlobals.SPLIT_PANE_DIVIDER_LOCATION, 100);
+    final Dimension PREFERRED_SIZE = new Dimension(GUIGlobals.SPLIT_PANE_DIVIDER_LOCATION, 100);
 
-	GridBagLayout gridBagLayout = new GridBagLayout();
+    GridBagLayout gridBagLayout = new GridBagLayout();
 
-	GridBagConstraints constraint = new GridBagConstraints();
+    GridBagConstraints constraint = new GridBagConstraints();
 
-	JPanel mainPanel = new JPanel();
+    JPanel mainPanel = new JPanel();
 
-	public SidePane() {
+    public SidePane() {
 
-		// For debugging the border:
-		// setBorder(BorderFactory.createLineBorder(Color.BLUE));
+        // For debugging the border:
+        // setBorder(BorderFactory.createLineBorder(Color.BLUE));
 
-		setLayout(new BorderLayout());
-		mainPanel.setLayout(gridBagLayout);
+        // Add right border only
+        // setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("Separator.foreground")));
 
-		// Initialize constraint
-		constraint.anchor = GridBagConstraints.NORTH;
-		constraint.fill = GridBagConstraints.BOTH;
-		constraint.gridwidth = GridBagConstraints.REMAINDER;
-		constraint.insets = new Insets(1, 1, 1, 1);
-		constraint.gridheight = 1;
-		constraint.weightx = 1;
+        setLayout(new BorderLayout());
+        mainPanel.setLayout(gridBagLayout);
 
-		/*
+        // Initialize constraint
+        constraint.anchor = GridBagConstraints.NORTH;
+        constraint.fill = GridBagConstraints.BOTH;
+        constraint.gridwidth = GridBagConstraints.REMAINDER;
+        constraint.insets = new Insets(1, 1, 1, 1);
+        constraint.gridheight = 1;
+        constraint.weightx = 1;
+
+        /*
 		 * Added Scrollpane to fix: 
-		 */
-		JScrollPane sp = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-			JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		sp.setBorder(null);
-		
-		// To remove the scroll panel just change sp to mainPanel and comment
-		// the JScrollPane declaration
-		super.add(sp);
-	}
+         */
+        JScrollPane sp = new JScrollPane(mainPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        sp.setBorder(null);
 
-	public void setComponents(Collection<SidePaneComponent> comps) {
-		mainPanel.removeAll();
+        // To remove the scroll panel just change sp to mainPanel and comment
+        // the JScrollPane declaration
+        super.add(sp);
+    }
 
-		constraint.weighty = 0;
-		for (Component c : comps){
-			gridBagLayout.setConstraints(c, constraint);
-			mainPanel.add(c);
-		}
-		constraint.weighty = 1;
-		Component bx = Box.createVerticalGlue();
-		gridBagLayout.setConstraints(bx, constraint);
-		mainPanel.add(bx);
+    public void setComponents(Collection<SidePaneComponent> comps) {
+        mainPanel.removeAll();
 
-		revalidate();
-		repaint();
-	}
+        constraint.weighty = 0;
+        for (Component c : comps) {
+            gridBagLayout.setConstraints(c, constraint);
+            mainPanel.add(c);
+        }
+        constraint.weighty = 1;
+        Component bx = Box.createVerticalGlue();
+        gridBagLayout.setConstraints(bx, constraint);
+        mainPanel.add(bx);
 
-	public void remove(Component c) {
-		mainPanel.remove(c);
-	}
+        revalidate();
+        repaint();
+    }
 
-	public Dimension getMaximumSize() {
-		return getPreferredSize();
-	}
+    public void remove(Component c) {
+        mainPanel.remove(c);
+    }
 
-	public Dimension getPreferredSize() {
-		return PREFERRED_SIZE;
-	}
+    public Dimension getMaximumSize() {
+        return getPreferredSize();
+    }
+
+    public Dimension getPreferredSize() {
+        return PREFERRED_SIZE;
+    }
 }

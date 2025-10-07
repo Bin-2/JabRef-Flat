@@ -22,28 +22,24 @@ USA
 Further information about the GNU GPL is available at:
 http://www.gnu.org/copyleft/gpl.ja.html
 
-*/
+ */
 package net.sf.jabref;
 
-public class KeyCollisionException extends RuntimeException
-{
-    public KeyCollisionException()
-    {
+public class KeyCollisionException extends RuntimeException {
+
+    public KeyCollisionException() {
         super();
     }
 
-    public KeyCollisionException(String msg)
-    {
+    public KeyCollisionException(String msg) {
         super(msg);
     }
 
-    public KeyCollisionException(String msg, Throwable exception)
-    {
+    public KeyCollisionException(String msg, Throwable exception) {
         super(msg, exception);
     }
 
-    public KeyCollisionException(Throwable exception)
-    {
+    public KeyCollisionException(Throwable exception) {
         super(exception);
     }
 }

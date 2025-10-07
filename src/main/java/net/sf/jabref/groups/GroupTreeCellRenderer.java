@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import java.awt.*;
@@ -21,6 +21,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
 import net.sf.jabref.BibtexEntry;
@@ -40,40 +41,50 @@ public class GroupTreeCellRenderer extends DefaultTreeCellRenderer {
 
     public static final int MAX_DISPLAYED_LETTERS = 35;
 
-    /** The cell over which the user is currently dragging */
+    /**
+     * The cell over which the user is currently dragging
+     */
     protected Object highlight1Cell = null;
     protected Object[] highlight2Cells = null;
     protected Object[] highlight3Cells = null;
     protected Object highlightBorderCell = null;
 
-    public static ImageIcon
-      groupRefiningIcon = GUIGlobals.getImage("groupRefining"),
-      groupIncludingIcon = GUIGlobals.getImage("groupIncluding"),
-      groupRegularIcon = null;
-
+    public static ImageIcon groupRefiningIcon = GUIGlobals.getImage("groupRefining"),
+            groupIncludingIcon = GUIGlobals.getImage("groupIncluding"),
+            groupRegularIcon = null;
 
     public Component getTreeCellRendererComponent(JTree tree, Object value,
             boolean selected, boolean expanded, boolean leaf, int row,
             boolean hasFocus) {
-        if (value == highlight1Cell)
+        if (value == highlight1Cell) {
             selected = true; // show as selected
+        }
         Component c = super.getTreeCellRendererComponent(tree, value, selected,
                 expanded, leaf, row, hasFocus);
         // this is sometimes called from deep within somewhere, with a dummy
         // value (probably for layout etc.), so we've got to check here!
-        if (!(value instanceof GroupTreeNode))
+        if (!(value instanceof GroupTreeNode)) {
             return c;
+        }
         AbstractGroup group = ((GroupTreeNode) value).getGroup();
-        if (group == null || !(c instanceof JLabel))
+        if (group == null || !(c instanceof JLabel)) {
             return c; // sanity check
+        }
         JLabel label = (JLabel) c;
 
-        if (highlightBorderCell != null && highlightBorderCell == value)
-            label.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        else
+        if (highlightBorderCell != null && highlightBorderCell == value) {
+            Color focusColor = UIManager.getColor("Component.focusColor");
+            if (focusColor == null) {
+                // Fallback for themes that don't define focusColor
+                focusColor = UIManager.getColor("TabbedPane.underlineColor");
+            }
+            label.setBorder(BorderFactory.createLineBorder(focusColor));
+        } else {
             label.setBorder(BorderFactory.createEmptyBorder());
+        }
+
         boolean italics = Globals.prefs.getBoolean("groupShowDynamic")
-        && group.isDynamic();
+                && group.isDynamic();
         boolean red = false;
         if (highlight2Cells != null) {
             for (Object highlight2Cell : highlight2Cells) {
@@ -94,55 +105,67 @@ public class GroupTreeCellRenderer extends DefaultTreeCellRenderer {
             }
         }
         String name = group.getName();
-        if (name.length() > MAX_DISPLAYED_LETTERS)
-            name = name.substring(0, MAX_DISPLAYED_LETTERS-2)+"...";
+        if (name.length() > MAX_DISPLAYED_LETTERS) {
+            name = name.substring(0, MAX_DISPLAYED_LETTERS - 2) + "...";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append("<html>");
-        if (red)
+        if (red) {
             sb.append("<font color=\"#FF0000\">");
-        if (underline)
+        }
+        if (underline) {
             sb.append("<u>");
-        if (italics)
+        }
+        if (italics) {
             sb.append("<i>");
+        }
         sb.append(Util.quoteForHTML(name));
         if (Globals.prefs.getBoolean(JabRefPreferences.GROUP_SHOW_NUMBER_OF_ELEMENTS)) {
-        	if (group instanceof ExplicitGroup) {
-        	    sb.append(" [").append(((ExplicitGroup) group).getNumEntries()).append("]");
-        	} else if ((group instanceof KeywordGroup) || (group instanceof SearchGroup)) {
-        		int hits = 0;
-        		for (BibtexEntry entry : JabRef.jrf.basePanel().getDatabase().getEntries()){
-        		    if (group.contains(entry))
-        			hits++;
-        		}
-        		sb.append(" [").append(hits).append("]");
-        	}
+            if (group instanceof ExplicitGroup) {
+                sb.append(" [").append(((ExplicitGroup) group).getNumEntries()).append("]");
+            } else if ((group instanceof KeywordGroup) || (group instanceof SearchGroup)) {
+                int hits = 0;
+                for (BibtexEntry entry : JabRef.jrf.basePanel().getDatabase().getEntries()) {
+                    if (group.contains(entry)) {
+                        hits++;
+                    }
+                }
+                sb.append(" [").append(hits).append("]");
+            }
         }
-        if (italics)
+        if (italics) {
             sb.append("</i>");
-        if (underline)
+        }
+        if (underline) {
             sb.append("</u>");
-        if (red)
+        }
+        if (red) {
             sb.append("</font>");
+        }
         sb.append("</html>");
         final String text = sb.toString();
 
-        if (!label.getText().equals(text))
+        if (!label.getText().equals(text)) {
             label.setText(text);
+        }
         label.setToolTipText("<html>" + group.getShortDescription() + "</html>");
         if (Globals.prefs.getBoolean("groupShowIcons")) {
             switch (group.getHierarchicalContext()) {
-            case AbstractGroup.REFINING:
-                if (label.getIcon() != groupRefiningIcon)
-                    label.setIcon(groupRefiningIcon);
-                break;
-            case AbstractGroup.INCLUDING:
-                if (label.getIcon() != groupIncludingIcon)
-                    label.setIcon(groupIncludingIcon);
-                break;
-            default:
-                if (label.getIcon() != groupRegularIcon)
-                    label.setIcon(groupRegularIcon);
-                break;
+                case AbstractGroup.REFINING:
+                    if (label.getIcon() != groupRefiningIcon) {
+                        label.setIcon(groupRefiningIcon);
+                    }
+                    break;
+                case AbstractGroup.INCLUDING:
+                    if (label.getIcon() != groupIncludingIcon) {
+                        label.setIcon(groupIncludingIcon);
+                    }
+                    break;
+                default:
+                    if (label.getIcon() != groupRegularIcon) {
+                        label.setIcon(groupRegularIcon);
+                    }
+                    break;
             }
         } else {
             label.setIcon(null);
@@ -153,16 +176,15 @@ public class GroupTreeCellRenderer extends DefaultTreeCellRenderer {
     /**
      * For use when dragging: The sepcified cell is always rendered as selected.
      *
-     * @param cell
-     *            The cell over which the user is currently dragging.
+     * @param cell The cell over which the user is currently dragging.
      */
     void setHighlight1Cell(Object cell) {
         this.highlight1Cell = cell;
     }
 
     /**
-     * Highlights the specified cells (in red), or disables highlight if cells ==
-     * null.
+     * Highlights the specified cells (in red), or disables highlight if cells
+     * == null.
      */
     void setHighlight2Cells(Object[] cells) {
         this.highlight2Cells = cells;
@@ -177,8 +199,8 @@ public class GroupTreeCellRenderer extends DefaultTreeCellRenderer {
     }
 
     /**
-     * Highlights the specified cells (by drawing a border around it),
-     * or disables highlight if highlightBorderCell == null.
+     * Highlights the specified cells (by drawing a border around it), or
+     * disables highlight if highlightBorderCell == null.
      */
     void setHighlightBorderCell(Object highlightBorderCell) {
         this.highlightBorderCell = highlightBorderCell;

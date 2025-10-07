@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.*;
@@ -31,37 +31,39 @@ import net.sf.jabref.help.HelpDialog;
 
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 public class ExternalTab extends JPanel implements PrefsTab {
 
-	JabRefPreferences _prefs;
+    JabRefPreferences _prefs;
 
-	JabRefFrame _frame;
+    JabRefFrame _frame;
 
-	JTextField pdfDir, regExpTextField, fileDir, psDir, emailSubject;
-            
+    JTextField pdfDir, regExpTextField, fileDir, psDir, emailSubject;
+
     JCheckBox bibLocationAsFileDir, bibLocAsPrimaryDir, runAutoFileSearch,
             allowFileAutoOpenBrowse, openFoldersOfAttachedFiles;
     JButton editFileTypes;
     ItemListener regExpListener;
 
-	JRadioButton useRegExpComboBox;
+    JRadioButton useRegExpComboBox;
     JRadioButton matchExactKeyOnly = new JRadioButton(Globals.lang("Autolink only files that match the BibTeX key")),
-        matchStartsWithKey = new JRadioButton(Globals.lang("Autolink files with names starting with the BibTeX key"));
+            matchStartsWithKey = new JRadioButton(Globals.lang("Autolink files with names starting with the BibTeX key"));
 
     public ExternalTab(JabRefFrame frame, PrefsDialog3 prefsDiag, JabRefPreferences prefs,
-                       HelpDialog helpDialog) {
-		_prefs = prefs;
-		_frame = frame;
-		setLayout(new BorderLayout());
+            HelpDialog helpDialog) {
+        _prefs = prefs;
+        _frame = frame;
+        setLayout(new BorderLayout());
 
-		psDir = new JTextField(25);
-		pdfDir = new JTextField(25);
+        psDir = new JTextField(25);
+        pdfDir = new JTextField(25);
         fileDir = new JTextField(25);
         bibLocationAsFileDir = new JCheckBox(Globals.lang("Allow file links relative to each bib file's location"));
         bibLocAsPrimaryDir = new JCheckBox(Globals.lang("Use the bib file location as primary file directory"));
         bibLocAsPrimaryDir.setToolTipText(Globals.lang("When downloading files, or moving linked files to the "
-            +"file directory, prefer the bib file location rather than the file directory set above"));
+                + "file directory, prefer the bib file location rather than the file directory set above"));
         bibLocationAsFileDir.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent changeEvent) {
                 bibLocAsPrimaryDir.setEnabled(bibLocationAsFileDir.isSelected());
@@ -72,12 +74,12 @@ public class ExternalTab extends JPanel implements PrefsTab {
         allowFileAutoOpenBrowse = new JCheckBox(Globals.lang("Automatically open browse dialog when creating new file link"));
         regExpTextField = new JTextField(25);
         useRegExpComboBox = new JRadioButton(Globals.lang("Use Regular Expression Search"));
-		regExpListener = new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
-				regExpTextField.setEditable(useRegExpComboBox.isSelected());
-			}
-		};
-		useRegExpComboBox.addItemListener(regExpListener);
+        regExpListener = new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                regExpTextField.setEditable(useRegExpComboBox.isSelected());
+            }
+        };
+        useRegExpComboBox.addItemListener(regExpListener);
 
         editFileTypes.addActionListener(ExternalFileTypeEditor.getAction(prefsDiag));
 
@@ -88,34 +90,35 @@ public class ExternalTab extends JPanel implements PrefsTab {
 
         BrowseAction browse;
 
-		FormLayout layout = new FormLayout(
-			"1dlu, 8dlu, left:pref, 4dlu, fill:150dlu, 4dlu, fill:pref","");
+        FormLayout layout = new FormLayout(
+                "1dlu, 8dlu, left:pref, 4dlu, fill:150dlu, 4dlu, fill:pref", "");
 
-		DefaultFormBuilder builder = new DefaultFormBuilder(layout);
+        DefaultFormBuilder builder = new DefaultFormBuilder(layout);
 
-		builder.appendSeparator(Globals.lang("External file links"));
-		JPanel pan = new JPanel();
-		builder.append(pan);
-		/**
-		 * Fix for [ 1749613 ] About translation
-		 * 
-		 * https://sourceforge.net/tracker/index.php?func=detail&aid=1749613&group_id=92314&atid=600306
-		 * 
-		 * Cannot really use %0 to refer to the file type, since this ruins translation.
-		 */
-		JLabel lab = new JLabel(Globals.lang("Main file directory") + ":");
-		builder.append(lab);
-		builder.append(fileDir);
-		browse = new BrowseAction(_frame, fileDir, true);
-		builder.append(new JButton(browse));
-		builder.nextLine();
+        builder.appendSeparator(Globals.lang("External file links"));
+        JPanel pan = new JPanel();
+        builder.append(pan);
+        /**
+         * Fix for [ 1749613 ] About translation
+         *
+         * https://sourceforge.net/tracker/index.php?func=detail&aid=1749613&group_id=92314&atid=600306
+         *
+         * Cannot really use %0 to refer to the file type, since this ruins
+         * translation.
+         */
+        JLabel lab = new JLabel(Globals.lang("Main file directory") + ":");
+        builder.append(lab);
+        builder.append(fileDir);
+        browse = new BrowseAction(_frame, fileDir, true);
+        builder.append(new JButton(browse));
+        builder.nextLine();
         builder.append(new JPanel());
         builder.append(bibLocationAsFileDir, 3);
         builder.nextLine();
         builder.append(new JPanel());
         builder.append(bibLocAsPrimaryDir, 3);
         builder.nextLine();
-		builder.append(new JPanel());
+        builder.append(new JPanel());
         builder.append(matchStartsWithKey, 3);
         builder.nextLine();
         builder.append(new JPanel());
@@ -123,12 +126,21 @@ public class ExternalTab extends JPanel implements PrefsTab {
         builder.nextLine();
         builder.append(new JPanel());
         builder.append(useRegExpComboBox);
-		builder.append(regExpTextField);
+        builder.append(regExpTextField);
 
-		HelpAction helpAction = new HelpAction(helpDialog, GUIGlobals.regularExpressionSearchHelp,
-			Globals.lang("Help on Regular Expression Search"), GUIGlobals.getIconUrl("helpSmall"));
-		builder.append(helpAction.getIconButton());
-		builder.nextLine();
+//        HelpAction helpAction = new HelpAction(helpDialog, GUIGlobals.regularExpressionSearchHelp,
+//                Globals.lang("Help on Regular Expression Search"), GUIGlobals.getIconUrl("helpSmall"));
+//        builder.append(helpAction.getIconButton());
+        HelpAction helpAction = new HelpAction(helpDialog, GUIGlobals.regularExpressionSearchHelp,
+                Globals.lang("Help on Regular Expression Search"));
+        JButton helpButton = helpAction.getIconButton();
+        Dimension helpButtonSize = new Dimension(22, 22);
+        // System.out.println(helpButtonSize);
+        helpButton.setPreferredSize(helpButtonSize);
+        helpButton.setMinimumSize(helpButtonSize);
+        builder.append(helpButton);
+
+        builder.nextLine();
         builder.append(new JPanel());
         builder.append(runAutoFileSearch, 3);
         builder.nextLine();
@@ -136,48 +148,48 @@ public class ExternalTab extends JPanel implements PrefsTab {
         builder.append(allowFileAutoOpenBrowse);
         builder.nextLine();
 
-		builder.appendSeparator(Globals.lang("Sending of emails"));
-		builder.append(new JPanel());
-		lab = new JLabel(Globals.lang("Subject for sending an email with references").concat(":"));
-		builder.append(lab);
-		emailSubject = new JTextField(25);
-		builder.append(emailSubject);
-		builder.nextLine();
-		builder.append(new JPanel());
-		openFoldersOfAttachedFiles = new JCheckBox(Globals.lang("Automatically open folders of attached files"));
-		builder.append(openFoldersOfAttachedFiles);
-		builder.nextLine();
+        builder.appendSeparator(Globals.lang("Sending of emails"));
+        builder.append(new JPanel());
+        lab = new JLabel(Globals.lang("Subject for sending an email with references").concat(":"));
+        builder.append(lab);
+        emailSubject = new JTextField(25);
+        builder.append(emailSubject);
+        builder.nextLine();
+        builder.append(new JPanel());
+        openFoldersOfAttachedFiles = new JCheckBox(Globals.lang("Automatically open folders of attached files"));
+        builder.append(openFoldersOfAttachedFiles);
+        builder.nextLine();
 
         builder.appendSeparator(Globals.lang("Legacy file fields"));
-		pan = new JPanel();
-		builder.append(pan);		
-		builder.append(new JLabel("<html>"+Globals.lang("Note that these settings are used for the legacy "
-			+"<b>pdf</b> and <b>ps</b> fields only.<br>For most users, setting the <b>Main file directory</b> "
-			+"above should be sufficient.")+"</html>"), 5);
-		builder.nextLine();
-		pan = new JPanel();
-		builder.append(pan);
-		lab = new JLabel(Globals.lang("Main PDF directory") + ":");
-		builder.append(lab);
-		builder.append(pdfDir);
-		browse = new BrowseAction(_frame, pdfDir, true);
-		builder.append(new JButton(browse));
-		builder.nextLine();
+        pan = new JPanel();
+        builder.append(pan);
+        builder.append(new JLabel("<html>" + Globals.lang("Note that these settings are used for the legacy "
+                + "<b>pdf</b> and <b>ps</b> fields only.<br>For most users, setting the <b>Main file directory</b> "
+                + "above should be sufficient.") + "</html>"), 5);
+        builder.nextLine();
+        pan = new JPanel();
+        builder.append(pan);
+        lab = new JLabel(Globals.lang("Main PDF directory") + ":");
+        builder.append(lab);
+        builder.append(pdfDir);
+        browse = new BrowseAction(_frame, pdfDir, true);
+        builder.append(new JButton(browse));
+        builder.nextLine();
 
         pan = new JPanel();
-		builder.append(pan);
-		lab = new JLabel(Globals.lang("Main PS directory") + ":");
-		builder.append(lab);
-		builder.append(psDir);
-		browse = new BrowseAction(_frame, psDir, true);
-		builder.append(new JButton(browse));
-		builder.nextLine();
-		builder.appendSeparator(Globals.lang("External programs"));
+        builder.append(pan);
+        lab = new JLabel(Globals.lang("Main PS directory") + ":");
+        builder.append(lab);
+        builder.append(psDir);
+        browse = new BrowseAction(_frame, psDir, true);
+        builder.append(new JButton(browse));
+        builder.nextLine();
+        builder.appendSeparator(Globals.lang("External programs"));
 
-		builder.nextLine();
+        builder.nextLine();
 
         JPanel butpan = new JPanel();
-        butpan.setLayout(new GridLayout(2,3));
+        butpan.setLayout(new GridLayout(2, 3));
         addSettingsButton(new PushToLyx(), butpan);
         addSettingsButton(new PushToEmacs(), butpan);
         addSettingsButton(new PushToWinEdt(), butpan);
@@ -190,10 +202,10 @@ public class ExternalTab extends JPanel implements PrefsTab {
         builder.nextLine();
         builder.append(pan);
         builder.append(editFileTypes);
-        
+
         pan = builder.getPanel();
-		pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		add(pan, BorderLayout.CENTER);
+        pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        add(pan, BorderLayout.CENTER);
 
     }
 
@@ -218,53 +230,58 @@ public class ExternalTab extends JPanel implements PrefsTab {
         //    b.nextLine();
     }
 
-	public void setValues() {
-		pdfDir.setText(_prefs.get("pdfDirectory"));
-		psDir.setText(_prefs.get("psDirectory"));
-        fileDir.setText(_prefs.get(GUIGlobals.FILE_FIELD+"Directory"));
+    @Override
+    public void setValues() {
+        pdfDir.setText(_prefs.get("pdfDirectory"));
+        psDir.setText(_prefs.get("psDirectory"));
+        fileDir.setText(_prefs.get(GUIGlobals.FILE_FIELD + "Directory"));
         bibLocationAsFileDir.setSelected(_prefs.getBoolean("bibLocationAsFileDir"));
         bibLocAsPrimaryDir.setSelected(_prefs.getBoolean("bibLocAsPrimaryDir"));
         bibLocAsPrimaryDir.setEnabled(bibLocationAsFileDir.isSelected());
         runAutoFileSearch.setSelected(_prefs.getBoolean("runAutomaticFileSearch"));
-		regExpTextField.setText(_prefs.get(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY));
+        regExpTextField.setText(_prefs.get(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY));
         allowFileAutoOpenBrowse.setSelected(_prefs.getBoolean("allowFileAutoOpenBrowse"));
-        
+
         emailSubject.setText(_prefs.get(JabRefPreferences.EMAIL_SUBJECT));
         openFoldersOfAttachedFiles.setSelected(_prefs.getBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES));
 
-        if (_prefs.getBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY))
+        if (_prefs.getBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY)) {
             useRegExpComboBox.setSelected(true);
-        else if (_prefs.getBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY))
+        } else if (_prefs.getBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY)) {
             matchExactKeyOnly.setSelected(true);
-        else
+        } else {
             matchStartsWithKey.setSelected(true);
+        }
     }
 
-	public void storeSettings() {
+    @Override
+    public void storeSettings() {
 
-		_prefs.putBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY, useRegExpComboBox.isSelected());
-		if (useRegExpComboBox.isSelected()) {
-			_prefs.put(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY, regExpTextField.getText());
-		}
+        _prefs.putBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY, useRegExpComboBox.isSelected());
+        if (useRegExpComboBox.isSelected()) {
+            _prefs.put(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY, regExpTextField.getText());
+        }
 
-		// We should maybe do some checking on the validity of the contents?
-		_prefs.put("pdfDirectory", pdfDir.getText());
-		_prefs.put("psDirectory", psDir.getText());
-        _prefs.put(GUIGlobals.FILE_FIELD+"Directory", fileDir.getText());
+        // We should maybe do some checking on the validity of the contents?
+        _prefs.put("pdfDirectory", pdfDir.getText());
+        _prefs.put("psDirectory", psDir.getText());
+        _prefs.put(GUIGlobals.FILE_FIELD + "Directory", fileDir.getText());
         _prefs.putBoolean("bibLocationAsFileDir", bibLocationAsFileDir.isSelected());
         _prefs.putBoolean("bibLocAsPrimaryDir", bibLocAsPrimaryDir.isSelected());
-		_prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, matchExactKeyOnly.isSelected());
+        _prefs.putBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY, matchExactKeyOnly.isSelected());
         _prefs.putBoolean("runAutomaticFileSearch", runAutoFileSearch.isSelected());
         _prefs.putBoolean("allowFileAutoOpenBrowse", allowFileAutoOpenBrowse.isSelected());
         _prefs.put(JabRefPreferences.EMAIL_SUBJECT, emailSubject.getText());
         _prefs.putBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES, openFoldersOfAttachedFiles.isSelected());
     }
 
-	public boolean readyToClose() {
-		return true;
-	}
+    @Override
+    public boolean readyToClose() {
+        return true;
+    }
 
-	public String getTabName() {
-		return Globals.lang("External programs");
-	}
+    @Override
+    public String getTabName() {
+        return Globals.lang("External programs");
+    }
 }

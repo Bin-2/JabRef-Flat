@@ -176,7 +176,7 @@ public class ExplicitGroup extends AbstractGroup implements SearchRule {
      * upon recreation.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(ID).append(Util.quote(m_name, SEPARATOR, QUOTE_CHAR)).append(SEPARATOR).append(m_context).append(SEPARATOR);
         String s;
         // write entries in well-defined order for CVS compatibility
@@ -216,7 +216,7 @@ public class ExplicitGroup extends AbstractGroup implements SearchRule {
     }
 
     public String getShortDescription() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("<b>").append(getName()).append("</b> -").append(Globals.lang("static group"));
         switch (getHierarchicalContext()) {
         case AbstractGroup.INCLUDING:

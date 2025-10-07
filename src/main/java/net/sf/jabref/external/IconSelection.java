@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.awt.BorderLayout;
@@ -46,11 +46,13 @@ import com.jgoodies.forms.builder.ButtonBarBuilder;
  */
 public class IconSelection extends JDialog {
 
-	JList icons;
     List<String> iconKeys;
-	DefaultListModel listModel;
+
+    DefaultListModel<JLabel> listModel = new DefaultListModel<>();
+    JList<JLabel> icons = new JList<>(listModel);  // OK now
+
     JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
     private boolean okPressed = false;
     private int selected = -1;
     private JDialog parent;
@@ -72,6 +74,7 @@ public class IconSelection extends JDialog {
     /**
      * After dialog has closed, this method reports whether a selection was made
      * or it was cancelled.
+     *
      * @return true if a selection was made.
      */
     public boolean isOkPressed() {
@@ -79,10 +82,11 @@ public class IconSelection extends JDialog {
     }
 
     public String getSelectedIconKey() {
-        if (selected >= 0)
+        if (selected >= 0) {
             return iconKeys.get(selected);
-        else
+        } else {
             return null;
+        }
     }
 
     private void init(String initialSelection) {
@@ -90,51 +94,80 @@ public class IconSelection extends JDialog {
         iconKeys = new ArrayList<String>();
         Map<String, String> icns = GUIGlobals.getAllIcons();
         HashSet<ImageIcon> iconSet = new LinkedHashSet<ImageIcon>();
-        for (String key : icns.keySet()){
+        for (String key : icns.keySet()) {
             ImageIcon icon = GUIGlobals.getImage(key);
             if (!iconSet.contains(icon)) {
                 iconKeys.add(key);
-                if (key.equals(initialSelection))
-                    initSelIndex = iconKeys.size()-1;
+                if (key.equals(initialSelection)) {
+                    initSelIndex = iconKeys.size() - 1;
+                }
             }
             iconSet.add(icon);
 
         }
 
-		listModel = new DefaultListModel();
-		icons = new JList(listModel);
+        listModel = new DefaultListModel<>();
+        icons = new JList<>(listModel);
         for (ImageIcon anIconSet : iconSet) {
             listModel.addElement(new JLabel(anIconSet));
         }
-		class MyRenderer implements ListCellRenderer {
-            JLabel comp = new JLabel();
-            public MyRenderer() {
-                comp.setOpaque(true);
-                comp.setIconTextGap(0);
-                comp.setHorizontalAlignment(JLabel.CENTER);
-            }
+//        class MyRenderer implements ListCellRenderer {
+//
+//            JLabel comp = new JLabel();
+//
+//            public MyRenderer() {
+//                comp.setOpaque(true);
+//                comp.setIconTextGap(0);
+//                comp.setHorizontalAlignment(JLabel.CENTER);
+//            }
+//
+//            public Component getListCellRendererComponent(JList list, Object value, int i,
+//                    boolean isSelected,
+//                    boolean hasFocus) {
+//                comp.setText(null);
+//                comp.setIcon(((JLabel) value).getIcon());
+//                if (isSelected) {
+//                    comp.setBackground(list.getSelectionBackground());
+//                    comp.setForeground(list.getSelectionForeground());
+//                    comp.setBorder(BorderFactory.createEtchedBorder());
+//                } else {
+//                    comp.setBackground(list.getBackground());
+//                    comp.setForeground(list.getForeground());
+//                    comp.setBorder(null);
+//                }
+//
+//                return comp;
+//            }
+//        }
+        // Fully typed renderer
+        class MyRenderer implements ListCellRenderer<JLabel> {
 
-			public Component getListCellRendererComponent(JList list, Object value, int i,
-                                                          boolean isSelected, 
-                                                          boolean hasFocus) {
-                comp.setText(null);
-				comp.setIcon(((JLabel) value).getIcon());
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<? extends JLabel> list,
+                    JLabel value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus) {
+
+                // Use the provided JLabel as the component
+                JLabel lbl = value;
+                // Apply standard selection colors
+                lbl.setOpaque(false);
                 if (isSelected) {
-                    comp.setBackground(list.getSelectionBackground());
-                    comp.setForeground(list.getSelectionForeground());
-                    comp.setBorder(BorderFactory.createEtchedBorder());
+                    lbl.setBackground(list.getSelectionBackground());
+                    lbl.setForeground(list.getSelectionForeground());
                 } else {
-                    comp.setBackground(list.getBackground());
-                    comp.setForeground(list.getForeground());
-                    comp.setBorder(null);
+                    lbl.setBackground(list.getBackground());
+                    lbl.setForeground(list.getForeground());
                 }
-
-                return comp;
+                return lbl;
             }
         }
 
-        if (initSelIndex >= 0)
+        if (initSelIndex >= 0) {
             icons.setSelectedIndex(initSelIndex);
+        }
         icons.setCellRenderer(new MyRenderer());
         icons.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         icons.setLayoutOrientation(JList.HORIZONTAL_WRAP);
@@ -144,13 +177,14 @@ public class IconSelection extends JDialog {
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         ok.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 okPressed = true;
-                if (icons.getSelectedValue() != null)
-                    selected = icons.getSelectedIndex(); 
+                if (icons.getSelectedValue() != null) {
+                    selected = icons.getSelectedIndex();
+                }
                 dispose();
             }
         });

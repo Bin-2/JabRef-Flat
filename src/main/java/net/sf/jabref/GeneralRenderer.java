@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.*;
@@ -27,16 +27,20 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
 
     Color background, selBackground = null;
 
+    public GeneralRenderer() {
+        super();
+    }
+
     public GeneralRenderer(Color c) {
         super();
         this.background = c;
         setBackground(c);
     }
 
-
     /**
-     * Renderer with specified foreground and background colors, and default selected
-     * background color.
+     * Renderer with specified foreground and background colors, and default
+     * selected background color.
+     *
      * @param c Foreground color
      * @param fg Background color
      */
@@ -47,7 +51,9 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
     }
 
     /**
-     * Renderer with specified foreground, background and selected background colors
+     * Renderer with specified foreground, background and selected background
+     * colors
+     *
      * @param c Foreground color
      * @param fg Unselected background color
      * @param sel Selected background color
@@ -59,46 +65,56 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
         this.selBackground = sel;
     }
 
+    @Override
     public Component getTableCellRendererComponent(JTable table, Object o, boolean isSelected,
-                                                   boolean hasFocus, int row, int column) {
-        if (selBackground == null)
+            boolean hasFocus, int row, int column) {
+        if (selBackground == null) {
             return super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);
-        else {
+        } else {
             Component c = super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);
-            if (isSelected)
+            if (isSelected) {
                 c.setBackground(selBackground);
-            else
+            } else {
                 c.setBackground(background);
+            }
             return c;
         }
     }
 
-    public void firePropertyChange(String propertyName, boolean old, boolean newV) {}
-    public void firePropertyChange(String propertyName, Object old, Object newV) {}
+    @Override
+    public void firePropertyChange(String propertyName, boolean old, boolean newV) {
+    }
+
+    @Override
+    public void firePropertyChange(String propertyName, Object old, Object newV) {
+    }
 
     /* For enabling the renderer to handle icons. */
+    @Override
     protected void setValue(Object value) {
         //System.out.println(""+value);
         if (value instanceof Icon) {
-            setIcon((Icon)value);
+            setIcon((Icon) value);
             setText(null);
             //super.setValue(null);
         } else if (value instanceof JLabel) {
-          JLabel lab = (JLabel)value;
-          setIcon(lab.getIcon());
-          //table.setToolTipText(lab.getToolTipText());
-          setToolTipText(lab.getToolTipText());
-          if (lab.getIcon() != null)
-            setText(null);
+            JLabel lab = (JLabel) value;
+            setIcon(lab.getIcon());
+            //table.setToolTipText(lab.getToolTipText());
+            setToolTipText(lab.getToolTipText());
+            if (lab.getIcon() != null) {
+                setText(null);
+            }
         } else {
 
             setIcon(null);
             //table.setToolTipText(null);
             setToolTipText(null);
-            if (value != null)
+            if (value != null) {
                 setText(value.toString());
-            else
+            } else {
                 setText(null);
+            }
         }
     }
 
@@ -116,5 +132,4 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
           super.paint(g2);
 
     }*/
-
 }

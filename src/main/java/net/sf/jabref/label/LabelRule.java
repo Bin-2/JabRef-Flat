@@ -12,15 +12,14 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.label;
 
 import net.sf.jabref.BibtexEntry;
 
-public interface LabelRule{
+public interface LabelRule {
 
     // the default rule is that it simply returns what it was given
-    public String applyRule(BibtexEntry oldEntry) ;
-
+    public String applyRule(BibtexEntry oldEntry);
 
 }

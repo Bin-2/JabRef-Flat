@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.label;
 
 import net.sf.jabref.BibtexEntry;
@@ -20,11 +20,9 @@ import net.sf.jabref.BibtexFields;
 
 public class DefaultLabelRule implements LabelRule {
 
-
     // the default rule is that oit simply returns what it was given
-    public String applyRule(BibtexEntry oldEntry){
+    public String applyRule(BibtexEntry oldEntry) {
         return oldEntry.getField(BibtexFields.KEY_FIELD);
     }
-
 
 }

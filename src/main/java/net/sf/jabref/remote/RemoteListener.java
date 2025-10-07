@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.remote;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Vector;
+import java.util.List;
 
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRef;
@@ -33,8 +33,8 @@ import javax.swing.*;
 
 public class RemoteListener extends Thread {
 
-    private JabRef jabref;
-    private ServerSocket socket;
+    private final JabRef jabref;
+    private final ServerSocket socket;
     private boolean active = true, toStop = false;
     private static final String IDENTIFIER = "jabref";
 
@@ -52,6 +52,7 @@ public class RemoteListener extends Thread {
         }
     }
 
+    @Override
     public void run() {
         while (active) {
             try {
@@ -71,16 +72,16 @@ public class RemoteListener extends Thread {
                 out.flush();
 
                 int c;
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 try {
                     while (((c = in.read()) != '\0') && (c >= 0)) {
-                        sb.append((char)c);
+                        sb.append((char) c);
                     }
                     if (sb.length() == 0) {
                         continue;
                     }
                     String[] args = sb.toString().split("\n");
-                    Vector<ParserResult> loaded = jabref.processArguments(args, false);
+                    List<ParserResult> loaded = jabref.processArguments(args, false);
 
                     // put "bringToFront" in the queue
                     // it has to happen before the call to import as the import might open a dialog
@@ -92,9 +93,9 @@ public class RemoteListener extends Thread {
                         }
                     });
 
-                    for (int i=0; i<loaded.size(); i++) {
-                        ParserResult pr = loaded.elementAt(i);
-                        JabRef.jrf.addParserResult(pr, (i==0));
+                    for (int i = 0; i < loaded.size(); i++) {
+                        ParserResult pr = loaded.get(i);
+                        JabRef.jrf.addParserResult(pr, (i == 0));
                     }
 
                     in.close();
@@ -106,8 +107,6 @@ public class RemoteListener extends Thread {
                     out.close();
                     newSocket.close();
                 }
-
-
 
             } catch (SocketException ex) {
                 active = false;
@@ -121,12 +120,13 @@ public class RemoteListener extends Thread {
     public static RemoteListener openRemoteListener(JabRef jabref) {
         try {
             ServerSocket socket = new ServerSocket(Globals.prefs.getInt("remoteServerPort"), 1,
-                    InetAddress.getByAddress(new byte[] {127, 0, 0, 1}));
+                    InetAddress.getByAddress(new byte[]{127, 0, 0, 1}));
             RemoteListener listener = new RemoteListener(jabref, socket);
             return listener;
         } catch (IOException e) {
-            if (!e.getMessage().startsWith("Address already in use"))
+            if (!e.getMessage().startsWith("Address already in use")) {
                 e.printStackTrace();
+            }
             return null;
 
         }
@@ -134,7 +134,9 @@ public class RemoteListener extends Thread {
     }
 
     /**
-     * Attempt to send command line arguments to already running JabRef instance.
+     * Attempt to send command line arguments to already running JabRef
+     * instance.
+     *
      * @param args Command line arguments.
      * @return true if successful, false otherwise.
      */
@@ -147,17 +149,17 @@ public class RemoteListener extends Thread {
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
             int c;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             try {
                 while (((c = in.read()) != '\0') && (c >= 0)) {
-                    sb.append((char)c);
+                    sb.append((char) c);
                 }
             } catch (SocketTimeoutException ex) {
-                 System.out.println("Connection timed out.");
+                System.out.println("Connection timed out.");
             }
 
             if (!IDENTIFIER.equals(sb.toString())) {
-            	String port = String.valueOf(Globals.prefs.getInt("remoteServerPort"));
+                String port = String.valueOf(Globals.prefs.getInt("remoteServerPort"));
                 String error = Globals.lang("Cannot use port %0 for remote operation; another application may be using it. Try specifying another port.", port);
                 System.out.println(error);
                 return false;

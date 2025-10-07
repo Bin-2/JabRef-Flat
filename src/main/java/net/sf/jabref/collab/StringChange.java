@@ -42,7 +42,7 @@ public class StringChange extends Change {
     this.tmp = tmp;
     this.disk = disk;
 
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("<HTML><H2>");
     sb.append(Globals.lang("Modified string"));
     sb.append("</H2><H3>");

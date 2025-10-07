@@ -17,9 +17,10 @@ package net.sf.jabref;
 
 import java.lang.Integer;
 import java.lang.Math;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Collection;
-import java.util.Vector;
+import java.util.List;
 
 import net.sf.jabref.search.*;
 import net.sf.jabref.imports.*;
@@ -62,7 +63,7 @@ public class SearchManagerNoGUI {
         }
         
         Collection<BibtexEntry> entries = database.getEntries();
-        Vector<BibtexEntry> matchEntries = new Vector<BibtexEntry>();
+        List<BibtexEntry> matchEntries = new ArrayList<>();
         for (BibtexEntry entry : entries) {
             boolean hit = searchRules.applyRule(searchOptions, entry) > 0;
             entry.setSearchHit(hit);

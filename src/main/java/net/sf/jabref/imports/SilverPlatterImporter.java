@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.io.InputStream;
@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 import net.sf.jabref.BibtexFields;
 
 /**
- * Imports a SilverPlatter exported file. This is a poor format to parse,
- * so it currently doesn't handle everything correctly.
+ * Imports a SilverPlatter exported file. This is a poor format to parse, so it
+ * currently doesn't handle everything correctly.
  */
 public class SilverPlatterImporter extends ImportFormat {
 
@@ -47,7 +47,7 @@ public class SilverPlatterImporter extends ImportFormat {
      * @see net.sf.jabref.imports.ImportFormat#getCLIId()
      */
     public String getCLIId() {
-      return "silverplatter";
+        return "silverplatter";
     }
 
     /**
@@ -62,13 +62,14 @@ public class SilverPlatterImporter extends ImportFormat {
         // accepting the Inspec format. Then we look for the title entry.
         Pattern pat1 = Pattern.compile("Record.*INSPEC.*");
         String str;
-        while ((str = in.readLine()) != null){
+        while ((str = in.readLine()) != null) {
 
-            if (pat1.matcher(str).find())
+            if (pat1.matcher(str).find()) {
                 return false; // This is an inspec file, so return false.
-
-            if ((str.length()>=5) && (str.substring(0, 5).equals("TI:  ")))
+            }
+            if ((str.length() >= 5) && (str.substring(0, 5).equals("TI:  "))) {
                 return true;
+            }
         }
         return false;
     }
@@ -82,39 +83,49 @@ public class SilverPlatterImporter extends ImportFormat {
         BufferedReader in = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
         boolean isChapter = false;
         String str;
-        StringBuffer sb = new StringBuffer();
-        while ((str = in.readLine()) != null){
-            if (str.length() < 2) sb.append("__::__").append(str);
-            else
-            sb.append("__NEWFIELD__").append(str);
+        StringBuilder sb = new StringBuilder();
+        while ((str = in.readLine()) != null) {
+            if (str.length() < 2) {
+                sb.append("__::__").append(str);
+            } else {
+                sb.append("__NEWFIELD__").append(str);
+            }
         }
         in.close();
         String[] entries = sb.toString().split("__::__");
         String Type = "";
         HashMap<String, String> h = new HashMap<String, String>();
         for (String entry : entries) {
-            if (entry.trim().length() < 6) continue;
+            if (entry.trim().length() < 6) {
+                continue;
+            }
             //System.out.println("'"+entries[i]+"'");
             h.clear();
             String[] fields = entry.split("__NEWFIELD__");
             for (String field : fields) {
-                if (field.length() < 6) continue;
+                if (field.length() < 6) {
+                    continue;
+                }
                 //System.out.println(">"+fields[j]+"<");
                 String s = field;
                 String f3 = s.substring(0, 2);
                 String frest = s.substring(5);
-                if (f3.equals("TI")) h.put("title", frest);
-                    //else if(f3.equals("PY")) h.put("year", frest);
+                if (f3.equals("TI")) {
+                    h.put("title", frest);
+                } //else if(f3.equals("PY")) h.put("year", frest);
                 else if (f3.equals("AU")) {
                     if (frest.trim().endsWith("(ed)")) {
                         String ed = frest.trim();
                         ed = ed.substring(0, ed.length() - 4);
                         h.put("editor", AuthorList.fixAuthor_lastNameFirst(ed.replaceAll(",-", ", ")
                                 .replaceAll(";", " and ")));
-                    } else h.put("author", AuthorList.fixAuthor_lastNameFirst(frest.replaceAll(
-                            ",-", ", ").replaceAll(";", " and ")));
-                } else if (f3.equals("AB")) h.put("abstract", frest);
-                else if (f3.equals("DE")) {
+                    } else {
+                        h.put("author", AuthorList.fixAuthor_lastNameFirst(frest.replaceAll(
+                                ",-", ", ").replaceAll(";", " and ")));
+                    }
+                } else if (f3.equals("AB")) {
+                    h.put("abstract", frest);
+                } else if (f3.equals("DE")) {
                     String kw = frest.replaceAll("-;", ",").toLowerCase();
                     h.put("keywords", kw.substring(0, kw.length() - 1));
                 } else if (f3.equals("SO")) {
@@ -161,15 +172,20 @@ public class SilverPlatterImporter extends ImportFormat {
 
                 } else if (f3.equals("DT")) {
                     frest = frest.trim();
-                    if (frest.equals("Monograph")) Type = "book";
-                    else if (frest.startsWith("Dissertation")) Type = "phdthesis";
-                    else if (frest.toLowerCase().contains("journal")) Type = "article";
-                    else if (frest.equals("Contribution") || frest.equals("Chapter")) {
+                    if (frest.equals("Monograph")) {
+                        Type = "book";
+                    } else if (frest.startsWith("Dissertation")) {
+                        Type = "phdthesis";
+                    } else if (frest.toLowerCase().contains("journal")) {
+                        Type = "article";
+                    } else if (frest.equals("Contribution") || frest.equals("Chapter")) {
                         Type = "incollection";
                         // This entry type contains page numbers and booktitle in the
                         // title field.
                         isChapter = true;
-                    } else Type = frest.replaceAll(" ", "");
+                    } else {
+                        Type = frest.replaceAll(" ", "");
+                    }
                 }
             }
 
@@ -179,9 +195,13 @@ public class SilverPlatterImporter extends ImportFormat {
                     String title = ((String) titleO).trim();
                     int inPos = title.indexOf("\" in ");
                     int pgPos = title.lastIndexOf(" ");
-                    if (inPos > 1) h.put("title", title.substring(1, inPos));
-                    if (pgPos > inPos) h.put("pages", title.substring(pgPos)
-                            .replaceAll("-", "--"));
+                    if (inPos > 1) {
+                        h.put("title", title.substring(1, inPos));
+                    }
+                    if (pgPos > inPos) {
+                        h.put("pages", title.substring(pgPos)
+                                .replaceAll("-", "--"));
+                    }
 
                 }
 
@@ -195,7 +215,6 @@ public class SilverPlatterImporter extends ImportFormat {
             bibitems.add(b);
 
         }
-
 
         return bibitems;
     }

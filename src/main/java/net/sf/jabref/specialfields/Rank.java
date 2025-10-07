@@ -12,35 +12,35 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.specialfields;
 
 import net.sf.jabref.Globals;
 
 public abstract class Rank extends SpecialField {
-	
-	public Rank() {
-		TEXT_DONE_PATTERN = Globals.lang("Set rank to '%0' for %1 entries");
-	}
 
-	public static Rank getInstance() {
-		if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_RANKING_COMPACT)) {
-			return RankCompact.getInstance();
-		} else {
-			return RankExtended.getInstance();
-		}
-	}
-	
-	public String getFieldName() {
-		return SpecialFieldsUtils.FIELDNAME_RANKING;
-	}
+    public Rank() {
+        TEXT_DONE_PATTERN = Globals.lang("Set rank to '%0' for %1 entries");
+    }
 
-	public String getToolTip() {
-		return Globals.lang("Rank");
-	}
-	
-	public String getMenuString() {
-		return Globals.lang("Rank");
-	}
-	
+    public static Rank getInstance() {
+        if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_RANKING_COMPACT)) {
+            return RankCompact.getInstance();
+        } else {
+            return RankExtended.getInstance();
+        }
+    }
+
+    public String getFieldName() {
+        return SpecialFieldsUtils.FIELDNAME_RANKING;
+    }
+
+    public String getToolTip() {
+        return Globals.lang("Rank");
+    }
+
+    public String getMenuString() {
+        return Globals.lang("Rank");
+    }
+
 }

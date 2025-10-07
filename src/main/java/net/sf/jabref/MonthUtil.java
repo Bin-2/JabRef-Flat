@@ -101,10 +101,9 @@ public class MonthUtil {
     }
 
     /**
-     * This method accepts three types of months given:
-     * - Single and Double Digit months from 1 to 12 (01 to 12)
-     * - 3 Digit BibTex strings (jan, feb, mar...)
-     * - Full English Month identifiers.
+     * This method accepts three types of months given: - Single and Double
+     * Digit months from 1 to 12 (01 to 12) - 3 Digit BibTex strings (jan, feb,
+     * mar...) - Full English Month identifiers.
      *
      * @param value the given value
      * @return the corresponding Month instance

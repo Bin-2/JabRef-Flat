@@ -52,10 +52,10 @@ public class BibtexNameFormatterTest {
 
             assertEquals("dlVP", BibtexNameFormatter.formatName(al.getAuthor(0), "{v{}}{l{}}",
                     new Warn() {
-                        public void warn(String s) {
-                            fail(s);
-                        }
-                    }
+                public void warn(String s) {
+                    fail(s);
+                }
+            }
             ));
         }
 
@@ -77,10 +77,10 @@ public class BibtexNameFormatterTest {
     private void assertNameFormat(String string, String string2, int which, String format) {
         assertEquals(string, BibtexNameFormatter.formatName(string2, which, format,
                 new Warn() {
-                    public void warn(String s) {
-                        fail(s);
-                    }
-                }
+            public void warn(String s) {
+                fail(s);
+            }
+        }
         ));
     }
 
@@ -99,19 +99,19 @@ public class BibtexNameFormatterTest {
     @Test
     public void testConsumeToMatchingBrace() {
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             assertEquals(6, BibtexNameFormatter.consumeToMatchingBrace(sb, "{HELLO} {WORLD}"
                     .toCharArray(), 0));
             assertEquals("{HELLO}", sb.toString());
         }
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             assertEquals(18, BibtexNameFormatter.consumeToMatchingBrace(sb, "{HE{L{}L}O} {WORLD}"
                     .toCharArray(), 12));
             assertEquals("{WORLD}", sb.toString());
         }
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             assertEquals(10, BibtexNameFormatter.consumeToMatchingBrace(sb, "{HE{L{}L}O} {WORLD}"
                     .toCharArray(), 0));
             assertEquals("{HE{L{}L}O}", sb.toString());

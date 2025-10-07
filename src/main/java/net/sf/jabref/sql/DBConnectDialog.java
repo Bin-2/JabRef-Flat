@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.sql;
 
 import java.awt.BorderLayout;
@@ -41,7 +41,6 @@ import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
-
 /**
  * Dialog box for collecting database connection strings from the user
  *
@@ -50,17 +49,17 @@ import com.jgoodies.forms.layout.FormLayout;
 public class DBConnectDialog extends JDialog {
 
     // labels
-    JLabel lblServerType     = new JLabel();
+    JLabel lblServerType = new JLabel();
     JLabel lblServerHostname = new JLabel();
-    JLabel lblDatabase       = new JLabel();
-    JLabel lblUsername       = new JLabel();
-    JLabel lblPassword       = new JLabel();
+    JLabel lblDatabase = new JLabel();
+    JLabel lblUsername = new JLabel();
+    JLabel lblPassword = new JLabel();
 
     // input fields
-	JComboBox cmbServerType = new JComboBox();
+    JComboBox<String> cmbServerType = new JComboBox<>();
     JTextField txtServerHostname = new JTextField(40);
     JTextField txtDatabase = new JTextField(40);
-    JTextField txtUsername = new JTextField(40);        
+    JTextField txtUsername = new JTextField(40);
     JPasswordField pwdPassword = new JPasswordField(40);
     JButton btnConnect = new JButton();
     JButton btnCancel = new JButton();
@@ -73,8 +72,10 @@ public class DBConnectDialog extends JDialog {
 
     private boolean connectToDB = false;
 
-    /** Creates a new instance of DBConnectDialog */
-    public DBConnectDialog( JFrame parent, DBStrings dbs) {
+    /**
+     * Creates a new instance of DBConnectDialog
+     */
+    public DBConnectDialog(JFrame parent, DBStrings dbs) {
 
         super(parent, Globals.lang("Connect to SQL database"), true);
 
@@ -104,10 +105,10 @@ public class DBConnectDialog extends JDialog {
         lblPassword.setText(Globals.lang("Password :"));
 
         // set label text alignment
-        for (JLabel label : lhs){
+        for (JLabel label : lhs) {
             label.setHorizontalAlignment(JLabel.RIGHT);
         }
-        
+
         // set button text
         btnConnect.setText(Globals.lang("Connect"));
         btnCancel.setText(Globals.lang("Cancel"));
@@ -125,13 +126,10 @@ public class DBConnectDialog extends JDialog {
         txtUsername.setText(dbStrings.getUsername());
         pwdPassword.setText(dbStrings.getPassword());
 
-
         // construct dialog
-        DefaultFormBuilder builder = new DefaultFormBuilder(new
-                                 FormLayout("right:pref, 4dlu, fill:pref", ""));
+        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("right:pref, 4dlu, fill:pref", ""));
 
-        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-
+        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         // add labels and input fields
         builder.append(lblServerType);
@@ -169,7 +167,7 @@ public class DBConnectDialog extends JDialog {
 
                 String errorMessage = checkInput();
 
-                if ( errorMessage==null) {
+                if (errorMessage == null) {
                     storeSettings();
                     setVisible(false);
                     setConnectToDB(true);
@@ -206,10 +204,9 @@ public class DBConnectDialog extends JDialog {
     /**
      * Checks the user input, and ensures that required fields have entries
      *
-     * @return 
-     *      Appropriate error message to be displayed to user
+     * @return Appropriate error message to be displayed to user
      */
-    private String checkInput () {
+    private String checkInput() {
 
         String[] fields = {"Server Hostname", "Database", "Username"};
         String[] errors = new String[fields.length];
@@ -240,11 +237,11 @@ public class DBConnectDialog extends JDialog {
                 errMsg = errMsg + errors[0] + ".";
                 break;
             case 2:
-                errMsg = errMsg + errors[0] + " and " + errors[1] + "."; 
+                errMsg = errMsg + errors[0] + " and " + errors[1] + ".";
                 break;
             case 3:
-                errMsg = errMsg + errors[0] + ", " +  errors[1] 
-                      + ", and " + errors[2] + ".";
+                errMsg = errMsg + errors[0] + ", " + errors[1]
+                        + ", and " + errors[2] + ".";
                 break;
             default:
 
@@ -256,7 +253,7 @@ public class DBConnectDialog extends JDialog {
     /**
      * Save user input.
      */
-    private void storeSettings () {
+    private void storeSettings() {
         dbStrings.setServerType(cmbServerType.getSelectedItem().toString());
         dbStrings.setServerHostname(txtServerHostname.getText());
         dbStrings.setDatabase(txtDatabase.getText());
@@ -280,7 +277,7 @@ public class DBConnectDialog extends JDialog {
         return dbStrings;
     }
 
-    public void setDBStrings(DBStrings dbStrings) { 
+    public void setDBStrings(DBStrings dbStrings) {
         this.dbStrings = dbStrings;
     }
 

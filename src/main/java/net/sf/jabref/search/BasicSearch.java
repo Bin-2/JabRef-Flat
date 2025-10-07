@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.search;
 
 import java.util.ArrayList;
@@ -30,6 +30,7 @@ import net.sf.jabref.export.layout.format.RemoveLatexCommands;
  * Search rule for simple search.
  */
 public class BasicSearch implements SearchRule {
+
     private boolean caseSensitive;
     private boolean regExp;
     Pattern[] pattern;
@@ -82,13 +83,13 @@ public class BasicSearch implements SearchRule {
 
         if (regExp)
             try {
-                pattern = new Pattern[words.size()];
-                for (int i = 0; i < pattern.length; i++) {
-                    pattern[i] = Pattern.compile(words.get(i), flags);
-                }
-            } catch (PatternSyntaxException ex) {
-                return 0;
+            pattern = new Pattern[words.size()];
+            for (int i = 0; i < pattern.length; i++) {
+                pattern[i] = Pattern.compile(words.get(i), flags);
             }
+        } catch (PatternSyntaxException ex) {
+            return 0;
+        }
 
         //print(words);
         // We need match for all words:
@@ -96,27 +97,27 @@ public class BasicSearch implements SearchRule {
 
         Object fieldContentAsObject;
         String fieldContent;
-        
-        for (String field : bibtexEntry.getAllFields()){
+
+        for (String field : bibtexEntry.getAllFields()) {
             fieldContentAsObject = bibtexEntry.getField(field);
             if (fieldContentAsObject != null) {
                 fieldContent = removeBrackets.format(fieldContentAsObject.toString());
-                if (!caseSensitive)
+                if (!caseSensitive) {
                     fieldContent = fieldContent.toLowerCase();
+                }
                 int index = 0;
                 // Check if we have a match for each of the query words, ignoring
                 // those words for which we already have a match:
-                for (int j=0; j<words.size(); j++) {
+                for (int j = 0; j < words.size(); j++) {
                     if (!regExp) {
                         String s = words.get(j);
                         matchFound[index] = matchFound[index]
-                            || (fieldContent.contains(s));
+                                || (fieldContent.contains(s));
                     } else {
                         if (fieldContent != null) {
-                            Matcher m = pattern[j].matcher
-                                    (removeBrackets.format(fieldContent));
+                            Matcher m = pattern[j].matcher(removeBrackets.format(fieldContent));
                             matchFound[index] = matchFound[index]
-                                || m.find();
+                                    || m.find();
                         }
                     }
 
@@ -126,43 +127,42 @@ public class BasicSearch implements SearchRule {
 
         }
         for (boolean aMatchFound : matchFound) {
-            if (!aMatchFound)
+            if (!aMatchFound) {
                 return 0; // Didn't match all words.
+            }
         }
         return 1; // Matched all words.
     }
 
     private ArrayList<String> parseQuery(String query) {
-        StringBuffer sb = new StringBuffer();
-        ArrayList<String> result = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        ArrayList<String> result = new ArrayList<>();
         int c;
         boolean escaped = false, quoted = false;
-        for (int i=0; i<query.length(); i++) {
+        for (int i = 0; i < query.length(); i++) {
             c = query.charAt(i);
             // Check if we are entering an escape sequence:
-            if (!escaped && (c == '\\'))
+            if (!escaped && (c == '\\')) {
                 escaped = true;
-            else {
+            } else {
                 // See if we have reached the end of a word:
-                if (!escaped && !quoted && Character.isWhitespace((char)c)) {
+                if (!escaped && !quoted && Character.isWhitespace((char) c)) {
                     if (sb.length() > 0) {
                         result.add(sb.toString());
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                     }
-                }
-                else if (c == '"') {
+                } else if (c == '"') {
                     // Whether it is a start or end quote, store the current
                     // word if any:
                     if (sb.length() > 0) {
                         result.add(sb.toString());
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                     }
                     quoted = !quoted;
-                }
-                else {
+                } else {
                     // All other possibilities exhausted, we add the char to
                     // the current word:
-                    sb.append((char)c);
+                    sb.append((char) c);
                 }
                 escaped = false;
             }
@@ -172,6 +172,6 @@ public class BasicSearch implements SearchRule {
             result.add(sb.toString());
         }
 
-        return result; 
+        return result;
     }
 }

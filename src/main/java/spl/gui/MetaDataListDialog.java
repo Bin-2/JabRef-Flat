@@ -1,6 +1,5 @@
 package spl.gui;
 
-
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
@@ -15,7 +14,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Vector;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -34,6 +32,7 @@ import spl.localization.LocalizationSupport;
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 
 public class MetaDataListDialog extends JDialog {
+
     private JPanel contentPane;
     private JTable tableMetadata;
     private JButton buttonOK;
@@ -148,9 +147,9 @@ public class MetaDataListDialog extends JDialog {
                     xmlDocuments = SplWebClient.metadata;
                     if (xmlDocuments != null /*&& xmlDocuments.getDocuments() != null && xmlDocuments.getDocuments().size() > 0*/) {
                         DocumentsWrapper documents = new DocumentsWrapper(xmlDocuments);
-                        List<Vector<String>> vectorList = documents.getDocuments();
-                        for (Vector<String> vector : vectorList) {
-                            tableModel.addRow(vector);
+                        List<List<String>> listOfLists = documents.getDocuments();
+                        for (List<String> list : listOfLists) {
+                            tableModel.addRow(list.toArray());
                         }
 
                         tableMetadata.getSelectionModel().setSelectionInterval(0, 0);
@@ -233,7 +232,6 @@ public class MetaDataListDialog extends JDialog {
         panelMetadata = new JPanel();
         panelMetadata.setLayout(cardLayou);
 
-
         panelMetadata.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
         JScrollPane scrollPane = new JScrollPane();
         scrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), null));
@@ -245,11 +243,11 @@ public class MetaDataListDialog extends JDialog {
         panelMetadata.add(scrollPane, "scrollPane");
         JPanel panelWait = new JPanel();
         panelWait.setLayout(new BorderLayout());
-        panelWait.setBackground(new Color(-1));
+//        panelWait.setBackground(new Color(-1));
         panelMetadata.add(panelWait, "panelWait");
         panelWait.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), null));
         iconLabel = new JLabel();
-        iconLabel.setBackground(new Color(-1));
+//        iconLabel.setBackground(new Color(-1));
         iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
         iconLabel.setHorizontalTextPosition(SwingConstants.TRAILING);
         iconLabel.setIcon(new ImageIcon(getClass().getResource("/spl/gui/ajax-loader.gif")));
@@ -278,7 +276,6 @@ public class MetaDataListDialog extends JDialog {
         blankButton.setText("");
         contentPane.add(bb.getPanel(), BorderLayout.SOUTH);
         iconLabel.setLabelFor(scrollPane);
-
 
     }
 

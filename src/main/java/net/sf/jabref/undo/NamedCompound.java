@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.undo;
 
 import javax.swing.undo.CompoundEdit;
@@ -26,10 +26,11 @@ public class NamedCompound extends CompoundEdit {
     boolean hasEdits = false;
 
     public NamedCompound(String name) {
-	super();
-	this.name = name;
+        super();
+        this.name = name;
     }
 
+    @Override
     public boolean addEdit(UndoableEdit undoableEdit) {
         hasEdits = true;
         return super.addEdit(undoableEdit);
@@ -39,18 +40,34 @@ public class NamedCompound extends CompoundEdit {
         return hasEdits;
     }
 
-    public String getUndoPresentationName() {
-	return Globals.lang("Undo")+": "+name;
+    public boolean shouldAdd() {
+        return hasEdits;
     }
 
+    @Override
+    public String getUndoPresentationName() {
+        return Globals.lang("Undo") + ": " + name;
+    }
+
+    @Override
     public String getRedoPresentationName() {
-	return Globals.lang("Redo")+": "+name;
+        return Globals.lang("Redo") + ": " + name;
+    }
+
+    @Override
+    public boolean canUndo() {
+        return hasEdits && super.canUndo();
+    }
+
+    @Override
+    public boolean canRedo() {
+        return hasEdits && super.canRedo();
     }
 
     /**
      * Returns the name of this compound, without the Undo or Redo prefix.
      */
     public String getNameOnly() {
-      return name;
+        return name;
     }
 }

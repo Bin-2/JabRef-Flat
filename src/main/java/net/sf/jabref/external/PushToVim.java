@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import com.jgoodies.forms.builder.DefaultFormBuilder;
@@ -24,23 +24,20 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: Mar 7, 2007
- * Time: 6:55:56 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: Mar 7, 2007 Time: 6:55:56 PM To
+ * change this template use File | Settings | File Templates.
  */
 public class PushToVim implements PushToApplication {
 
     private JPanel settings = null;
     private JTextField vimPath = new JTextField(30),
-        vimServer = new JTextField(30),
-        citeCommand = new JTextField(30);
+            vimServer = new JTextField(30),
+            citeCommand = new JTextField(30);
 
-    private boolean couldNotConnect=false, couldNotRunClient=false;
+    private boolean couldNotConnect = false, couldNotRunClient = false;
 
     public String getName() {
-        return Globals.lang("Insert selected citations into Vim") ;
+        return Globals.lang("Insert selected citations into Vim");
     }
 
     public String getApplicationName() {
@@ -60,14 +57,15 @@ public class PushToVim implements PushToApplication {
     }
 
     public JPanel getSettingsPanel() {
-        if (settings == null)
+        if (settings == null) {
             initSettingsPanel();
+        }
         vimPath.setText(Globals.prefs.get("vim"));
         vimServer.setText(Globals.prefs.get("vimServer"));
         citeCommand.setText(Globals.prefs.get("citeCommandVim"));
         return settings;
     }
-    
+
     public void storeSettings() {
         Globals.prefs.put("vim", vimPath.getText());
         Globals.prefs.put("vimServer", vimServer.getText());
@@ -94,14 +92,14 @@ public class PushToVim implements PushToApplication {
     }
 
     public void pushEntries(BibtexDatabase database, BibtexEntry[] entries, String keys,
-                            MetaData metaData) {
+            MetaData metaData) {
 
-        couldNotConnect=false;
-        couldNotRunClient=false;
+        couldNotConnect = false;
+        couldNotRunClient = false;
         try {
-                String[] com = new String[] {Globals.prefs.get("vim"), "--servername", Globals.prefs.get("vimServer"), "--remote-send",
-                "<C-\\><C-N>a" + Globals.prefs.get("citeCommandVim") +
-                       "{" + keys + "}"};
+            String[] com = new String[]{Globals.prefs.get("vim"), "--servername", Globals.prefs.get("vimServer"), "--remote-send",
+                "<C-\\><C-N>a" + Globals.prefs.get("citeCommandVim")
+                + "{" + keys + "}"};
 
             final Process p = Runtime.getRuntime().exec(com);
 
@@ -109,16 +107,17 @@ public class PushToVim implements PushToApplication {
                 public void run() {
                     InputStream out = p.getErrorStream();
                     int c;
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     try {
-                        while ((c = out.read()) != -1)
+                        while ((c = out.read()) != -1) {
                             sb.append((char) c);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     // Error stream has been closed. See if there were any errors:
                     if (sb.toString().trim().length() > 0) {
-			System.out.println(sb.toString());
+                        System.out.println(sb.toString());
                         couldNotConnect = true;
                     }
                 }
@@ -126,8 +125,7 @@ public class PushToVim implements PushToApplication {
             Thread t = new Thread(errorListener);
             t.start();
             t.join();
-        }
-        catch (IOException excep) {
+        } catch (IOException excep) {
             couldNotRunClient = true;
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -135,22 +133,21 @@ public class PushToVim implements PushToApplication {
 
     }
 
-
     public void operationCompleted(BasePanel panel) {
-        if (couldNotConnect)
+        if (couldNotConnect) {
             JOptionPane.showMessageDialog(
-                panel.frame(),
-                "<HTML>"+
-                Globals.lang("Could not connect to Vim server. Make sure that "
-														 +"Vim is running<BR>with correct server name.")
-                +"</HTML>",
-                Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
-        else if (couldNotRunClient)
+                    panel.frame(),
+                    "<HTML>"
+                    + Globals.lang("Could not connect to Vim server. Make sure that "
+                            + "Vim is running<BR>with correct server name.")
+                    + "</HTML>",
+                    Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
+        } else if (couldNotRunClient) {
             JOptionPane.showMessageDialog(
-                panel.frame(),
-                Globals.lang("Could not run the 'vim' program."),
-                Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
-        else {
+                    panel.frame(),
+                    Globals.lang("Could not run the 'vim' program."),
+                    Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
+        } else {
             panel.output(Globals.lang("Pushed citations to Vim"));
         }
     }

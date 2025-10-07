@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.specialfields;
 
 import java.util.ArrayList;
@@ -24,40 +24,40 @@ import net.sf.jabref.Globals;
 
 public class Quality extends SpecialField {
 
-	private static Quality INSTANCE;
+    private static Quality INSTANCE;
 
-	public Quality() {
-		ArrayList<SpecialFieldValue> values = new ArrayList<SpecialFieldValue>();
-    	values.add(new SpecialFieldValue(this, "qualityAssured", "toggleQualityAssured", Globals.lang("Toogle quality assured"), GUIGlobals.getImage("qualityAssured"), Globals.lang("Toogle quality assured")));
-		this.setValues(values);
-		TEXT_DONE_PATTERN = "Toggled quality for %0 entries";
-	}
-	
-	public String getFieldName() {
-		return SpecialFieldsUtils.FIELDNAME_QUALITY;
-	}
+    public Quality() {
+        ArrayList<SpecialFieldValue> values = new ArrayList<SpecialFieldValue>();
+        values.add(new SpecialFieldValue(this, "qualityAssured", "toggleQualityAssured", Globals.lang("Toogle quality assured"), GUIGlobals.getImage("qualityAssured"), Globals.lang("Toogle quality assured")));
+        this.setValues(values);
+        TEXT_DONE_PATTERN = "Toggled quality for %0 entries";
+    }
 
-	public static Quality getInstance() {
-		if (INSTANCE == null) {
-			INSTANCE = new Quality();
-		}
-		return INSTANCE;
-	}
-	
-	public ImageIcon getRepresentingIcon() {
-		return this.getValues().get(0).getIcon();
-	}
+    public String getFieldName() {
+        return SpecialFieldsUtils.FIELDNAME_QUALITY;
+    }
 
-	public String getToolTip() {
-		return this.getValues().get(0).getToolTipText();
-	}
+    public static Quality getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new Quality();
+        }
+        return INSTANCE;
+    }
 
-	public String getMenuString() {
-		return Globals.lang("Quality");
-	}
-	
-	public boolean isSingleValueField() {
-		return true;
-	}
+    public ImageIcon getRepresentingIcon() {
+        return this.getValues().get(0).getIcon();
+    }
+
+    public String getToolTip() {
+        return this.getValues().get(0).getToolTipText();
+    }
+
+    public String getMenuString() {
+        return Globals.lang("Quality");
+    }
+
+    public boolean isSingleValueField() {
+        return true;
+    }
 
 }

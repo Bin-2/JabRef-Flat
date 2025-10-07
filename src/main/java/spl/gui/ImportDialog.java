@@ -14,18 +14,19 @@ import java.awt.event.*;
 import java.io.File;
 
 public class ImportDialog extends JDialog {
-	public final static int NOMETA = 0;
-	public final static int XMP = 1;
-	public final static int CONTENT = 2;
-	public final static int MRDLIB = 3;
-	public final static int ONLYATTACH = 4;
-	public final static int UPDATEEMPTYFIELDS = 5;
-	
+
+    public final static int NOMETA = 0;
+    public final static int XMP = 1;
+    public final static int CONTENT = 2;
+    public final static int MRDLIB = 3;
+    public final static int ONLYATTACH = 4;
+    public final static int UPDATEEMPTYFIELDS = 5;
+
     private JPanel contentPane;
     private JCheckBox checkBoxDoNotShowAgain;
-   	private JCheckBox useDefaultPDFImportStyle;
+    private JCheckBox useDefaultPDFImportStyle;
     private JRadioButton radioButtonXmp;
-	private JRadioButton radioButtonPDFcontent;
+    private JRadioButton radioButtonPDFcontent;
     private JRadioButton radioButtonMrDlib;
     private JRadioButton radioButtonNoMeta;
     private JRadioButton radioButtononlyAttachPDF;
@@ -38,7 +39,7 @@ public class ImportDialog extends JDialog {
         contentPane.setLayout(new BorderLayout());
         setContentPane(contentPane);
         JPanel panel3 = new JPanel();
-        panel3.setBackground(new Color(-1643275));
+//        panel3.setBackground(new Color(-1643275));
         JLabel labelHeadline = new JLabel(Globals.lang("Import_Metadata_from:"));
         labelHeadline.setFont(new Font(labelHeadline.getFont().getName(), Font.BOLD, 14));
         JLabel labelSubHeadline = new JLabel(Globals.lang("Choose_the_source_for_the_metadata_import"));
@@ -48,12 +49,12 @@ public class ImportDialog extends JDialog {
         JPanel headLinePanel = new JPanel();
         headLinePanel.add(labelHeadline);
         headLinePanel.add(labelFileName);
-        headLinePanel.setBackground(new Color(-1643275));
-        GridLayout gl = new GridLayout(2,1);
+//        headLinePanel.setBackground(new Color(-1643275));
+        GridLayout gl = new GridLayout(2, 1);
         gl.setVgap(10);
         gl.setHgap(10);
         panel3.setLayout(gl);
-        panel3.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        panel3.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panel3.add(headLinePanel);
         panel3.add(labelSubHeadline);
         radioButtonNoMeta = new JRadioButton(Globals.lang("Create_blank_entry_linking_the_PDF"));
@@ -64,15 +65,15 @@ public class ImportDialog extends JDialog {
         radioButtonUpdateEmptyFields = new JRadioButton(Globals.lang("Update_empty_fields_with_data_fetched_from"));
         JLabel labelMrDlib1 = new JLabel("Mr._dLib");
         labelMrDlib1.setFont(new Font(labelMrDlib1.getFont().getName(), Font.BOLD, 13));
-        labelMrDlib1.setForeground(new Color(-16776961));
+//        labelMrDlib1.setForeground(new Color(-16776961));
         JLabel labelMrDlib2 = new JLabel("Mr._dLib");
         labelMrDlib2.setFont(new Font(labelMrDlib1.getFont().getName(), Font.BOLD, 13));
-        labelMrDlib2.setForeground(new Color(-16776961));
+//        labelMrDlib2.setForeground(new Color(-16776961));
         JButton buttonOK = new JButton(Globals.lang("Ok"));
         JButton buttonCancel = new JButton(Globals.lang("Cancel"));
         checkBoxDoNotShowAgain = new JCheckBox(Globals.lang("Do not show this box again for this import"));
         useDefaultPDFImportStyle = new JCheckBox(Globals.lang("Always use this PDF import style (and do not ask for each import)"));
-        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("left:pref, 5dlu, left:pref:grow",""));
+        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("left:pref, 5dlu, left:pref:grow", ""));
         b.appendSeparator(Globals.lang("Create New Entry"));
         b.append(radioButtonNoMeta, 3);
         b.append(radioButtonXmp, 3);
@@ -86,14 +87,14 @@ public class ImportDialog extends JDialog {
         b.nextLine();
         b.append(checkBoxDoNotShowAgain);
         b.append(useDefaultPDFImportStyle);
-        b.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        b.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         ButtonBarBuilder bb = new ButtonBarBuilder();
         bb.addGlue();
         bb.addButton(buttonOK);
         bb.addButton(buttonCancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-        
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
         contentPane.add(panel3, BorderLayout.NORTH);
         contentPane.add(b.getPanel(), BorderLayout.CENTER);
         contentPane.add(bb.getPanel(), BorderLayout.SOUTH);
@@ -116,7 +117,7 @@ public class ImportDialog extends JDialog {
 
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
-        
+
         // only one of the radio buttons may be selected.
         ButtonGroup bg = new ButtonGroup();
         bg.add(radioButtonNoMeta);
@@ -152,38 +153,38 @@ public class ImportDialog extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         switch (Globals.prefs.getInt(ImportSettingsTab.PREF_IMPORT_DEFAULT_PDF_IMPORT_STYLE)) {
-		case NOMETA:
-			radioButtonNoMeta.setSelected(true);
-			break;
-		case XMP:
-			radioButtonXmp.setSelected(true);
-			break;
-		case CONTENT:
-			radioButtonPDFcontent.setSelected(true);
-			break;
-		case MRDLIB:
-			radioButtonMrDlib.setSelected(true);
-			break;
-		case ONLYATTACH:
-			radioButtononlyAttachPDF.setSelected(true);
-			break;
-		case UPDATEEMPTYFIELDS:
-			radioButtonUpdateEmptyFields.setSelected(true);
-			break;
-		default:
-			// fallback
-			radioButtonPDFcontent.setSelected(true);
-			break;
-		}
+            case NOMETA:
+                radioButtonNoMeta.setSelected(true);
+                break;
+            case XMP:
+                radioButtonXmp.setSelected(true);
+                break;
+            case CONTENT:
+                radioButtonPDFcontent.setSelected(true);
+                break;
+            case MRDLIB:
+                radioButtonMrDlib.setSelected(true);
+                break;
+            case ONLYATTACH:
+                radioButtononlyAttachPDF.setSelected(true);
+                break;
+            case UPDATEEMPTYFIELDS:
+                radioButtonUpdateEmptyFields.setSelected(true);
+                break;
+            default:
+                // fallback
+                radioButtonPDFcontent.setSelected(true);
+                break;
+        }
 
         this.setSize(555, 371);
     }
 
     private void onOK() {
-        this.result = JOptionPane.OK_OPTION;        
-        Globals.prefs.putInt(ImportSettingsTab.PREF_IMPORT_DEFAULT_PDF_IMPORT_STYLE, this.getChoice());   
+        this.result = JOptionPane.OK_OPTION;
+        Globals.prefs.putInt(ImportSettingsTab.PREF_IMPORT_DEFAULT_PDF_IMPORT_STYLE, this.getChoice());
         if (useDefaultPDFImportStyle.isSelected()) {
-        	Globals.prefs.putBoolean(ImportSettingsTab.PREF_IMPORT_ALWAYSUSE, true);
+            Globals.prefs.putBoolean(ImportSettingsTab.PREF_IMPORT_ALWAYSUSE, true);
         }
         // checkBoxDoNotShowAgain handled by local variable
         dispose();
@@ -196,27 +197,29 @@ public class ImportDialog extends JDialog {
 
     public void showDialog() {
         this.pack();
-       	this.setVisible(true);
+        this.setVisible(true);
     }
-    
+
     public int getChoice() {
-    	if (radioButtonXmp.isSelected())
-    		return XMP;
-    	else if (radioButtonPDFcontent.isSelected())
-    		return CONTENT;
-    	else if (radioButtonMrDlib.isSelected())
-    		return MRDLIB;
-    	else if (radioButtonNoMeta.isSelected())
-    		return NOMETA;
-    	else if (radioButtononlyAttachPDF.isSelected())
-    		return ONLYATTACH;
-    	else if (radioButtonUpdateEmptyFields.isSelected())
-    		return UPDATEEMPTYFIELDS;
-    	else throw new IllegalStateException();
+        if (radioButtonXmp.isSelected()) {
+            return XMP;
+        } else if (radioButtonPDFcontent.isSelected()) {
+            return CONTENT;
+        } else if (radioButtonMrDlib.isSelected()) {
+            return MRDLIB;
+        } else if (radioButtonNoMeta.isSelected()) {
+            return NOMETA;
+        } else if (radioButtononlyAttachPDF.isSelected()) {
+            return ONLYATTACH;
+        } else if (radioButtonUpdateEmptyFields.isSelected()) {
+            return UPDATEEMPTYFIELDS;
+        } else {
+            throw new IllegalStateException();
+        }
     }
 
     public boolean getDoNotShowAgain() {
-    	return this.checkBoxDoNotShowAgain.isSelected();
+        return this.checkBoxDoNotShowAgain.isSelected();
     }
 
     public int getResult() {
@@ -227,7 +230,7 @@ public class ImportDialog extends JDialog {
         return contentPane;
     }
 
-	public void disableXMPChoice() {
-		this.radioButtonXmp.setEnabled(false);
-	}
+    public void disableXMPChoice() {
+        this.radioButtonXmp.setEnabled(false);
+    }
 }

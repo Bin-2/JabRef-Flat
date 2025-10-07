@@ -24,16 +24,13 @@
  http://www.gnu.org/copyleft/gpl.ja.html
 
  */
-
 // created by : r.nagel 19.10.2004
 //
 // function : a popupmenu for bibtex fieldtext editors
 //
 //
 // modified :
-
-
-package net.sf.jabref ;
+package net.sf.jabref;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
@@ -50,103 +47,95 @@ import net.sf.jabref.util.CaseChangeMenu;
 import net.sf.jabref.util.NameListNormalizer;
 import net.sf.jabref.util.GoogleUrlCleaner;
 
-public class FieldTextMenu implements MouseListener
-{
-  private FieldEditor myFieldName ;
-  private JPopupMenu inputMenu = new JPopupMenu() ;
-  private CopyAction copyAct = new CopyAction() ;
+public class FieldTextMenu implements MouseListener {
 
-    public FieldTextMenu(FieldEditor fieldComponent)
-  {
-    myFieldName = fieldComponent ;
+    private FieldEditor myFieldName;
+    private JPopupMenu inputMenu = new JPopupMenu();
+    private CopyAction copyAct = new CopyAction();
 
-    // copy/paste Menu
-      PasteAction pasteAct = new PasteAction();
-      inputMenu.add(pasteAct) ;
-    inputMenu.add( copyAct ) ;
-    inputMenu.addSeparator();
-    inputMenu.add(new ReplaceAction());
-    inputMenu.add(new UrlAction());
+    public FieldTextMenu(FieldEditor fieldComponent) {
+        myFieldName = fieldComponent;
 
-    if (myFieldName.getTextComponent() instanceof JTextComponent)
-        inputMenu.add(new CaseChangeMenu((JTextComponent) myFieldName.getTextComponent()));
-  }
+        // copy/paste Menu
+        PasteAction pasteAct = new PasteAction();
+        inputMenu.add(pasteAct);
+        inputMenu.add(copyAct);
+        inputMenu.addSeparator();
+        inputMenu.add(new ReplaceAction());
+        // inputMenu.add(new UrlAction());
+        // inputMenu.addSeparator();
+        inputMenu.add(new CleanUpTextAction()); // Add the new menu item here
 
-  public void mouseClicked(MouseEvent e)
-  {
-  }
-
-  public void mouseEntered(MouseEvent e)
-  {
-  }
-
-  public void mouseExited(MouseEvent e)
-  {
-  }
-
-  public void mousePressed(MouseEvent e)
-  {
-    maybeShowPopup( e ) ;
-  }
-
-  public void mouseReleased(MouseEvent e)
-  {
-    maybeShowPopup( e ) ;
-  }
-
-  private void maybeShowPopup( MouseEvent e )
-  {
-    if ( e.isPopupTrigger() )
-    {
-      if (myFieldName != null)
-      {
-          myFieldName.requestFocus();
-
-        // enable/disable copy to clipboard if selected text available
-        String txt = myFieldName.getSelectedText() ;
-        boolean cStat = false ;
-        if (txt != null)
-          if (txt.length() > 0)
-            cStat = true ;
-
-        copyAct.setEnabled(cStat);
-        inputMenu.show( e.getComponent(), e.getX(), e.getY() ) ;
-      }
+        if (myFieldName.getTextComponent() instanceof JTextComponent) {
+            inputMenu.add(new CaseChangeMenu((JTextComponent) myFieldName.getTextComponent()));
+        }
     }
-  }
 
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+        maybeShowPopup(e);
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        maybeShowPopup(e);
+    }
+
+    private void maybeShowPopup(MouseEvent e) {
+        if (e.isPopupTrigger()) {
+            if (myFieldName != null) {
+                myFieldName.requestFocus();
+
+                // enable/disable copy to clipboard if selected text available
+                String txt = myFieldName.getSelectedText();
+                boolean cStat = false;
+                if (txt != null) {
+                    if (txt.length() > 0) {
+                        cStat = true;
+                    }
+                }
+
+                copyAct.setEnabled(cStat);
+                inputMenu.show(e.getComponent(), e.getX(), e.getY());
+            }
+        }
+    }
 
 // ---------------------------------------------------------------------------
-  abstract class BasicAction extends AbstractAction
-  {
-    public BasicAction(String text, String description, URL icon)
-    {
-      super(Globals.lang(text), new ImageIcon(icon));
-      putValue(SHORT_DESCRIPTION, Globals.lang(description));
-    }
+    abstract class BasicAction extends AbstractAction {
 
-    public BasicAction(String text, String description, URL icon, KeyStroke key)
-    {
-      super(Globals.lang(text), new ImageIcon(icon));
-      putValue(ACCELERATOR_KEY, key);
-      putValue(SHORT_DESCRIPTION, Globals.lang(description));
-    }
+        public BasicAction(String text, String description, URL icon) {
+            super(Globals.lang(text), new ImageIcon(icon));
+            putValue(SHORT_DESCRIPTION, Globals.lang(description));
+        }
 
-    public BasicAction(String text)
-    {
-      super(Globals.lang(text));
-    }
+        public BasicAction(String text, String description, URL icon, KeyStroke key) {
+            super(Globals.lang(text), new ImageIcon(icon));
+            putValue(ACCELERATOR_KEY, key);
+            putValue(SHORT_DESCRIPTION, Globals.lang(description));
+        }
 
-    public BasicAction(String text, KeyStroke key)
-    {
-      super(Globals.lang(text));
-      putValue(ACCELERATOR_KEY, key);
-    }
+        public BasicAction(String text) {
+            super(Globals.lang(text));
+        }
 
-    public abstract void actionPerformed(ActionEvent e) ;
-  }
+        public BasicAction(String text, KeyStroke key) {
+            super(Globals.lang(text));
+            putValue(ACCELERATOR_KEY, key);
+        }
+
+        public abstract void actionPerformed(ActionEvent e);
+    }
 //---------------------------------------------------------------
-  /*class MenuHeaderAction extends BasicAction
+
+    /*class MenuHeaderAction extends BasicAction
   {
     public MenuHeaderAction(String comment)
     {
@@ -156,84 +145,138 @@ public class FieldTextMenu implements MouseListener
 
     public void actionPerformed(ActionEvent e) { }
   }
-    */
-
+     */
 // ---------------------------------------------------------------------------
-  class PasteAction extends BasicAction
-  {
-    public PasteAction()
-    {
-      super("Paste from clipboard", "Paste from clipboard",
-              GUIGlobals.getIconUrl("paste"));
-    }
+    class PasteAction extends BasicAction {
 
-    public void actionPerformed(ActionEvent e)
-    {
-      try
-      {
-        String data = ClipBoardManager.clipBoard.getClipboardContents() ;
-        if (data != null)
-          if (data.length() > 0)
-            if (myFieldName != null)
-              myFieldName.paste(data);
-      }
-      catch (Exception ignored) {}
+        public PasteAction() {
+            super("Paste from clipboard", "Paste from clipboard",
+                    GUIGlobals.getIconUrl("paste"));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            try {
+                String data = ClipBoardManager.clipBoard.getClipboardContents();
+                if (data != null) {
+                    if (data.length() > 0) {
+                        if (myFieldName != null) {
+                            myFieldName.paste(data);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
-  }
 // ---------------------------------------------------------------------------
-  class CopyAction extends BasicAction
-  {
-    public CopyAction()
-    {
-      super("Copy to clipboard", "Copy to clipboard", GUIGlobals.getIconUrl("copy"));
-    }
 
-    public void actionPerformed(ActionEvent e)
-    {
-      try
-      {
+    class CopyAction extends BasicAction {
+
+        public CopyAction() {
+            super("Copy to clipboard", "Copy to clipboard", GUIGlobals.getIconUrl("copy"));
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            try {
 //        String data = ( String ) systemClip.getContents( null ).getTransferData(
 //            DataFlavor.stringFlavor ) ;
-        if (myFieldName != null)
-        {
-          String data = myFieldName.getSelectedText() ;
-          if (data != null)
-            if (data.length() > 0)
-              ClipBoardManager.clipBoard.setClipboardContents(data);
+                if (myFieldName != null) {
+                    String data = myFieldName.getSelectedText();
+                    if (data != null) {
+                        if (data.length() > 0) {
+                            ClipBoardManager.clipBoard.setClipboardContents(data);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
         }
-      }
-      catch (Exception ignored) {}
     }
-  }
 
-  class ReplaceAction extends BasicAction{
-    public ReplaceAction(){
-        super("Normalize to BibTeX name format");
-        putValue(SHORT_DESCRIPTION, Globals.lang("If possible, normalize this list of names to conform to standard BibTeX name formatting"));
-    }
-    public void actionPerformed(ActionEvent evt){
-        if (myFieldName.getText().equals("")){
-            return;
-        }
-        //myFieldName.selectAll();
-        String input = myFieldName.getText();
-        //myFieldName.setText(input.replaceAll(","," and"));
-        myFieldName.setText(NameListNormalizer.normalizeAuthorList(input));
-    }
-  }
+    class ReplaceAction extends BasicAction {
 
-  class UrlAction extends BasicAction{
-    public UrlAction(){
-        super("Clean Google URL");
-        putValue(SHORT_DESCRIPTION, Globals.lang("If possible, clean URL that Google search returned"));
-    }
-    public void actionPerformed(ActionEvent evt){
-        if (myFieldName.getText().equals("")){
-            return;
+        public ReplaceAction() {
+            super("Normalize to BibTeX name format");
+            putValue(SHORT_DESCRIPTION, Globals.lang("If possible, normalize this list of names to conform to standard BibTeX name formatting"));
         }
-        String input = myFieldName.getText();
-        myFieldName.setText(GoogleUrlCleaner.cleanUrl(input));
+
+        public void actionPerformed(ActionEvent evt) {
+            if (myFieldName.getText().equals("")) {
+                return;
+            }
+            //myFieldName.selectAll();
+            String input = myFieldName.getText();
+            //myFieldName.setText(input.replaceAll(","," and"));
+            myFieldName.setText(NameListNormalizer.normalizeAuthorList(input));
+        }
     }
-  }
+
+    class UrlAction extends BasicAction {
+
+        public UrlAction() {
+            super("Clean Google URL");
+            putValue(SHORT_DESCRIPTION, Globals.lang("If possible, clean URL that Google search returned"));
+        }
+
+        public void actionPerformed(ActionEvent evt) {
+            if (myFieldName.getText().equals("")) {
+                return;
+            }
+            String input = myFieldName.getText();
+            myFieldName.setText(GoogleUrlCleaner.cleanUrl(input));
+        }
+    }
+
+    class CleanUpTextAction extends BasicAction {
+
+        public CleanUpTextAction() {
+            super("Cleanup Text");
+            putValue(SHORT_DESCRIPTION, Globals.lang("Clean up text by joining lines with spaces, preserving paragraph breaks"));
+        }
+
+        public void actionPerformed(ActionEvent evt) {
+            if (myFieldName.getText().equals("")) {
+                return;
+            }
+            String input = myFieldName.getText();
+            myFieldName.setText(cleanupText(input));
+        }
+    }
+
+
+    //***********************************
+    /**
+     * Clean up text by joining lines with spaces, preserving paragraph breaks
+     */
+    private String cleanupText(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        // Normalize line breaks and handle multiple consecutive line breaks
+        String normalized = text.replace("\r\n", "\n").replace("\r", "\n");
+
+        // Split into paragraphs (multiple linebreaks indicate paragraph breaks)
+        String[] paragraphs = normalized.split("\n\\s*\n+");
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < paragraphs.length; i++) {
+            if (i > 0) {
+                result.append("\n\n"); // Separate paragraphs with double line breaks
+            }
+
+            // Clean up individual paragraph
+            String paragraph = paragraphs[i].trim();
+            if (!paragraph.isEmpty()) {
+                // Replace single line breaks within paragraph with spaces
+                String cleanedParagraph = paragraph.replaceAll("\\s*\n\\s*", " ");
+                // Collapse multiple spaces
+                cleanedParagraph = cleanedParagraph.replaceAll("\\s+", " ");
+                result.append(cleanedParagraph.trim());
+            }
+        }
+
+        return result.toString();
+    }
 
 }

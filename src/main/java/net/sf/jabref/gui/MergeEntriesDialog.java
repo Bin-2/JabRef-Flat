@@ -15,6 +15,8 @@
  */
 package net.sf.jabref.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -98,7 +100,7 @@ public class MergeEntriesDialog extends JDialog {
             this.dispose();
             return;
         }
-        
+
         // Store the two entries
         one = selected[0];
         two = selected[1];
@@ -112,12 +114,12 @@ public class MergeEntriesDialog extends JDialog {
         // Remove field starting with __
         Set<String> toberemoved = new TreeSet<String>();
         for (String field : joint) {
-            if(field.startsWith("__")) {
+            if (field.startsWith("__")) {
                 toberemoved.add(field);
             }
         }
-        
-        for (String field: toberemoved) {
+
+        for (String field : toberemoved) {
             joint.remove(field);
         }
 
@@ -126,7 +128,7 @@ public class MergeEntriesDialog extends JDialog {
         rbg = new ButtonGroup[joint.size() + 1];
         identical = new Boolean[joint.size() + 1];
         jointStrings = new String[joint.size()];
-        
+
         // Create layout
         String colSpec = "left:pref, 5px, fill:4cm:grow, 5px, right:pref, 3px, center:pref, 3px, left:pref, 5px, fill:4cm:grow";
         StringBuilder rowBuilder = new StringBuilder("pref, 10px, pref, ");
@@ -138,8 +140,7 @@ public class MergeEntriesDialog extends JDialog {
         FormLayout layout = new FormLayout(colSpec, rowBuilder.toString());
         // layout.setColumnGroups(new int[][] {{3, 11}});
         this.setLayout(layout);
-        
-        
+
         // Set headings
         for (int i = 0; i < 6; i++) {
             JLabel label = new JLabel(columnHeadings[i]);
@@ -151,7 +152,6 @@ public class MergeEntriesDialog extends JDialog {
 
         this.add(new JSeparator(), cc.xyw(1, 2, 11));
 
-        
         // Start with entry type
         BibtexEntryType type1 = one.getType();
         BibtexEntryType type2 = two.getType();
@@ -186,8 +186,6 @@ public class MergeEntriesDialog extends JDialog {
         type2ta.setEditable(false);
         this.add(type2ta, cc.xy(11, 3));
 
-
-
         // For all fields in joint add a row and possibly radio buttons
         int row = 4;
         for (String field : joint) {
@@ -206,7 +204,7 @@ public class MergeEntriesDialog extends JDialog {
             }
 
             if (field.equals("abstract")) {
-            // Treat the abstract field special, maybe more fields? Review? Note?
+                // Treat the abstract field special, maybe more fields? Review? Note?
                 JTextArea tf = new JTextArea();
                 tf.setLineWrap(true);
                 tf.setEditable(false);
@@ -216,7 +214,6 @@ public class MergeEntriesDialog extends JDialog {
                 this.add(jsptf, cc.xy(3, row, "f, f"));
                 tf.setText(string1);
                 tf.setCaretPosition(0);
-
 
             } else {
                 JTextArea tf = new JTextArea(string1);
@@ -344,13 +341,12 @@ public class MergeEntriesDialog extends JDialog {
         if (getWidth() > DIM.width) {
             setSize(new Dimension(DIM.width, getHeight()));
         }
-        
+
         // Everything done, allow any action to actually update the merged entry
         doneBuilding = true;
-        
+
         // Show what we've got
         setVisible(true);
-
 
     }
 
@@ -358,7 +354,7 @@ public class MergeEntriesDialog extends JDialog {
         if (button.equals("cancel")) {
             // Cancelled, throw it away
             panel.output(Globals.lang("Cancelled merging entries"));
-            
+
             dispose();
         } else if (button.equals("newentry")) {
             // Create a new entry and add it to the undo stack
@@ -411,11 +407,10 @@ public class MergeEntriesDialog extends JDialog {
                 }
             }
         }
-        
+
         // Update the PreviewPanel
         pp.setEntry(mergedEntry);
 
-        
         // Update the Bibtex source view
         StringWriter sw = new StringWriter();
         try {

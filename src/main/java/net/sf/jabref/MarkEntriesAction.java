@@ -12,42 +12,48 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
+import java.awt.Color;
 import net.sf.jabref.undo.NamedCompound;
 
 import javax.swing.*;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import net.sf.jabref.gui.ThemeAwareComponent;
 
 /**
  *
  */
-public class MarkEntriesAction extends AbstractWorker implements ActionListener {
+public class MarkEntriesAction extends AbstractWorker implements ActionListener, ThemeAwareComponent {
 
-    private JabRefFrame frame;
+    private final JabRefFrame frame;
     final int level;
-    private JMenuItem menuItem;
+    private final JMenuItem menuItem;
     private int besLength = 0;
 
     public MarkEntriesAction(JabRefFrame frame, int level) {
         this.frame = frame;
         this.level = level;
 
-        //menuItem = new JMenuItem(Globals.menuTitle("Mark entries").replaceAll("&",""));
         menuItem = new JMenuItem("               ");
-        menuItem.setMnemonic(String.valueOf(level+1).charAt(0));
-        menuItem.setBackground(Globals.prefs.getColor("markedEntryBackground"+this.level));
-        menuItem.setOpaque(true);
+        menuItem.setMnemonic(String.valueOf(level + 1).charAt(0));
+
+        updateMenuColor(); // Initial color setup
+        menuItem.setOpaque(true); // Changed to true to show background
         menuItem.addActionListener(this);
+
+        // Register for theme changes
+        ThemeWatcher.register(this);
     }
 
     public JMenuItem getMenuItem() {
         return menuItem;
     }
 
+    @Override
     public void actionPerformed(ActionEvent actionEvent) {
         try {
             this.init();
@@ -58,6 +64,7 @@ public class MarkEntriesAction extends AbstractWorker implements ActionListener 
         }
     }
 
+    @Override
     public void run() {
         BasePanel panel = frame.basePanel();
         BibtexEntry[] bes = panel.getSelectedEntries();
@@ -79,18 +86,51 @@ public class MarkEntriesAction extends AbstractWorker implements ActionListener 
     public void update() {
         String outputStr;
         switch (besLength) {
-        case 0:
-            outputStr = Globals.lang("No entries selected.");
-            break;
-        case 1:
-            frame.basePanel().markBaseChanged();
-            outputStr = Globals.lang("Marked selected entry");
-            break;
-        default:
-            frame.basePanel().markBaseChanged();
-            outputStr = Globals.lang("Marked all %0 selected entries", Integer.toString(besLength));
-            break;
+            case 0:
+                outputStr = Globals.lang("No entries selected.");
+                break;
+            case 1:
+                frame.basePanel().markBaseChanged();
+                outputStr = Globals.lang("Marked selected entry");
+                break;
+            default:
+                frame.basePanel().markBaseChanged();
+                outputStr = Globals.lang("Marked all %0 selected entries", Integer.toString(besLength));
+                break;
         }
         frame.output(outputStr);
     }
+
+    @Override
+    public void onThemeChanged() {
+        // Update menu color when theme changes - always use the original marking color
+        updateMenuColor();
+    }
+
+    private void updateMenuColor() {
+        // Always use the original marking colors, don't let theme changes affect them
+        Color markColor = Globals.prefs.getColor("markedEntryBackground" + level);
+        // System.out.println(markColor);
+        if (markColor != null) {
+            menuItem.setBackground(markColor);
+
+            // Ensure text is readable against the background
+            if (isDarkColor(markColor)) {
+                menuItem.setForeground(Color.WHITE);
+            } else {
+                menuItem.setForeground(Color.BLACK);
+            }
+        }
+    }
+
+    private boolean isDarkColor(Color color) {
+        // Simple luminance calculation
+        double luminance = (0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue()) / 255;
+        return luminance < 0.5;
+    }
+
+    public void cleanup() {
+        ThemeWatcher.unregister(this);
+    }
+
 }

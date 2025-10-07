@@ -1,5 +1,7 @@
 package net.sf.jabref.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import ca.odell.glazedlists.BasicEventList;
 import ca.odell.glazedlists.EventList;
 import ca.odell.glazedlists.gui.TableFormat;
@@ -27,13 +29,12 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
     //protected SortedList<TableEntry> sortedList;
     protected JTable glTable;
     protected JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
     protected JButton selectAll = new JButton(Globals.lang("Select all"));
     protected JButton deselectAll = new JButton(Globals.lang("Deselect all"));
     protected boolean okPressed = false;
     private JabRefFrame frame;
     private int warningLimit;
-
 
     public FetcherPreviewDialog(JabRefFrame frame, int warningLimit, int tableRowHeight) {
         super(frame, Globals.lang("Title"), true);
@@ -66,7 +67,7 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
         });
 
         EventTableModel<TableEntry> tableModelGl = new EventTableModel<TableEntry>(entries,
-                    new EntryTableFormat());
+                new EntryTableFormat());
         glTable = new EntryTable(tableModelGl);
         glTable.setRowHeight(tableRowHeight);
         glTable.getColumnModel().getColumn(0).setMaxWidth(45);
@@ -76,14 +77,14 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
         ButtonStackBuilder builder = new ButtonStackBuilder();
         builder.addButton(selectAll);
         builder.addButton(deselectAll);
-        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         ButtonBarBuilder bb = new ButtonBarBuilder();
         bb.addGlue();
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         JPanel centerPan = new JPanel();
         centerPan.setLayout(new BorderLayout());
@@ -95,9 +96,9 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
 
         // Key bindings:
         AbstractAction closeAction = new AbstractAction() {
-          public void actionPerformed(ActionEvent e) {
-            dispose();
-          }
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
         };
         ActionMap am = centerPan.getActionMap();
         InputMap im = centerPan.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -109,37 +110,41 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
     }
 
     /**
-     * Check whether a large number of entries are selected, and if so, ask the user whether
-     * to go on.
+     * Check whether a large number of entries are selected, and if so, ask the
+     * user whether to go on.
+     *
      * @return true if we should go on
      */
     public boolean verifySelection() {
         int selected = 0;
         for (TableEntry entry : entries) {
-            if (entry.isWanted())
+            if (entry.isWanted()) {
                 selected++;
+            }
         }
         if (selected > warningLimit) {
             int result = JOptionPane.showConfirmDialog(this,
                     Globals.lang("You have selected more than %0 entries for download. Some web sites "
-                    +"might block you if you make too many rapid downloads. Do you want to continue?",
+                            + "might block you if you make too many rapid downloads. Do you want to continue?",
                             String.valueOf(warningLimit)),
                     Globals.lang("Confirm selection"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             return result == JOptionPane.YES_OPTION;
+        } else {
+            return true;
         }
-        else return true;
     }
 
-    public Map<String,Boolean> getSelection() {
-        LinkedHashMap<String, Boolean> selection = new LinkedHashMap<String,Boolean>();
-        for (TableEntry e : entries)
+    public Map<String, Boolean> getSelection() {
+        LinkedHashMap<String, Boolean> selection = new LinkedHashMap<String, Boolean>();
+        for (TableEntry e : entries) {
             selection.put(e.id, e.isWanted());
+        }
         return selection;
     }
 
-        /* (non-Javadoc)
+    /* (non-Javadoc)
 	 * @see net.sf.jabref.gui.ImportInspection#addEntry(net.sf.jabref.BibtexEntry)
-	 */
+     */
     public void addEntry(String entryId, JLabel preview) {
         TableEntry entry = new TableEntry(entryId, preview);
         this.entries.getReadWriteLock().writeLock().lock();
@@ -155,11 +160,12 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
         glTable.repaint();
     }
 
-
     class TableEntry {
+
         private String id;
         private JLabel preview;
         private boolean wanted = false;
+
         public TableEntry(String id, JLabel preview) {
             this.id = id;
             this.preview = preview;
@@ -180,11 +186,13 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
     }
 
     class PreviewRenderer implements TableCellRenderer {
+
         JLabel label = new JLabel();
+
         public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus,
-                                                       int row, int column) {
-            JLabel label = (JLabel)value;
+                boolean isSelected, boolean hasFocus,
+                int row, int column) {
+            JLabel label = (JLabel) value;
             this.label.setText(label.getText());
             return this.label;
         }
@@ -207,12 +215,12 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
          * public TableCellEditor getCellEditor() { return
          * getDefaultEditor(Boolean.class); }
          */
-
         public Class<?> getColumnClass(int col) {
-            if (col == 0)
+            if (col == 0) {
                 return Boolean.class;
-            else
+            } else {
                 return JLabel.class;
+            }
         }
 
         public boolean isCellEditable(int row, int column) {
@@ -236,16 +244,19 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
         }
 
         public String getColumnName(int i) {
-            if (i == 0)
+            if (i == 0) {
                 return Globals.lang("Keep");
-            else
+            } else {
                 return Globals.lang("Preview");
+            }
         }
 
         public Object getColumnValue(TableEntry entry, int i) {
-            if (i == 0)
+            if (i == 0) {
                 return entry.isWanted() ? Boolean.TRUE : Boolean.FALSE;
-            else return entry.getPreview();
+            } else {
+                return entry.getPreview();
+            }
         }
 
     }
@@ -254,11 +265,9 @@ public class FetcherPreviewDialog extends JDialog implements OutputPrinter {
         return okPressed;
     }
 
-
     public void setStatus(String s) {
         frame.setStatus(s);
     }
-
 
     public void showMessage(Object message, String title, int msgType) {
         JOptionPane.showMessageDialog(this, message, title, msgType);

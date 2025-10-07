@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.util.HashMap;
@@ -29,16 +29,12 @@ public class HTMLConverter implements LayoutFormatter {
      Permission to copy in any form is granted for use with
      conforming SGML systems and applications as defined in
      ISO 8879, provided this notice is included in all copies.
-    */
-
-
-	// most of the LaTeX commands can be read at http://en.wikibooks.org/wiki/LaTeX/Accents
-	// The symbols can be looked at http://www.fileformat.info/info/unicode/char/a4/index.htm. Replace "a4" with the U+ number
-	// http://detexify.kirelabs.org/classify.html and http://www.ctan.org/tex-archive/info/symbols/comprehensive/ might help to find the right LaTeX command
-        // http://llg.cubic.org/docs/ent2latex.html and http://www.w3.org/TR/xml-entity-names/byalpha.html are also useful
-        // as well as http://www.w3.org/Math/characters/unicode.xml
-    
-    
+     */
+    // most of the LaTeX commands can be read at http://en.wikibooks.org/wiki/LaTeX/Accents
+    // The symbols can be looked at http://www.fileformat.info/info/unicode/char/a4/index.htm. Replace "a4" with the U+ number
+    // http://detexify.kirelabs.org/classify.html and http://www.ctan.org/tex-archive/info/symbols/comprehensive/ might help to find the right LaTeX command
+    // http://llg.cubic.org/docs/ent2latex.html and http://www.w3.org/TR/xml-entity-names/byalpha.html are also useful
+    // as well as http://www.w3.org/Math/characters/unicode.xml
     // An array of arrays of strings in the format:
     // {"decimal number of HTML entity", "text HTML entity", "corresponding LaTeX command"}
     // Leaving a field empty is OK as it then will not be included
@@ -427,7 +423,7 @@ public class HTMLConverter implements LayoutFormatter {
         {"8970", "lfloor", "\\$\\\\lfloor\\$"}, // left floor = apl downstile, 
         //                                    U+230A ISOamsc  
         {"8971", "rfloor", "\\$\\\\rfloor\\$"}, // right floor, U+230B ISOamsc   
-        
+
         /* Miscellaneous Technical */
         {"9001", "lang", "\\$\\\\langle\\$"}, // left-pointing angle bracket = bra, 
         //                                    U+2329 ISOtech 
@@ -502,7 +498,7 @@ public class HTMLConverter implements LayoutFormatter {
         //                                   U+203A ISO proposed 
         /* rsaquo is proposed but not yet ISO standardized */
         {"8364", "euro", "\\{\\\\texteuro\\}"}, // euro sign, U+20AC NEW 
-            
+
         /* Manually added */
         {"24", "dollar", "\\\\$"}, // Percent
         {"37", "percnt", "\\\\%"}, // Percent
@@ -531,7 +527,7 @@ public class HTMLConverter implements LayoutFormatter {
         {"125", "rbrace", "\\\\\\}"}, // Right curly bracket
         {"", "rcub", "\\\\\\}"}, // Right curly bracket
         {"138", "", "\\{\\\\v\\{S\\}\\}"}, // Line tabulation set   
-     // {"141", "", ""}, // Reverse line feed
+        // {"141", "", ""}, // Reverse line feed
         {"145", "", "`"}, // Apostrophe
         {"146", "", "'"}, // Apostrophe
         {"147", "", "``"}, // Quotation mark
@@ -556,25 +552,25 @@ public class HTMLConverter implements LayoutFormatter {
         {"299", "imacr", "\\{\\\\=\\{\\\\i\\}\\}"}, // small i with macron
         {"302", "Iogon", "\\{\\\\k\\{I\\}\\}"}, // capital I with ogonek
         {"303", "iogon", "\\{\\\\k\\{i\\}\\}"}, // small i with ogonek
-        {"304", "Idot", "\\{\\\\.\\{I\\}\\}"},    // capital I with dot above
-        {"305", "inodot", "\\{\\\\i\\}"},    // Small i without the dot
-        {"", "imath", "\\{\\\\i\\}"},    // Small i without the dot
-        {"321", "Lstrok", "\\{\\\\L\\}"},    // upper case l with stroke
-        {"322", "lstrok", "\\{\\\\l\\}"},    // lower case l with stroke
-        {"348", "Scirc", "\\{\\\\\\^\\{S\\}\\}"},    // upper case S with circumflex
-        {"349", "scirc", "\\{\\\\\\^\\{s\\}\\}"},    // lower case s with circumflex
+        {"304", "Idot", "\\{\\\\.\\{I\\}\\}"}, // capital I with dot above
+        {"305", "inodot", "\\{\\\\i\\}"}, // Small i without the dot
+        {"", "imath", "\\{\\\\i\\}"}, // Small i without the dot
+        {"321", "Lstrok", "\\{\\\\L\\}"}, // upper case l with stroke
+        {"322", "lstrok", "\\{\\\\l\\}"}, // lower case l with stroke
+        {"348", "Scirc", "\\{\\\\\\^\\{S\\}\\}"}, // upper case S with circumflex
+        {"349", "scirc", "\\{\\\\\\^\\{s\\}\\}"}, // lower case s with circumflex
         {"370", "Uogon", "\\{\\\\k\\{U\\}\\}"}, // capital U with ogonek
         {"371", "uogon", "\\{\\\\k\\{u\\}\\}"}, // small u with ogonek
         {"381", "Zcaron", "\\{\\\\v\\{Z\\}\\}"}, // capital Z with caron
         {"382", "zcaron", "\\{\\\\v\\{z\\}\\}"}, // small z with caron
-        {"490", "Oogon", "\\{\\\\k\\{O\\}\\}"},    // capital letter O with ogonek
-        {"491", "oogon", "\\{\\\\k\\{o\\}\\}"},    // small letter o with ogonek
-        {"492", "", "\\{\\\\k\\{\\\\=\\{O\\}\\}\\}"},    // capital letter O with ogonek and macron
-        {"493", "", "\\{\\\\k\\{\\\\=\\{o\\}\\}\\}"},    // small letter o with ogonek and macron
-        {"536", "", "\\{\\\\cb\\{S\\}\\}"},    // capital letter S with comma below, require combelow
-        {"537", "", "\\{\\\\cb\\{s\\}\\}"},    // small letter S with comma below, require combelow
-        {"538", "", "\\{\\\\cb\\{T\\}\\}"},    // capital letter T with comma below, require combelow
-        {"539", "", "\\{\\\\cb\\{t\\}\\}"},    // small letter T with comma below, require combelow
+        {"490", "Oogon", "\\{\\\\k\\{O\\}\\}"}, // capital letter O with ogonek
+        {"491", "oogon", "\\{\\\\k\\{o\\}\\}"}, // small letter o with ogonek
+        {"492", "", "\\{\\\\k\\{\\\\=\\{O\\}\\}\\}"}, // capital letter O with ogonek and macron
+        {"493", "", "\\{\\\\k\\{\\\\=\\{o\\}\\}\\}"}, // small letter o with ogonek and macron
+        {"536", "", "\\{\\\\cb\\{S\\}\\}"}, // capital letter S with comma below, require combelow
+        {"537", "", "\\{\\\\cb\\{s\\}\\}"}, // small letter S with comma below, require combelow
+        {"538", "", "\\{\\\\cb\\{T\\}\\}"}, // capital letter T with comma below, require combelow
+        {"539", "", "\\{\\\\cb\\{t\\}\\}"}, // small letter T with comma below, require combelow
         {"727", "caron", "\\{\\\\v\\{\\}\\}"}, // Caron
         {"", "Hacek", "\\{\\\\v\\{\\}\\}"}, // Caron
         {"728", "breve", "\\{\\\\u\\{\\}\\}"}, // Breve
@@ -583,19 +579,19 @@ public class HTMLConverter implements LayoutFormatter {
         {"730", "ring", "\\{\\\\r\\{\\}\\}"}, // Ring above
         {"731", "ogon", "\\{\\\\k\\{\\}\\}"}, // Ogonek
         {"733", "dblac", "\\{\\\\H\\{\\}\\}"}, // Double acute
-        {"949", "epsi", "\\$\\\\epsilon\\$"},    // Epsilon - double check
-        {"1013", "epsiv", "\\$\\\\varepsilonup\\$"},    // lunate epsilon, requires txfonts
-        {"1055", "", "\\{\\\\cyrchar\\\\CYRP\\}"},    // Cyrillic capital Pe
-        {"1082", "", "\\{\\\\cyrchar\\\\cyrk\\}"},    // Cyrillic small Ka
-     // {"2013", "", ""},    // NKO letter FA -- Maybe en dash = 0x2013?
-     // {"2014", "", ""},    // NKO letter FA -- Maybe em dash = 0x2014?
+        {"949", "epsi", "\\$\\\\epsilon\\$"}, // Epsilon - double check
+        {"1013", "epsiv", "\\$\\\\varepsilonup\\$"}, // lunate epsilon, requires txfonts
+        {"1055", "", "\\{\\\\cyrchar\\\\CYRP\\}"}, // Cyrillic capital Pe
+        {"1082", "", "\\{\\\\cyrchar\\\\cyrk\\}"}, // Cyrillic small Ka
+        // {"2013", "", ""},    // NKO letter FA -- Maybe en dash = 0x2013?
+        // {"2014", "", ""},    // NKO letter FA -- Maybe em dash = 0x2014?
         {"8192", "", "\\\\hspace\\{0.5em\\}"}, // en quad
         {"8193", "", "\\\\hspace\\{1em\\}"}, // em quad
         {"8196", "", "\\\\hspace\\{0.333em\\}"}, // Three-Per-Em Space 
         {"8197", "", "\\\\hspace\\{0.25em\\}"}, // Four-Per-Em Space 
         {"8198", "", "\\\\hspace\\{0.167em\\}"}, // Six-Per-Em Space
-        {"8208", "hyphen", "-"},    // Hyphen
-        {"8229", "nldr", "\\.\\."},    // Double dots - en leader
+        {"8208", "hyphen", "-"}, // Hyphen
+        {"8229", "nldr", "\\.\\."}, // Double dots - en leader
         {"8450", "complexes", "\\$\\\\mathbb\\{C\\}\\$"}, // double struck capital C -- requires e.g. amsfonts
         {"8451", "", "\\$\\\\deg\\$\\{C\\}"}, // Degree Celsius
         {"8459", "Hscr", "\\$\\\\mathcal\\{H\\}\\$"}, // script capital H -- possibly use \mathscr
@@ -608,23 +604,23 @@ public class HTMLConverter implements LayoutFormatter {
         {"8486", "", "\\$\\{\\\\Omega\\}\\$"}, // Omega
         {"8491", "angst", "\\{\\\\AA\\}"}, // Angstrom 
         {"8496", "Escr", "\\$\\\\mathcal\\{E\\}\\$"}, // script capital E 
-        {"8531", "frac13", "\\$\\\\sfrac\\{1\\}\\{3\\}\\$"},    // Vulgar fraction one third
-        {"8532", "frac23", "\\$\\\\sfrac\\{2\\}\\{3\\}\\$"},    // Vulgar fraction two thirds
-        {"8533", "frac15", "\\$\\\\sfrac\\{1\\}\\{5\\}\\$"},    // Vulgar fraction one fifth
-        {"8534", "frac25", "\\$\\\\sfrac\\{2\\}\\{5\\}\\$"},    // Vulgar fraction two fifths
-        {"8535", "frac35", "\\$\\\\sfrac\\{3\\}\\{5\\}\\$"},    // Vulgar fraction three fifths
-        {"8536", "frac45", "\\$\\\\sfrac\\{4\\}\\{5\\}\\$"},    // Vulgar fraction four fifths
-        {"8537", "frac16", "\\$\\\\sfrac\\{1\\}\\{6\\}\\$"},    // Vulgar fraction one sixth
-        {"8538", "frac56", "\\$\\\\sfrac\\{5\\}\\{6\\}\\$"},    // Vulgar fraction five sixths
-        {"8539", "frac18", "\\$\\\\sfrac\\{1\\}\\{8\\}\\$"},    // Vulgar fraction one eighth
-        {"8540", "frac38", "\\$\\\\sfrac\\{3\\}\\{8\\}\\$"},    // Vulgar fraction three eighths
-        {"8541", "frac58", "\\$\\\\sfrac\\{5\\}\\{8\\}\\$"},    // Vulgar fraction five eighths
-        {"8542", "frac78", "\\$\\\\sfrac\\{7\\}\\{8\\}\\$"},    // Vulgar fraction seven eighths
-        {"8710", "", "\\$\\\\triangle\\$"},    // Increment - could use a more appropriate symbol
-        {"8714", "", "\\$\\\\in\\$"},    // Small element in
-        {"8723", "mp", "\\$\\\\mp\\$"},    // Minus-plus
-        {"8729", "bullet", "\\$\\\\bullet\\$"},    // Bullet operator
-        {"8758", "ratio", ":"},    // Colon/ratio
+        {"8531", "frac13", "\\$\\\\sfrac\\{1\\}\\{3\\}\\$"}, // Vulgar fraction one third
+        {"8532", "frac23", "\\$\\\\sfrac\\{2\\}\\{3\\}\\$"}, // Vulgar fraction two thirds
+        {"8533", "frac15", "\\$\\\\sfrac\\{1\\}\\{5\\}\\$"}, // Vulgar fraction one fifth
+        {"8534", "frac25", "\\$\\\\sfrac\\{2\\}\\{5\\}\\$"}, // Vulgar fraction two fifths
+        {"8535", "frac35", "\\$\\\\sfrac\\{3\\}\\{5\\}\\$"}, // Vulgar fraction three fifths
+        {"8536", "frac45", "\\$\\\\sfrac\\{4\\}\\{5\\}\\$"}, // Vulgar fraction four fifths
+        {"8537", "frac16", "\\$\\\\sfrac\\{1\\}\\{6\\}\\$"}, // Vulgar fraction one sixth
+        {"8538", "frac56", "\\$\\\\sfrac\\{5\\}\\{6\\}\\$"}, // Vulgar fraction five sixths
+        {"8539", "frac18", "\\$\\\\sfrac\\{1\\}\\{8\\}\\$"}, // Vulgar fraction one eighth
+        {"8540", "frac38", "\\$\\\\sfrac\\{3\\}\\{8\\}\\$"}, // Vulgar fraction three eighths
+        {"8541", "frac58", "\\$\\\\sfrac\\{5\\}\\{8\\}\\$"}, // Vulgar fraction five eighths
+        {"8542", "frac78", "\\$\\\\sfrac\\{7\\}\\{8\\}\\$"}, // Vulgar fraction seven eighths
+        {"8710", "", "\\$\\\\triangle\\$"}, // Increment - could use a more appropriate symbol
+        {"8714", "", "\\$\\\\in\\$"}, // Small element in
+        {"8723", "mp", "\\$\\\\mp\\$"}, // Minus-plus
+        {"8729", "bullet", "\\$\\\\bullet\\$"}, // Bullet operator
+        {"8758", "ratio", ":"}, // Colon/ratio
         {"8771", "sime", "\\$\\\\simeq\\$"}, // almost equal to = asymptotic to, 
         {"8776", "ap", "\\$\\\\approx\\$"}, // almost equal to = asymptotic to, 
         {"8810", "ll", "\\$\\\\ll\\$"}, // Much less than 
@@ -649,109 +645,106 @@ public class HTMLConverter implements LayoutFormatter {
         {"9633", "square", "\\$\\\\square\\$"}, // White square
         {"9651", "xutri", "\\$\\\\bigtriangleup\\$"}, // White up-pointing big triangle 
         {"9653", "utri", "\\$\\\\triangle\\$"}, // White up-pointing small triangle -- \vartriangle probably
-                                                // better but requires amssymb
-        {"10877", "les", "\\$\\\\leqslant\\$"},    // Less than slanted equal -- requires amssymb 
-        {"10878", "ges", "\\$\\\\geqslant\\$"},    // Less than slanted equal -- requires amssymb 
+        // better but requires amssymb
+        {"10877", "les", "\\$\\\\leqslant\\$"}, // Less than slanted equal -- requires amssymb 
+        {"10878", "ges", "\\$\\\\geqslant\\$"}, // Less than slanted equal -- requires amssymb 
         {"119978", "Oscr", "\\$\\\\mathcal\\{O\\}\\$"}, // script capital O -- possibly use \mathscr
         {"119984", "Uscr", "\\$\\\\mathcal\\{U\\}\\$"} // script capital U -- possibly use \mathscr
-        
     };
-    
-        // List of combining accents
-        private String[][] accentList = new String[][] {
-        {"768", "`"},    // Grave 
-        {"769", "'"},    // Acute
-        {"770", "\\^"},  // Circumflex
-        {"771", "~"},    // Tilde
-        {"772", "="},    // Macron
-        {"773", "="},     // Overline - not completely correct
-        {"774", "u"},    // Breve
-        {"775", "\\."},  // Dot above
-        {"776", "\""},   // Diaeresis
-        {"777", "h"},    // Hook above
-        {"778", "r"},    // Ring 
-        {"779", "H"},    // Double acute
-        {"780", "v"},    // Caron
-        {"781", "\\|"},  // Vertical line above
-        {"782", "U"},     // Double vertical line above
-        {"783", "G"},    // Double grave
-        {"784", "textdotbreve"},    // Candrabindu
-        {"785", "t"},    // Inverted breve
-//        {"786", ""},    // Turned comma above
-//        {"787", ""},    // Comma above
-//        {"788", ""},    // Reversed comma above
-//        {"789", ""},    // Comma above right
-        {"790", "textsubgrave"},    // Grave accent below -requires tipa
-        {"791", "textsubacute"},    // Acute accent below - requires tipa
-        {"792", "textadvancing"},    // Left tack below - requires tipa
-        {"793", "textretracting"},    // Right tack below - requires tipa
-//        {"794", ""},    // Left angle above
-//        {"795", ""},    // Horn
-        {"796", "textsublhalfring"},    // Left half ring below - requires tipa
-        {"797", "textraising"},    // Up tack below - requires tipa
-        {"798", "textlowering"},    // Down tack below - requires tipa
-        {"799", "textsubplus"},    // Plus sign below - requires tipa
-//        {"800", ""},    // Minus sign below
-//        {"801", ""},    // Palatalized hook below
-//        {"802", ""},    // Retroflex hook below
-        {"803", "d"},    // Dot below
-        {"804", "textsubumlaut"},    // Diaeresis below - requires tipa
-        {"805", "textsubring"},    // Ring below - requires tipa
-        {"806", "cb"},    // Comma below - requires combelow
-        {"807", "c"},    // Cedilla
-        {"808", "k"},    // Ogonek
-        {"809", "textsyllabic"},    // Vertical line below - requires tipa
-        {"810", "textsubbridge"},    // Bridge below - requires tipa
-        {"811", "textsubw"},    // Inverted double arch below - requires tipa
-        {"812", "textsubwedge"},    // Caron below
-        {"813", "textsubcircum"},    // Circumflex accent below - requires tipa
-//        {"814", ""},    // Breve below
-        {"815", "textsubarch"},    // Inverted breve below - requires tipa
-        {"816", "textsubtilde"},    // Tilde below - requires tipa
-        {"817", "b"},    // Macron below - not completely correct
-        {"818", "b"},    // Underline
-        {"819", "subdoublebar"},    // Double low line -- requires extraipa
-        {"820", "textsuperimposetilde"},    // Tilde overlay - requires tipa
-//        {"821", ""},    // Short stroke overlay
-//        {"822", ""},    // Long stroke overlay
-//        {"823", ""},    // Short solidus overlay
-//        {"824", ""},    // Long solidus overlay
-        {"825", "textsubrhalfring"},    // Right half ring below - requires tipa
-        {"826", "textinvsubbridge"},    // inverted bridge below - requires tipa
-        {"827", "textsubsquare"},    // Square below - requires tipa
-        {"828", "textseagull"},    // Seagull below - requires tipa
-        {"829", "textovercross"},    // X above - requires tipa
-//        {"830", ""},    // Vertical tilde
-//        {"831", ""},    // Double overline
-//        {"832", ""},    // Grave tone mark
-//        {"833", ""},    // Acute tone mark
-//        {"834", ""},    // Greek perispomeni
-//        {"835", ""},    // Greek koronis
-//        {"836", ""},    // Greek dialytika tonos
-//        {"837", ""},    // Greek ypogegrammeni
-        {"838", "overbridge"},    // Bridge above - requires extraipa
-        {"839", "subdoublebar"},    // Equals sign below - requires extraipa
-        {"840", "subdoublevert"},    // Double vertical line below - requires extraipa
-        {"841", "subcorner"},    // Left angle below - requires extraipa
-        {"842", "crtilde"},    // Not tilde above - requires extraipa
-        {"843", "dottedtilde"},    // Homothetic above - requires extraipa
-        {"844", "doubletilde"},    // Almost equal to above - requires extraipa
-        {"845", "spreadlips"},    // Left right arrow below - requires extraipa
-        {"846", "whistle"},    // Upwards arrow below - requires extraipa
-//        {"864", ""},    // Double tilde
-//        {"865", ""},    // Double inverted breve
-        {"866", "sliding"},    // Double rightwards arrow below - requires extraipa
-        };
 
-        private HashMap<String, String> escapedSymbols = new HashMap<String, String>();
-        private HashMap<Integer, String> escapedAccents = new HashMap<Integer, String>();
-        private HashMap<Integer, String> numSymbols = new HashMap<Integer, String>();
-        private HashMap<Character, String> unicodeSymbols = new HashMap<Character, String>();
-        
-        
-	
-	public HTMLConverter() {
-		super();
+    // List of combining accents
+    private String[][] accentList = new String[][]{
+        {"768", "`"}, // Grave 
+        {"769", "'"}, // Acute
+        {"770", "\\^"}, // Circumflex
+        {"771", "~"}, // Tilde
+        {"772", "="}, // Macron
+        {"773", "="}, // Overline - not completely correct
+        {"774", "u"}, // Breve
+        {"775", "\\."}, // Dot above
+        {"776", "\""}, // Diaeresis
+        {"777", "h"}, // Hook above
+        {"778", "r"}, // Ring 
+        {"779", "H"}, // Double acute
+        {"780", "v"}, // Caron
+        {"781", "\\|"}, // Vertical line above
+        {"782", "U"}, // Double vertical line above
+        {"783", "G"}, // Double grave
+        {"784", "textdotbreve"}, // Candrabindu
+        {"785", "t"}, // Inverted breve
+        //        {"786", ""},    // Turned comma above
+        //        {"787", ""},    // Comma above
+        //        {"788", ""},    // Reversed comma above
+        //        {"789", ""},    // Comma above right
+        {"790", "textsubgrave"}, // Grave accent below -requires tipa
+        {"791", "textsubacute"}, // Acute accent below - requires tipa
+        {"792", "textadvancing"}, // Left tack below - requires tipa
+        {"793", "textretracting"}, // Right tack below - requires tipa
+        //        {"794", ""},    // Left angle above
+        //        {"795", ""},    // Horn
+        {"796", "textsublhalfring"}, // Left half ring below - requires tipa
+        {"797", "textraising"}, // Up tack below - requires tipa
+        {"798", "textlowering"}, // Down tack below - requires tipa
+        {"799", "textsubplus"}, // Plus sign below - requires tipa
+        //        {"800", ""},    // Minus sign below
+        //        {"801", ""},    // Palatalized hook below
+        //        {"802", ""},    // Retroflex hook below
+        {"803", "d"}, // Dot below
+        {"804", "textsubumlaut"}, // Diaeresis below - requires tipa
+        {"805", "textsubring"}, // Ring below - requires tipa
+        {"806", "cb"}, // Comma below - requires combelow
+        {"807", "c"}, // Cedilla
+        {"808", "k"}, // Ogonek
+        {"809", "textsyllabic"}, // Vertical line below - requires tipa
+        {"810", "textsubbridge"}, // Bridge below - requires tipa
+        {"811", "textsubw"}, // Inverted double arch below - requires tipa
+        {"812", "textsubwedge"}, // Caron below
+        {"813", "textsubcircum"}, // Circumflex accent below - requires tipa
+        //        {"814", ""},    // Breve below
+        {"815", "textsubarch"}, // Inverted breve below - requires tipa
+        {"816", "textsubtilde"}, // Tilde below - requires tipa
+        {"817", "b"}, // Macron below - not completely correct
+        {"818", "b"}, // Underline
+        {"819", "subdoublebar"}, // Double low line -- requires extraipa
+        {"820", "textsuperimposetilde"}, // Tilde overlay - requires tipa
+        //        {"821", ""},    // Short stroke overlay
+        //        {"822", ""},    // Long stroke overlay
+        //        {"823", ""},    // Short solidus overlay
+        //        {"824", ""},    // Long solidus overlay
+        {"825", "textsubrhalfring"}, // Right half ring below - requires tipa
+        {"826", "textinvsubbridge"}, // inverted bridge below - requires tipa
+        {"827", "textsubsquare"}, // Square below - requires tipa
+        {"828", "textseagull"}, // Seagull below - requires tipa
+        {"829", "textovercross"}, // X above - requires tipa
+        //        {"830", ""},    // Vertical tilde
+        //        {"831", ""},    // Double overline
+        //        {"832", ""},    // Grave tone mark
+        //        {"833", ""},    // Acute tone mark
+        //        {"834", ""},    // Greek perispomeni
+        //        {"835", ""},    // Greek koronis
+        //        {"836", ""},    // Greek dialytika tonos
+        //        {"837", ""},    // Greek ypogegrammeni
+        {"838", "overbridge"}, // Bridge above - requires extraipa
+        {"839", "subdoublebar"}, // Equals sign below - requires extraipa
+        {"840", "subdoublevert"}, // Double vertical line below - requires extraipa
+        {"841", "subcorner"}, // Left angle below - requires extraipa
+        {"842", "crtilde"}, // Not tilde above - requires extraipa
+        {"843", "dottedtilde"}, // Homothetic above - requires extraipa
+        {"844", "doubletilde"}, // Almost equal to above - requires extraipa
+        {"845", "spreadlips"}, // Left right arrow below - requires extraipa
+        {"846", "whistle"}, // Upwards arrow below - requires extraipa
+        //        {"864", ""},    // Double tilde
+        //        {"865", ""},    // Double inverted breve
+        {"866", "sliding"}, // Double rightwards arrow below - requires extraipa
+    };
+
+    private HashMap<String, String> escapedSymbols = new HashMap<String, String>();
+    private HashMap<Integer, String> escapedAccents = new HashMap<Integer, String>();
+    private HashMap<Integer, String> numSymbols = new HashMap<Integer, String>();
+    private HashMap<Character, String> unicodeSymbols = new HashMap<Character, String>();
+
+    public HTMLConverter() {
+        super();
         for (String[] aConversionList : conversionList) {
             if (aConversionList[2].length() >= 1) {
                 if (aConversionList[1].length() >= 1) {
@@ -770,109 +763,113 @@ public class HTMLConverter implements LayoutFormatter {
         for (String[] anAccentList : accentList) {
             escapedAccents.put(Integer.decode(anAccentList[0]), anAccentList[1]);
         }
-	}
-        
+    }
+
     public String formatUnicode(String text) {
-        if (text == null)
-            return null;    
+        if (text == null) {
+            return null;
+        }
         Set<Character> chars = unicodeSymbols.keySet();
-        for (Character character: chars) {
-                // System.err.println(new Integer((int) character).toString() + ": " + character.toString() + ": " + unicodeSymbols.get(character));
-        	text = text.replaceAll(character.toString(), unicodeSymbols.get(character));
+        for (Character character : chars) {
+            // System.err.println(new Integer((int) character).toString() + ": " + character.toString() + ": " + unicodeSymbols.get(character));
+            text = text.replaceAll(character.toString(), unicodeSymbols.get(character));
         }
         return text;
     }
 
     public String format(String text) {
-        if (text == null)
+        if (text == null) {
             return null;
-        StringBuffer sb = new StringBuffer();
-	// Deal with the form <sup>k</sup>and <sub>k</sub>
+        }
+        StringBuilder sb = new StringBuilder();
+        // Deal with the form <sup>k</sup>and <sub>k</sub>
         // If the result is in text or equation form can be controlled
         // From the "Advanced settings" tab
-        if(Globals.prefs.getBoolean("useConvertToEquation")) {
+        if (Globals.prefs.getBoolean("useConvertToEquation")) {
             text = text.replaceAll("<[ ]?sup>([^<]+)</sup>", "\\$\\^\\{$1\\}\\$");
             text = text.replaceAll("<[ ]?sub>([^<]+)</sub>", "\\$_\\{$1\\}\\$");
         } else {
             text = text.replaceAll("<[ ]?sup>([^<]+)</sup>", "\\\\textsuperscript\\{$1\\}");
             text = text.replaceAll("<[ ]?sub>([^<]+)</sub>", "\\\\textsubscript\\{$1\\}");
         }
-        
+
         // TODO: maybe rewrite this based on regular expressions instead
         // Note that (at least) the IEEE Xplore fetcher must be fixed as it relies on the current way to 
         // remove tags for its image alt-tag to equation converter
-        for (int i=0; i<text.length(); i++) {
+        for (int i = 0; i < text.length(); i++) {
 
             int c = text.charAt(i);
 
             if (c == '<') {
                 i = readTag(text, sb, i);
-            } else
-                sb.append((char)c);
+            } else {
+                sb.append((char) c);
+            }
 
         }
         text = sb.toString();
-        
+
         // Handle text based HTML entities
         Set<String> patterns = escapedSymbols.keySet();
-        for (String pattern: patterns) {
-        	text = text.replaceAll(pattern, escapedSymbols.get(pattern));
+        for (String pattern : patterns) {
+            text = text.replaceAll(pattern, escapedSymbols.get(pattern));
         }
-        
+
         // Handle numerical HTML entities
         Pattern escapedPattern = Pattern.compile("&#([x]*)([0]*)(\\p{XDigit}+);");
         Matcher m = escapedPattern.matcher(text);
         while (m.find()) {
-	    //	    System.err.println("Found pattern: " + m.group(1));
-	    //      System.err.println("Found pattern: " + m.group(2));
+            //	    System.err.println("Found pattern: " + m.group(1));
+            //      System.err.println("Found pattern: " + m.group(2));
             int num = Integer.decode(m.group(1).replace("x", "#") + m.group(3));
-            if(numSymbols.containsKey(num)) {
+            if (numSymbols.containsKey(num)) {
                 text = text.replaceAll("&#" + m.group(1) + m.group(2) + m.group(3) + ";", numSymbols.get(num));
-            } 
+            }
         }
 
         escapedPattern = Pattern.compile("(.)&#([x]*)([0]*)(\\p{XDigit}+);");
         m = escapedPattern.matcher(text);
         while (m.find()) {
-	    //	    System.err.println("Found pattern: " + m.group(1));
-	    //      System.err.println("Found pattern: " + m.group(2));
+            //	    System.err.println("Found pattern: " + m.group(1));
+            //      System.err.println("Found pattern: " + m.group(2));
             int num = Integer.decode(m.group(2).replace("x", "#") + m.group(4));
-            if(escapedAccents.containsKey(num)) {
-                if(m.group(1).equals("i")) {
+            if (escapedAccents.containsKey(num)) {
+                if (m.group(1).equals("i")) {
                     text = text.replaceAll(m.group(1) + "&#" + m.group(2) + m.group(3) + m.group(4) + ";", "\\{\\\\" + escapedAccents.get(num) + "\\{\\\\i\\}\\}");
-                } else if(m.group(1).equals("j")){
+                } else if (m.group(1).equals("j")) {
                     text = text.replaceAll(m.group(1) + "&#" + m.group(2) + m.group(3) + m.group(4) + ";", "\\{\\\\" + escapedAccents.get(num) + "\\{\\\\j\\}\\}");
                 } else {
                     text = text.replaceAll(m.group(1) + "&#" + m.group(2) + m.group(3) + m.group(4) + ";", "\\{\\\\" + escapedAccents.get(num) + "\\{" + m.group(1) + "\\}\\}");
                 }
-            } 
+            }
         }
 
         escapedPattern = Pattern.compile("&#([x]*)([0]*)(\\p{XDigit}+);");
         m = escapedPattern.matcher(text);
         while (m.find()) {
-	    //	    System.err.println("Found pattern: " + m.group(1));
-	    //      System.err.println("Found pattern: " + m.group(2));
+            //	    System.err.println("Found pattern: " + m.group(1));
+            //      System.err.println("Found pattern: " + m.group(2));
             int num = Integer.decode(m.group(1).replace("x", "#") + m.group(3));
             System.err.println("HTML escaped char not converted: " + m.group(1) + m.group(2) + m.group(3) + " = " + Integer.toString(num));
         }
-        
+
         // Remove $$ in case of two adjacent conversions
-        text = text.replace("$$","");
-        
-       // Find non-covered special characters with alphabetic codes
+        text = text.replace("$$", "");
+
+        // Find non-covered special characters with alphabetic codes
         escapedPattern = Pattern.compile("&(\\w+);");
         m = escapedPattern.matcher(text);
         while (m.find()) {
-	    System.err.println("HTML escaped char not converted: " + m.group(1));
-	}
+            System.err.println("HTML escaped char not converted: " + m.group(1));
+        }
 
         return text.trim();
     }
 
     private final int MAX_TAG_LENGTH = 100;
+
     /*private final int MAX_TAG_LENGTH = 30;*/
-    /*private final int MAX_CHAR_LENGTH = 10;
+ /*private final int MAX_CHAR_LENGTH = 10;
 
     private int readHtmlChar(String text, StringBuffer sb, int position) {
         // Have just read the < character that starts the tag.
@@ -884,12 +881,14 @@ public class HTMLConverter implements LayoutFormatter {
         } else return position; // Don't do anything.
     }*/
 
-    private int readTag(String text, StringBuffer sb, int position) {
+    private int readTag(String text, StringBuilder sb, int position) {
         // Have just read the < character that starts the tag.
         int index = text.indexOf('>', position);
-        if ((index > position) && (index-position < MAX_TAG_LENGTH)) {
+        if ((index > position) && (index - position < MAX_TAG_LENGTH)) {
             //System.out.println("Removed tag: "+text.substring(position, index));
             return index; // Just skip the tag.
-        } else return position; // Don't do anything.
+        } else {
+            return position; // Don't do anything.
+        }
     }
 }

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 /**
@@ -25,57 +25,52 @@ public class BibtexString {
      *
      * Differentiate a \@String based on its usage:
      *
-     * - {@link #AUTHOR}: prefix "a", for author and editor fields.
-     * - {@link #INSTITUTION}: prefix "i", for institution and organization
-     *                         field
-     * - {@link #PUBLISHER}: prefix "p", for publisher fields
-     * - {@link #OTHER}: no prefix, for any field
+     * - {@link #AUTHOR}: prefix "a", for author and editor fields. -
+     * {@link #INSTITUTION}: prefix "i", for institution and organization field
+     * - {@link #PUBLISHER}: prefix "p", for publisher fields - {@link #OTHER}:
+     * no prefix, for any field
      *
      * Examples:
      *
-     * \@String { aKahle    = "Kahle, Brewster " } -> author
-     * \@String { aStallman = "Stallman, Richard" } -> author
-     * \@String { iMIT      = "{Massachusetts Institute of Technology ({MIT})}" } -> institution
-     * \@String { pMIT      = "{Massachusetts Institute of Technology ({MIT}) press}" } -> publisher
-     * \@String { anct      = "Anecdote" } -> other
-     * \@String { eg        = "for example" } -> other
-     * \@String { et        = " and " } -> other
-     * \@String { lBigMac   = "Big Mac" } -> other
+     * \@String { aKahle = "Kahle, Brewster " } -> author \@String { aStallman =
+     * "Stallman, Richard" } -> author \@String { iMIT = "{Massachusetts
+     * Institute of Technology ({MIT})}" } -> institution \@String { pMIT =
+     * "{Massachusetts Institute of Technology ({MIT}) press}" } -> publisher
+     * \@String { anct = "Anecdote" } -> other \@String { eg = "for example" }
+     * -> other \@String { et = " and " } -> other \@String { lBigMac = "Big
+     * Mac" } -> other
      *
      * Usage:
      *
-     * \@Misc {
-     *   title       = "The GNU Project"
-     *   author      = aStallman # et # aKahle
-     *   institution = iMIT
-     *   publisher   = pMIT
-     *   note        = "Just " # eg
-     * }
+     * \@Misc { title = "The GNU Project" author = aStallman # et # aKahle
+     * institution = iMIT publisher = pMIT note = "Just " # eg }
      *
      * @author Jan Kubovy <jan@kubovy.eu>
      */
     public enum Type {
-		AUTHOR("a"),
+        AUTHOR("a"),
         INSTITUTION("i"),
         PUBLISHER("p"),
         OTHER("");
 
-        private String prefix;
+        private final String prefix;
 
         Type(String prefix) {
             this.prefix = prefix;
         }
 
         public static final Type get(String name) {
-        	if (name.length() <= 1) {
-        		return OTHER;
-        	}
-            if (!(name.charAt(1) + "").toUpperCase().equals(
-                    (name.charAt(1) + "")))
+            if (name.length() <= 1) {
                 return OTHER;
-            for(Type t : Type.values()) {
-                if (t.prefix.equals(name.charAt(0) + ""))
+            }
+            if (!(name.charAt(1) + "").toUpperCase().equals(
+                    (name.charAt(1) + ""))) {
+                return OTHER;
+            }
+            for (Type t : Type.values()) {
+                if (t.prefix.equals(name.charAt(0) + "")) {
                     return t;
+                }
             }
             return OTHER;
         }
@@ -85,46 +80,47 @@ public class BibtexString {
     Type _type;
 
     public BibtexString(String id, String name, String content) {
-	_id = id;
-	_name = name;
-	_content = content;
-	_type = Type.get(name);
+        _id = id;
+        _name = name;
+        _content = content;
+        _type = Type.get(name);
     }
 
     public BibtexString(String id, String name, String content, Type type) {
-	_id = id;
-	_name = name;
-	_content = content;
-	_type = type;
+        _id = id;
+        _name = name;
+        _content = content;
+        _type = type;
     }
 
     public String getId() {
-	return _id;
+        return _id;
     }
 
     public void setId(String id) {
-	_id = id;
+        _id = id;
     }
 
     public String getName() {
-	return _name;
+        return _name;
     }
 
     public void setName(String name) {
-	_name = name;
-	_type = Type.get(name);
+        _name = name;
+        _type = Type.get(name);
     }
 
     public String getContent() {
-	return ((_content == null) ? "" : _content);
+        return ((_content == null) ? "" : _content);
     }
 
     public void setContent(String content) {
-	_content = content;
+        _content = content;
     }
 
+    @Override
     public Object clone() {
-      return new BibtexString(_id, _name, _content);
+        return new BibtexString(_id, _name, _content);
     }
 
     public Type getType() {

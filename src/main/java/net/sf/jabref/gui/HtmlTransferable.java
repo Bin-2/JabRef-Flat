@@ -13,8 +13,9 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -22,21 +23,23 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
 /**
-Based on http://newsgroups.derkeiler.com/Archive/De/de.comp.lang.java/2010-04/msg00203.html
-*/
+ * Based on
+ * http://newsgroups.derkeiler.com/Archive/De/de.comp.lang.java/2010-04/msg00203.html
+ */
 public class HtmlTransferable implements Transferable {
+
     private static final int HTML = 0;
     private static final int STRING = 1;
 
     public static final DataFlavor HTML_FLAVOR = new DataFlavor("text/html;charset=utf-8;class=java.lang.String", "HTML Format"); // charset could be read via JabRef.jrf.basePanel().getEncoding()
 
-    private static final DataFlavor[] FLAVORS = { HTML_FLAVOR, DataFlavor.stringFlavor };
+    private static final DataFlavor[] FLAVORS = {HTML_FLAVOR, DataFlavor.stringFlavor};
 
     private String htmlText;
     private String plainText;
 
     /**
-     * @param htmlText the text in html 
+     * @param htmlText the text in html
      * @param plainText the plain text
      */
     public HtmlTransferable(String htmlText, String plainText) {

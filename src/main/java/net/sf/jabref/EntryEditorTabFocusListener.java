@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import javax.swing.*;
@@ -32,15 +32,16 @@ class EntryEditorTabFocusListener implements FocusListener {
     JTextComponent c;
 
     DocumentListener d;
-    private EntryEditorTab entryEditorTab;
+    private final EntryEditorTab entryEditorTab;
 
     public EntryEditorTabFocusListener(final EntryEditorTab entryEditorTab) {
         this.entryEditorTab = entryEditorTab;
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
 
-        synchronized (this){
+        synchronized (this) {
             if (c != null) {
                 c.getDocument().removeDocumentListener(d);
                 c = null;
@@ -51,8 +52,7 @@ class EntryEditorTabFocusListener implements FocusListener {
 
                 c = (JTextComponent) e.getSource();
                 /**
-                 * [ 1553552 ] Not properly detecting changes to flag as
-                 * changed
+                 * [ 1553552 ] Not properly detecting changes to flag as changed
                  */
                 d = new DocumentListener() {
 
@@ -62,14 +62,17 @@ class EntryEditorTabFocusListener implements FocusListener {
                         }
                     }
 
+                    @Override
                     public void changedUpdate(DocumentEvent e) {
                         fire();
                     }
 
+                    @Override
                     public void insertUpdate(DocumentEvent e) {
                         fire();
                     }
 
+                    @Override
                     public void removeUpdate(DocumentEvent e) {
                         fire();
                     }
@@ -97,15 +100,17 @@ class EntryEditorTabFocusListener implements FocusListener {
 
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
-synchronized (this) {
+        synchronized (this) {
             if (c != null) {
                 c.getDocument().removeDocumentListener(d);
                 c = null;
                 d = null;
             }
         }
-        if (!e.isTemporary())
+        if (!e.isTemporary()) {
             entryEditorTab.getParent().updateField(e.getSource());
+        }
     }
 }

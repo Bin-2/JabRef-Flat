@@ -227,7 +227,7 @@ public class WriteXMPAction extends AbstractWorker {
 			
 			panel.setSize(d);
 
-			progressArea.setBackground(Color.WHITE);
+//			progressArea.setBackground(Color.WHITE);
 			progressArea.setEditable(false);
 			progressArea.setBorder(BorderFactory.createEmptyBorder(3, 3, 3,
 				3));

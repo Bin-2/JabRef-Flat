@@ -11,11 +11,8 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: Jan 14, 2006
- * Time: 4:55:23 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: Jan 14, 2006 Time: 4:55:23 PM To
+ * change this template use File | Settings | File Templates.
  */
 public class PushToTeXstudio implements PushToApplication {
 
@@ -24,10 +21,10 @@ public class PushToTeXstudio implements PushToApplication {
     private JTextField citeCommand = new JTextField(30);
     private JTextField progPath = new JTextField(30);
 
-    private boolean couldNotConnect=false, couldNotRunClient=false;
+    private boolean couldNotConnect = false, couldNotRunClient = false;
 
     public String getName() {
-        return Globals.lang("Insert selected citations into TeXstudio") ;
+        return Globals.lang("Insert selected citations into TeXstudio");
     }
 
     public String getApplicationName() {
@@ -49,22 +46,28 @@ public class PushToTeXstudio implements PushToApplication {
     protected String defaultProgramPath() {
         if (Globals.ON_WIN) {
             String progFiles = System.getenv("ProgramFiles(x86)");
-            if (progFiles == null)
+            if (progFiles == null) {
                 progFiles = System.getenv("ProgramFiles");
-            return progFiles+"\\texstudio\\texstudio.exe";
+            }
+            return progFiles + "\\texstudio\\texstudio.exe";
         } else {
             return "texstudio";
         }
     }
 
     public JPanel getSettingsPanel() {
-	    if (settings == null)
+        if (settings == null) {
             initSettingsPanel();
+        }
         String citeCom = Globals.prefs.get("citeCommandTeXstudio");
-        if (citeCom == null) citeCom = defaultCiteCommand;
+        if (citeCom == null) {
+            citeCom = defaultCiteCommand;
+        }
         citeCommand.setText(citeCom);
         String programPath = Globals.prefs.get("TeXstudioPath");
-        if (programPath == null) programPath = defaultProgramPath();
+        if (programPath == null) {
+            programPath = defaultProgramPath();
+        }
         progPath.setText(programPath);
         return settings;
     }
@@ -80,48 +83,51 @@ public class PushToTeXstudio implements PushToApplication {
         builder.append(Globals.lang("Cite command") + ":");
         builder.append(citeCommand);
         builder.nextLine();
-        builder.append(Globals.lang("Path to TeXstudio")+":");
+        builder.append(Globals.lang("Path to TeXstudio") + ":");
         builder.append(progPath);
         settings = builder.getPanel();
     }
 
-
     public void pushEntries(BibtexDatabase database, BibtexEntry[] entries, String keys, MetaData metaData) {
 
-        couldNotConnect=false;
-        couldNotRunClient=false;
+        couldNotConnect = false;
+        couldNotRunClient = false;
         String citeCom = Globals.prefs.get("citeCommandTeXstudio");
-        if (citeCom == null) citeCom = defaultCiteCommand;
+        if (citeCom == null) {
+            citeCom = defaultCiteCommand;
+        }
         String programPath = Globals.prefs.get("TeXstudioPath");
-        if (programPath == null) programPath = defaultProgramPath();
+        if (programPath == null) {
+            programPath = defaultProgramPath();
+        }
         try {
-            String[] com = Globals.ON_WIN ?
-                // No additional escaping is needed for TeXstudio:
-		        new String[] {programPath, "--insert-cite", citeCom + "{" + keys + "}"}
-                : new String[] {programPath, "--insert-cite", citeCom + "{" + keys + "}"};
+            String[] com = Globals.ON_WIN
+                    ? // No additional escaping is needed for TeXstudio:
+                    new String[]{programPath, "--insert-cite", citeCom + "{" + keys + "}"}
+                    : new String[]{programPath, "--insert-cite", citeCom + "{" + keys + "}"};
 
             /*for (int i = 0; i < com.length; i++) {
                 String s = com[i];
                 System.out.print(s + " ");
             }
             System.out.println("");*/
-
             final Process p = Runtime.getRuntime().exec(com);
-	        System.out.println(keys);
+            System.out.println(keys);
             Runnable errorListener = new Runnable() {
                 public void run() {
                     InputStream out = p.getErrorStream();
                     int c;
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     try {
-                        while ((c = out.read()) != -1)
+                        while ((c = out.read()) != -1) {
                             sb.append((char) c);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     // Error stream has been closed. See if there were any errors:
                     if (sb.toString().trim().length() > 0) {
-			//System.out.println(sb.toString());
+                        //System.out.println(sb.toString());
                         couldNotConnect = true;
                     }
                 }
@@ -129,8 +135,7 @@ public class PushToTeXstudio implements PushToApplication {
             Thread t = new Thread(errorListener);
             t.start();
             t.join();
-        }
-        catch (IOException excep) {
+        } catch (IOException excep) {
             couldNotRunClient = true;
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -141,19 +146,19 @@ public class PushToTeXstudio implements PushToApplication {
     public void operationCompleted(BasePanel panel) {
         if (couldNotConnect) {
             JOptionPane.showMessageDialog(
-                panel.frame(),
-                "TeXstudio: could not connect",
-                Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
-        }
-        else if (couldNotRunClient) {
+                    panel.frame(),
+                    "TeXstudio: could not connect",
+                    Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
+        } else if (couldNotRunClient) {
             String programPath = Globals.prefs.get("TeXstudioPath");
-            if (programPath == null) programPath = defaultProgramPath();
+            if (programPath == null) {
+                programPath = defaultProgramPath();
+            }
             JOptionPane.showMessageDialog(
-                panel.frame(),
-                "TeXstudio: "+Globals.lang("Program '%0' not found", programPath),
-                Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
-        }
-        else {
+                    panel.frame(),
+                    "TeXstudio: " + Globals.lang("Program '%0' not found", programPath),
+                    Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
+        } else {
             panel.output(Globals.lang("Pushed citations to TeXstudio"));
         }
     }
@@ -162,4 +167,3 @@ public class PushToTeXstudio implements PushToApplication {
         return true;
     }
 }
-

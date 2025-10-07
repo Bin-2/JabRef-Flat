@@ -13,8 +13,9 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
@@ -32,13 +33,14 @@ import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefFrame;
 
 public class PreviewPanelTransferHandler extends FileListEditorTransferHandler {
-    
+
     public PreviewPanelTransferHandler(JabRefFrame frame, EntryContainer entryContainer, TransferHandler textTransferHandler) {
         super(frame, entryContainer, textTransferHandler);
     }
 
     /**
-     * LINK is unsupported as dropping into into Microsoft Word then leads to a link instead to a copy
+     * LINK is unsupported as dropping into into Microsoft Word then leads to a
+     * link instead to a copy
      */
     @Override
     public int getSourceActions(JComponent c) {
@@ -49,12 +51,11 @@ public class PreviewPanelTransferHandler extends FileListEditorTransferHandler {
     protected Transferable createTransferable(JComponent c) {
         if (c instanceof JEditorPane) {
             // this method should be called from the preview panel only
-            
+
             // the default TransferHandler implementation is aware of HTML
             // and returns an appropriate Transferable
             // as textTransferHandler.createTransferable() is not available and
             // I don't know any other method, I do the HTML conversion by hand
-
             // First, get the HTML of the selected text
             JEditorPane e = (JEditorPane) c;
             StringWriter sw = new StringWriter();
@@ -65,7 +66,7 @@ public class PreviewPanelTransferHandler extends FileListEditorTransferHandler {
             } catch (BadLocationException e1) {
                 e1.printStackTrace();
             }
-            
+
             // Second, return the HTML (and text as fallback)
             return new HtmlTransferable(sw.toString(), e.getSelectedText());
         } else {

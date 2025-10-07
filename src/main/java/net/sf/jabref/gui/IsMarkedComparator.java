@@ -15,6 +15,8 @@
 */
 package net.sf.jabref.gui;
 
+import com.formdev.flatlaf.FlatLightLaf;
+
 import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.Util;
 

@@ -12,16 +12,16 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * This class represents a list of comparators. The first Comparator takes precedence,
- * and each time a Comparator returns 0, the next one is attempted. If all comparators
- * return 0 the final result will be 0.
+ * This class represents a list of comparators. The first Comparator takes
+ * precedence, and each time a Comparator returns 0, the next one is attempted.
+ * If all comparators return 0 the final result will be 0.
  */
 public class FieldComparatorStack<T> implements Comparator<T> {
 
@@ -31,11 +31,13 @@ public class FieldComparatorStack<T> implements Comparator<T> {
         this.comparators = comparators;
     }
 
+    @Override
     public int compare(T o1, T o2) {
-    	for (Comparator<? super T> comp : comparators){
-    		int res = comp.compare(o1, o2);
-            if (res != 0)
+        for (Comparator<? super T> comp : comparators) {
+            int res = comp.compare(o1, o2);
+            if (res != 0) {
                 return res;
+            }
         }
         return 0;
     }

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import net.sf.jabref.gui.FileDialogs;
@@ -28,10 +28,10 @@ import javax.swing.*;
  */
 public class BrowseAction extends AbstractAction implements ActionListener {
 
-	private static final long serialVersionUID = 3007593430933681310L;
+    private static final long serialVersionUID = 3007593430933681310L;
 
     JComponent focusTarget = null;
-	JFrame frame=null;
+    JFrame frame = null;
     //JDialog dialog=null;
     JTextField comp;
     boolean dir;
@@ -51,24 +51,26 @@ public class BrowseAction extends AbstractAction implements ActionListener {
         comp = tc;
 
     } */
-
     public void setFocusTarget(JComponent focusTarget) {
         this.focusTarget = focusTarget;
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         String chosen;
-        if (dir)
+        if (dir) {
             chosen = FileDialogs.getNewDir(frame, new File(comp.getText()), Globals.NONE,
                     JFileChooser.OPEN_DIALOG, false);
-        else
+        } else {
             chosen = FileDialogs.getNewFile(frame, new File(comp.getText()), Globals.NONE,
                     JFileChooser.OPEN_DIALOG, false);
+        }
         if (chosen != null) {
             File newFile = new File(chosen);
             comp.setText(newFile.getPath());
-            if (focusTarget != null)
+            if (focusTarget != null) {
                 new FocusRequester(focusTarget);
+            }
         }
     }
 

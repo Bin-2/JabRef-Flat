@@ -38,7 +38,7 @@ import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * Dialog for creating or modifying groups. Operates directly on the Vector
+ * Dialog for creating or modifying groups. Operates directly on the List
  * containing group information.
  */
 class AutoGroupDialog extends JDialog implements CaretListener {

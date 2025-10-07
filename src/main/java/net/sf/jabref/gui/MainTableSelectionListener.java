@@ -12,8 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -50,8 +52,8 @@ import net.sf.jabref.specialfields.SpecialFieldValue;
 import net.sf.jabref.specialfields.SpecialFieldsUtils;
 
 /**
- * List event, mouse, key and focus listener for the main table that makes up the
- * most part of the BasePanel for a single bib database.
+ * List event, mouse, key and focus listener for the main table that makes up
+ * the most part of the BasePanel for a single bib database.
  */
 public class MainTableSelectionListener implements ListEventListener<BibtexEntry>, MouseListener,
         KeyListener, FocusListener {
@@ -76,7 +78,6 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     private long QUICK_JUMP_TIMEOUT = 2000;
 
     //private int lastCharPressed = -1;
-
     public MainTableSelectionListener(BasePanel panel, MainTable table) {
         this.table = table;
         this.panel = panel;
@@ -90,15 +91,15 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     }
 
     private void instantiatePreviews() {
-		previewPanel = new PreviewPanel[] {
-			new PreviewPanel(panel.database(), null, panel, panel.metaData(), Globals.prefs
-				.get("preview0"), true),
-			new PreviewPanel(panel.database(), null, panel, panel.metaData(), Globals.prefs
-				.get("preview1"), true) };
-		
-		panel.frame().getSearchManager().addSearchListener(previewPanel[0]);
-		panel.frame().getSearchManager().addSearchListener(previewPanel[1]);
-	}
+        previewPanel = new PreviewPanel[]{
+            new PreviewPanel(panel.database(), null, panel, panel.metaData(), Globals.prefs
+            .get("preview0"), true),
+            new PreviewPanel(panel.database(), null, panel, panel.metaData(), Globals.prefs
+            .get("preview1"), true)};
+
+        panel.frame().getSearchManager().addSearchListener(previewPanel[0]);
+        panel.frame().getSearchManager().addSearchListener(previewPanel[1]);
+    }
 
     public void updatePreviews() {
         try {
@@ -117,11 +118,12 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         Object newSelected = null;
         while (e.next()) {
             if (e.getType() == ListEvent.INSERT) {
-                if (newSelected != null)
+                if (newSelected != null) {
                     return; // More than one new selected. Do nothing.
-                else {
-                    if (e.getIndex() < selected.size())
+                } else {
+                    if (e.getIndex() < selected.size()) {
                         newSelected = selected.get(e.getIndex());
+                    }
                 }
 
             }
@@ -143,13 +145,16 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
                 EntryEditor newEditor = panel.getEntryEditor(toShow);
 
                 if ((oldEditor != null))// && (oldEditor != newEditor))
+                {
                     oldEditor.setMovingToDifferentEntry();
+                }
 
                 // Show the new editor unless it was already visible:
                 if ((newEditor != oldEditor) || (mode != BasePanel.SHOWING_EDITOR)) {
-                    
-                    if (visName != null)
+
+                    if (visName != null) {
                         newEditor.setVisiblePanel(visName);
+                    }
                     panel.showEntryEditor(newEditor);
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
@@ -175,8 +180,9 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
 
     private void updatePreview(final BibtexEntry toShow, final boolean changedPreview, int repeats) {
         if (workingOnPreview) {
-            if (repeats > 0)
+            if (repeats > 0) {
                 return; // We've already waited once. Give up on this selection.
+            }
             Timer t = new Timer(50, new ActionListener() {
                 public void actionPerformed(ActionEvent actionEvent) {
                     updatePreview(toShow, changedPreview, 1);
@@ -231,26 +237,27 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     public void mouseReleased(MouseEvent e) {
         // First find the column and row on which the user has clicked.
         final int col = table.columnAtPoint(e.getPoint()),
-                  row = table.rowAtPoint(e.getPoint());
+                row = table.rowAtPoint(e.getPoint());
 
         // Check if the user has clicked on an icon cell to open url or pdf.
         final String[] iconType = table.getIconTypeForColumn(col);
-        
+
         // Check if the user has right-clicked. If so, open the right-click menu.
         if (e.isPopupTrigger() || (e.getButton() == MouseEvent.BUTTON3)) {
-            if (iconType == null)
+            if (iconType == null) {
                 processPopupTrigger(e, row);
-            else
+            } else {
                 showIconRightClickMenu(e, row, iconType);
+            }
         }
     }
-    
+
     public void mousePressed(MouseEvent e) {
-    	// all handling is done in "mouseReleased"
+        // all handling is done in "mouseReleased"
     }
 
     public void mouseClicked(MouseEvent e) {
-         
+
         // First find the column on which the user has clicked.
         final int col = table.columnAtPoint(e.getPoint()),
                 row = table.rowAtPoint(e.getPoint());
@@ -265,50 +272,54 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         // Check if the user has clicked on an icon cell to open url or pdf.
         final String[] iconType = table.getIconTypeForColumn(col);
 
-
-         // Workaround for Windows. Right-click is not popup trigger on mousePressed, but
-         // on mouseReleased. Therefore we need to avoid taking action at this point, because
-         // action will be taken when the button is released:
-        if (Globals.ON_WIN && (iconType != null) && (e.getButton() != MouseEvent.BUTTON1))
+        // Workaround for Windows. Right-click is not popup trigger on mousePressed, but
+        // on mouseReleased. Therefore we need to avoid taking action at this point, because
+        // action will be taken when the button is released:
+        if (Globals.ON_WIN && (iconType != null) && (e.getButton() != MouseEvent.BUTTON1)) {
             return;
+        }
 
         if (iconType != null) {
-        	// left click on icon field
-        	SpecialField field = SpecialFieldsUtils.getSpecialFieldInstanceFromFieldName(iconType[0]);
-        	if ((e.getClickCount() == 1) && (field != null)) {
-        		// special field found
-        		if (field.isSingleValueField()) {
-        			// directly execute toggle action instead of showing a menu with one action
-        			field.getValues().get(0).getAction(panel.frame()).action();
-        		} else {
-	        		JPopupMenu menu = new JPopupMenu();
-	                for (SpecialFieldValue val: field.getValues()) {
-	                	menu.add(val.getMenuAction(panel.frame()));
-	                }
-	        		menu.show(table, e.getX(), e.getY());
-        		}
-        		return;
-        	}
+            // left click on icon field
+            SpecialField field = SpecialFieldsUtils.getSpecialFieldInstanceFromFieldName(iconType[0]);
+            if ((e.getClickCount() == 1) && (field != null)) {
+                // special field found
+                if (field.isSingleValueField()) {
+                    // directly execute toggle action instead of showing a menu with one action
+                    field.getValues().get(0).getAction(panel.frame()).action();
+                } else {
+                    JPopupMenu menu = new JPopupMenu();
+                    for (SpecialFieldValue val : field.getValues()) {
+                        menu.add(val.getMenuAction(panel.frame()));
+                    }
+                    menu.show(table, e.getX(), e.getY());
+                }
+                return;
+            }
 
             Object value = table.getValueAt(row, col);
-            if (value == null) return; // No icon here, so we do nothing.
-
+            if (value == null) {
+                return; // No icon here, so we do nothing.
+            }
             final BibtexEntry entry = tableRows.get(row);
 
             // Get the icon type. Corresponds to the field name.
             int hasField = -1;
-            for (int i = iconType.length - 1; i >= 0; i--)
-                if (entry.getField(iconType[i]) != null)
+            for (int i = iconType.length - 1; i >= 0; i--) {
+                if (entry.getField(iconType[i]) != null) {
                     hasField = i;
-            if (hasField == -1)
+                }
+            }
+            if (hasField == -1) {
                 return;
+            }
             final String fieldName = iconType[hasField];
 
             //If this is a file link field with specified file types,
             //we should also pass the types.
-            String[] fileTypes={};
-            if(hasField==0&&iconType[hasField].equals(GUIGlobals.FILE_FIELD)&&iconType.length>1) {
-                fileTypes=iconType;
+            String[] fileTypes = {};
+            if (hasField == 0 && iconType[hasField].equals(GUIGlobals.FILE_FIELD) && iconType.length > 1) {
+                fileTypes = iconType;
             }
             final List<String> listOfFileTypes = Collections.unmodifiableList(Arrays.asList(fileTypes));
 
@@ -330,36 +341,34 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
 
                             // We use a FileListTableModel to parse the field content:
                             FileListTableModel fileList = new FileListTableModel();
-                            fileList.setContent((String)link);
+                            fileList.setContent((String) link);
 
-                            FileListEntry flEntry=null;
+                            FileListEntry flEntry = null;
                             // If there are one or more links of the correct type,
                             // open the first one:
-                            if(listOfFileTypes.size()>0) {
-                                for(int i=0;i<fileList.getRowCount();i++) {
+                            if (listOfFileTypes.size() > 0) {
+                                for (int i = 0; i < fileList.getRowCount(); i++) {
                                     flEntry = fileList.getEntry(i);
-                                    boolean correctType=false;
+                                    boolean correctType = false;
                                     for (String listOfFileType : listOfFileTypes) {
                                         if (flEntry.getType().toString().equals(listOfFileType)) {
                                             correctType = true;
                                         }
                                     }
-                                    if(correctType) {
+                                    if (correctType) {
                                         break;
                                     }
-                                    flEntry=null;
+                                    flEntry = null;
                                 }
+                            } //If there are no file types specified, consider all files.
+                            else if (fileList.getRowCount() > 0) {
+                                flEntry = fileList.getEntry(0);
                             }
-                            //If there are no file types specified, consider all files.
-                            else if(fileList.getRowCount()>0) {
-                                flEntry=fileList.getEntry(0);
-                            }
-                            if(flEntry!=null) {
+                            if (flEntry != null) {
 //                            if (fileList.getRowCount() > 0) {
 //                                FileListEntry flEntry = fileList.getEntry(0);
 
-                                ExternalFileMenuItem item = new ExternalFileMenuItem
-                                        (panel.frame(), entry, "",
+                                ExternalFileMenuItem item = new ExternalFileMenuItem(panel.frame(), entry, "",
                                         flEntry.getLink(), flEntry.getType().getIcon(),
                                         panel.metaData(), flEntry.getType());
                                 boolean success = item.openLink();
@@ -369,7 +378,7 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
                             }
                         } else {
                             try {
-                                Util.openExternalViewer(panel.metaData(), (String)link, fieldName);
+                                Util.openExternalViewer(panel.metaData(), (String) link, fieldName);
                             } catch (IOException ex) {
                                 panel.output(Globals.lang("Unable to open link."));
                             }
@@ -397,31 +406,34 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     }
 
     /**
-     * Process general right-click events on the table. Show the table context menu at
-     * the position where the user right-clicked.
+     * Process general right-click events on the table. Show the table context
+     * menu at the position where the user right-clicked.
+     *
      * @param e The mouse event defining the popup trigger.
      * @param row The row where the event occured.
      */
     protected void processPopupTrigger(MouseEvent e, int row) {
-         int selRow = table.getSelectedRow();
-         if (selRow == -1 ||// (getSelectedRowCount() == 0))
-                 !table.isRowSelected(table.rowAtPoint(e.getPoint()))) {
-             table.setRowSelectionInterval(row, row);
-             //panel.updateViewToSelected();
-         }
-         RightClickMenu rightClickMenu = new RightClickMenu(panel, panel.metaData());
-         rightClickMenu.show(table, e.getX(), e.getY());
-     }
+        int selRow = table.getSelectedRow();
+        if (selRow == -1
+                ||// (getSelectedRowCount() == 0))
+                !table.isRowSelected(table.rowAtPoint(e.getPoint()))) {
+            table.setRowSelectionInterval(row, row);
+            //panel.updateViewToSelected();
+        }
+        RightClickMenu rightClickMenu = new RightClickMenu(panel, panel.metaData());
+        rightClickMenu.show(table, e.getX(), e.getY());
+    }
 
     /**
      * Process popup trigger events occurring on an icon cell in the table. Show
      * a menu where the user can choose which external resource to open for the
-     * entry. If no relevant external resources exist, let the normal popup trigger
-     * handler do its thing instead.
+     * entry. If no relevant external resources exist, let the normal popup
+     * trigger handler do its thing instead.
+     *
      * @param e The mouse event defining this popup trigger.
      * @param row The row where the event occurred.
-     * @param iconType A string array containing the resource fields associated with
-     *  this table cell.
+     * @param iconType A string array containing the resource fields associated
+     * with this table cell.
      */
     private void showIconRightClickMenu(MouseEvent e, int row, String[] iconType) {
         BibtexEntry entry = tableRows.get(row);
@@ -434,41 +446,42 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
             // We use a FileListTableModel to parse the field content:
             Object o = entry.getField(iconType[0]);
             FileListTableModel fileList = new FileListTableModel();
-            fileList.setContent((String)o);
+            fileList.setContent((String) o);
             // If there are one or more links, open the first one:
-            for (int i=0; i<fileList.getRowCount(); i++) {
+            for (int i = 0; i < fileList.getRowCount(); i++) {
                 FileListEntry flEntry = fileList.getEntry(i);
 
                 //If file types are specified, ignore files of other types.
-                if(iconType.length>1) {
-                    boolean correctType=false;
-                    for(int j=1;j<iconType.length;j++) {
-                        if(flEntry.getType().toString().equals(iconType[j])) {
-                            correctType=true;
+                if (iconType.length > 1) {
+                    boolean correctType = false;
+                    for (int j = 1; j < iconType.length; j++) {
+                        if (flEntry.getType().toString().equals(iconType[j])) {
+                            correctType = true;
                         }
                     }
-                    if(!correctType) {
+                    if (!correctType) {
                         continue;
                     }
                 }
 
                 String description = flEntry.getDescription();
-                if ((description == null) || (description.trim().length() == 0))
+                if ((description == null) || (description.trim().length() == 0)) {
                     description = flEntry.getLink();
+                }
                 menu.add(new ExternalFileMenuItem(panel.frame(), entry, description,
                         flEntry.getLink(), flEntry.getType().getIcon(), panel.metaData(),
                         flEntry.getType()));
                 showDefaultPopup = false;
             }
         } else {
-        	SpecialField field = SpecialFieldsUtils.getSpecialFieldInstanceFromFieldName(iconType[0]);
-        	if (field != null) {
+            SpecialField field = SpecialFieldsUtils.getSpecialFieldInstanceFromFieldName(iconType[0]);
+            if (field != null) {
 //                for (SpecialFieldValue val: field.getValues()) {
 //                	menu.add(val.getMenuAction(panel.frame()));
 //                }
-        		// full pop should be shown as left click already shows short popup
+                // full pop should be shown as left click already shows short popup
                 showDefaultPopup = true;
-        	} else {
+            } else {
                 for (String anIconType : iconType) {
                     Object o = entry.getField(anIconType);
                     if (o != null) {
@@ -483,22 +496,20 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         if (showDefaultPopup) {
             processPopupTrigger(e, row);
         } else {
-        	menu.show(table, e.getX(), e.getY());
+            menu.show(table, e.getX(), e.getY());
         }
     }
 
     public void entryEditorClosing(EntryEditor editor) {
         preview.setEntry(editor.getEntry());
-        if (previewActive)
+        if (previewActive) {
             panel.showPreview(preview);
-        else
+        } else {
             panel.hideBottomComponent();
+        }
         panel.adjustSplitter();
         new FocusRequester(table);
     }
-
-
-
 
     public void mouseEntered(MouseEvent e) {
 
@@ -513,17 +524,18 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         if (!previewActive) {
             panel.hideBottomComponent();
         } else {
-            if (table.getSelected().size() > 0 ) {
+            if (table.getSelected().size() > 0) {
                 updatePreview(table.getSelected().get(0), false);
             }
         }
     }
 
     public void switchPreview() {
-        if (activePreview < previewPanel.length - 1)
+        if (activePreview < previewPanel.length - 1) {
             activePreview++;
-        else
+        } else {
             activePreview = 0;
+        }
         Globals.prefs.putInt("activePreview", activePreview);
         if (previewActive) {
             this.preview = previewPanel[activePreview];
@@ -538,26 +550,28 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
      * Receive key event on the main table. If the key is a letter or a digit,
      * we should select the first entry in the table which starts with the given
      * letter in the column by which the table is sorted.
+     *
      * @param e The KeyEvent
      */
     public void keyTyped(KeyEvent e) {
         if ((!e.isActionKey()) && Character.isLetterOrDigit(e.getKeyChar())
-	    //&& !e.isControlDown() && !e.isAltDown() && !e.isMetaDown()) {
-	    && (e.getModifiers() == 0)) {
+                //&& !e.isControlDown() && !e.isAltDown() && !e.isMetaDown()) {
+                && (e.getModifiers() == 0)) {
             long time = System.currentTimeMillis();
-            if (time - lastPressedTime > QUICK_JUMP_TIMEOUT)
+            if (time - lastPressedTime > QUICK_JUMP_TIMEOUT) {
                 lastPressedCount = 0; // Reset last pressed character
-            // Update timestamp:
+            }            // Update timestamp:
             lastPressedTime = time;
             // Add the new char to the search array:
             int c = e.getKeyChar();
-            if (lastPressedCount < lastPressed.length)
+            if (lastPressedCount < lastPressed.length) {
                 lastPressed[lastPressedCount++] = c;
+            }
 
             int sortingColumn = table.getSortingColumn(0);
-            if (sortingColumn == -1)
+            if (sortingColumn == -1) {
                 return; // No sorting? TODO: look up by author, etc.?
-            // TODO: the following lookup should be done by a faster algorithm,
+            }            // TODO: the following lookup should be done by a faster algorithm,
             // such as binary search. But the table may not be sorted properly,
             // due to marked entries, search etc., which rules out the binary search.
             int startRow = 0;
@@ -568,34 +582,37 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
 
             boolean done = false;
             while (!done) {
-                for (int i=startRow; i<table.getRowCount(); i++) {
+                for (int i = startRow; i < table.getRowCount(); i++) {
                     Object o = table.getValueAt(i, sortingColumn);
-                    if (o == null)
+                    if (o == null) {
                         continue;
+                    }
                     String s = o.toString().toLowerCase();
-                    if (s.length() >= lastPressedCount)
-                        for (int j=0; j<lastPressedCount; j++) {
-                            if (s.charAt(j) != lastPressed[j])
+                    if (s.length() >= lastPressedCount) {
+                        for (int j = 0; j < lastPressedCount; j++) {
+                            if (s.charAt(j) != lastPressed[j]) {
                                 break; // Escape the loop immediately when we find a mismatch
-                            else if (j == lastPressedCount-1) {
+                            } else if (j == lastPressedCount - 1) {
                                 // We found a match:
                                 table.setRowSelectionInterval(i, i);
                                 table.ensureVisible(i);
                                 return;
                             }
                         }
+                    }
                     //if ((s.length() >= 1) && (s.charAt(0) == c)) {
                     //}
                 }
                 // Finished, no result. If we didn't start at the beginning of
                 // the table, try that. Otherwise, exit the while loop.
-                if (startRow > 0)
+                if (startRow > 0) {
                     startRow = 0;
-                else
+                } else {
                     done = true;
+                }
 
             }
-            
+
         } else if (e.getKeyChar() == KeyEvent.VK_ESCAPE) {
             lastPressedCount = 0;
 

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.event.*;
@@ -38,10 +38,9 @@ public class PreambleEditor extends JDialog {
     JPanel pan = new JPanel();
     FieldEditor ed;
 
-
     public PreambleEditor(JabRefFrame baseFrame,
-                          BasePanel panel, BibtexDatabase base,
-                          JabRefPreferences prefs) {
+            BasePanel panel, BibtexDatabase base,
+            JabRefPreferences prefs) {
         super(baseFrame);
         this.baseFrame = baseFrame;
         this.panel = panel;
@@ -105,7 +104,6 @@ public class PreambleEditor extends JDialog {
         ta.getInputMap().put(prefs.getKey("Redo"), "redo");
         ta.getActionMap().put("redo", redoAction);
 
-
         ta.addFocusListener(new FieldListener());
     }
 
@@ -114,13 +112,15 @@ public class PreambleEditor extends JDialog {
     }
 
     class FieldListener extends FocusAdapter {
+
         /*
        * Focus listener that fires the storeFieldAction when a FieldTextArea
        * loses focus.
-       */
+         */
         public void focusLost(FocusEvent e) {
-            if (!e.isTemporary())
+            if (!e.isTemporary()) {
                 storeFieldAction.actionPerformed(new ActionEvent(e.getSource(), 0, ""));
+            }
         }
 
     }
@@ -128,6 +128,7 @@ public class PreambleEditor extends JDialog {
     StoreFieldAction storeFieldAction = new StoreFieldAction();
 
     class StoreFieldAction extends AbstractAction {
+
         public StoreFieldAction() {
             super("Store field value");
             putValue(SHORT_DESCRIPTION, "Store field value");
@@ -136,30 +137,31 @@ public class PreambleEditor extends JDialog {
         public void actionPerformed(ActionEvent e) {
             String toSet = null;
             boolean set;
-            if (ed.getText().length() > 0)
+            if (ed.getText().length() > 0) {
                 toSet = ed.getText();
+            }
             // We check if the field has changed, since we don't want to mark the
             // base as changed unless we have a real change.
             if (toSet == null) {
                 set = base.getPreamble() != null;
             } else {
-                set = !((base.getPreamble() != null)
-                        && toSet.equals(base.getPreamble()));
+                set = !((base.getPreamble() != null) && toSet.equals(base.getPreamble()));
             }
 
             if (set) {
-                panel.undoManager.addEdit(new UndoablePreambleChange
-                        (base, panel, base.getPreamble(), toSet));
+                panel.undoManager.addEdit(new UndoablePreambleChange(base, panel, base.getPreamble(), toSet));
                 base.setPreamble(toSet);
-                if ((toSet != null) && (toSet.length() > 0)) {
-                    ed.setLabelColor(GUIGlobals.entryEditorLabelColor);
-                    ed.setValidBackgroundColor();
-                } else {
-                    ed.setLabelColor(GUIGlobals.nullFieldColor);
-                    ed.setValidBackgroundColor();
-                }
-                if (ed.getTextComponent().hasFocus())
-                    ed.setActiveBackgroundColor();
+//                if ((toSet != null) && (toSet.length() > 0)) {
+//                    ed.setLabelColor(GUIGlobals.entryEditorLabelColor);
+//                    ed.setValidBackgroundColor();
+//                } else {
+//                    ed.setLabelColor(GUIGlobals.nullFieldColor);
+//                    ed.setValidBackgroundColor();
+//                }
+//                if (ed.getTextComponent().hasFocus()) {
+//                    ed.setActiveBackgroundColor();
+//                }
+
                 panel.markBaseChanged();
             }
 
@@ -169,6 +171,7 @@ public class PreambleEditor extends JDialog {
     UndoAction undoAction = new UndoAction();
 
     class UndoAction extends AbstractAction {
+
         public UndoAction() {
             super("Undo", GUIGlobals.getImage("undo"));
             putValue(SHORT_DESCRIPTION, "Undo");
@@ -185,6 +188,7 @@ public class PreambleEditor extends JDialog {
     RedoAction redoAction = new RedoAction();
 
     class RedoAction extends AbstractAction {
+
         public RedoAction() {
             super("Undo", GUIGlobals.getImage("redo"));
             putValue(SHORT_DESCRIPTION, "Redo");
@@ -202,6 +206,7 @@ public class PreambleEditor extends JDialog {
     CloseAction closeAction = new CloseAction();
 
     class CloseAction extends AbstractAction {
+
         public CloseAction() {
             super(Globals.lang("Close window"));
             //, new ImageIcon(GUIGlobals.closeIconFile));

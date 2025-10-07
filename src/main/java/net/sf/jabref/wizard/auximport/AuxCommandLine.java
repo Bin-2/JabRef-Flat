@@ -33,8 +33,7 @@ http://www.gnu.org/copyleft/gpl.ja.html
 
 package net.sf.jabref.wizard.auximport ;
 
-import java.util.Vector;
-
+import java.util.List;
 import net.sf.jabref.BibtexDatabase;
 import net.sf.jabref.Globals;
 import net.sf.jabref.Util;
@@ -56,7 +55,7 @@ public class AuxCommandLine
     if ( (auxName.length() > 0) && (bib != null) )
     {
       AuxSubGenerator auxParser = new AuxSubGenerator(bib) ;
-      Vector<String> returnValue = auxParser.generate(auxName, bib) ;
+      List<String> returnValue = auxParser.generate(auxName, bib) ;
       back = auxParser.getGeneratedDatabase() ;
 
       // print statistics

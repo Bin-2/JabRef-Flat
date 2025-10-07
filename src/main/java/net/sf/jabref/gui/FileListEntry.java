@@ -12,15 +12,18 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
+
+import com.formdev.flatlaf.FlatLightLaf;
 
 import net.sf.jabref.external.ExternalFileType;
 
 /**
  * This class represents a file link for a Bibtex entry.
-*/
+ */
 public class FileListEntry {
+
     private String link;
     private String description;
     private ExternalFileType type;
@@ -56,7 +59,7 @@ public class FileListEntry {
     }
 
     public String toString() {
-        return description+" : "+link+" : "+type;
+        return description + " : " + link + " : " + type;
     }
 
 }

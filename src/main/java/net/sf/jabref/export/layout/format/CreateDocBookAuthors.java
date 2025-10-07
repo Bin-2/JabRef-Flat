@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Filename: $RCSfile$
 //  Purpose:  Atom representation.
@@ -36,13 +36,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 package net.sf.jabref.export.layout.format;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.sf.jabref.export.layout.WSITools;
-
-import java.util.Vector;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
 import net.sf.jabref.AuthorList;
-
 
 /**
  * Create DocBook authors formatter.
@@ -50,14 +49,12 @@ import net.sf.jabref.AuthorList;
  * @author $author$
  * @version $Revision$
  */
-public class CreateDocBookAuthors implements LayoutFormatter
-{
+public class CreateDocBookAuthors implements LayoutFormatter {
     //~ Methods ////////////////////////////////////////////////////////////////
 
     static XMLChars xc = new XMLChars();
 
-    public String format(String fieldText)
-    {
+    public String format(String fieldText) {
 
         StringBuilder sb = new StringBuilder(100);
 
@@ -65,13 +62,11 @@ public class CreateDocBookAuthors implements LayoutFormatter
 
         addBody(sb, al, "author");
         return sb.toString();
-        
+
         //		<author><firstname>L.</firstname><surname>Xue</surname></author>
         //     <author><firstname>F.</firstname><othername role="mi">L.</othername><surname>Stahura</surname></author>
         //     <author><firstname>J.</firstname><othername role="mi">W.</othername><surname>Godden</surname></author>
         //     <author><firstname>J.</firstname><surname>Bajorath</surname></author>
-
-
         /*
         if (fieldText.indexOf(" and ") == -1)
         {
@@ -100,7 +95,7 @@ public class CreateDocBookAuthors implements LayoutFormatter
     }
 
     public void addBody(StringBuilder sb, AuthorList al, String tagName) {
-        for (int i=0; i<al.size(); i++) {
+        for (int i = 0; i < al.size(); i++) {
             sb.append("<").append(tagName).append(">");
             AuthorList.Author a = al.getAuthor(i);
             if ((a.getFirst() != null) && (a.getFirst().length() > 0)) {
@@ -122,10 +117,11 @@ public class CreateDocBookAuthors implements LayoutFormatter
                 sb.append("</surname>");
             }
 
-            if (i < al.size()-1)
+            if (i < al.size() - 1) {
                 sb.append("</").append(tagName).append(">\n       ");
-            else
+            } else {
                 sb.append("</").append(tagName).append(">");
+            }
         }
     }
 
@@ -133,43 +129,35 @@ public class CreateDocBookAuthors implements LayoutFormatter
      * @param sb
      * @param author
      */
-    protected void singleAuthor(StringBuffer sb, String author)
-    {
+    protected void singleAuthor(StringBuffer sb, String author) {
         // TODO: replace special characters
-        Vector<String> v = new Vector<String>();
+        List<String> v = new ArrayList<>();
 
         String authorMod = AuthorList.fixAuthor_firstNameFirst(author);
 
         WSITools.tokenize(v, authorMod, " \n\r");
 
-        if (v.size() == 1)
-        {
+        if (v.size() == 1) {
             sb.append("<surname>");
             sb.append(v.get(0));
             sb.append("</surname>");
-        }
-        else if (v.size() == 2)
-        {
+        } else if (v.size() == 2) {
             sb.append("<firstname>");
             sb.append(v.get(0));
             sb.append("</firstname>");
             sb.append("<surname>");
             sb.append(v.get(1));
             sb.append("</surname>");
-        }
-        else
-        {
+        } else {
             sb.append("<firstname>");
             sb.append(v.get(0));
             sb.append("</firstname>");
             sb.append("<othername role=\"mi\">");
 
-            for (int i = 1; i < (v.size() - 1); i++)
-            {
+            for (int i = 1; i < (v.size() - 1); i++) {
                 sb.append(v.get(i));
 
-                if (i < (v.size() - 2))
-                {
+                if (i < (v.size() - 2)) {
                     sb.append(' ');
                 }
             }

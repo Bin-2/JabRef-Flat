@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import net.sf.jabref.export.LatexFieldFormatter;
@@ -39,19 +39,19 @@ public class TransferableBibtexEntry implements Transferable {
 
     public DataFlavor[] getTransferDataFlavors() {
         return new DataFlavor[]{TransferableBibtexEntry.entryFlavor,
-                DataFlavor.stringFlavor};
+            DataFlavor.stringFlavor};
     }
 
     public boolean isDataFlavorSupported(DataFlavor flavor) {
-        return (flavor.equals(entryFlavor) ||
-                flavor.equals(DataFlavor.stringFlavor));
+        return (flavor.equals(entryFlavor)
+                || flavor.equals(DataFlavor.stringFlavor));
     }
 
     public Object getTransferData(DataFlavor flavor)
             throws UnsupportedFlavorException {
-        if (flavor.equals(entryFlavor))
+        if (flavor.equals(entryFlavor)) {
             return data;
-        else if (flavor.equals(DataFlavor.stringFlavor)) {
+        } else if (flavor.equals(DataFlavor.stringFlavor)) {
             try {
                 StringWriter sw = new StringWriter();
                 BibtexEntryWriter bibtexEntryWriter = new BibtexEntryWriter(new LatexFieldFormatter(), false);
@@ -60,12 +60,12 @@ public class TransferableBibtexEntry implements Transferable {
                 }
                 return sw.toString();
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog
-                        (null, "Could not paste entry as text:\n" + ex.getMessage(),
-                                "Clipboard", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Could not paste entry as text:\n" + ex.getMessage(),
+                        "Clipboard", JOptionPane.ERROR_MESSAGE);
                 return "";
             }
-        } else
+        } else {
             throw new UnsupportedFlavorException(flavor);
+        }
     }
 }

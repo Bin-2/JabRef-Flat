@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import net.sf.jabref.*;
@@ -29,16 +29,18 @@ import java.util.ArrayList;
 /**
  * Write XMP action for EntryEditor toolbar.
  */
-public class WriteXMPEntryEditorAction extends AbstractAction {
+//public class WriteXMPEntryEditorAction extends AbstractAction {
+public class WriteXMPEntryEditorAction extends ThemedAction {
+
     private BasePanel panel;
     private EntryEditor editor;
     private String message = null;
 
     public WriteXMPEntryEditorAction(BasePanel panel, EntryEditor editor) {
+        super(Globals.lang("Write XMP"), "writeXMPVertical"); // icon key used in GUIGlobals.getIcon(...)
         this.panel = panel;
         this.editor = editor;
-        putValue(NAME, Globals.lang("Write XMP")); // normally, this call should be without "Globals.lang". However, the string "Write XMP" is also used in non-menu places and therefore, the translation must be also available at Globals.lang()
-        putValue(SMALL_ICON, GUIGlobals.getImage("pdfSmall"));
+
         putValue(SHORT_DESCRIPTION, Globals.lang("Write BibtexEntry as XMP-metadata to PDF."));
     }
 
@@ -56,8 +58,9 @@ public class WriteXMPEntryEditorAction extends AbstractAction {
         String pdf = entry.getField("pdf");
         String[] dirs = panel.metaData().getFileDirectory("pdf");
         File f = Util.expandFilename(pdf, dirs);
-        if (f != null)
+        if (f != null) {
             files.add(f);
+        }
 
         // Then check the "file" field:
         dirs = panel.metaData().getFileDirectory(GUIGlobals.FILE_FIELD);
@@ -69,8 +72,9 @@ public class WriteXMPEntryEditorAction extends AbstractAction {
                 FileListEntry flEntry = tm.getEntry(j);
                 if ((flEntry.getType() != null) && (flEntry.getType().getName().toLowerCase().equals("pdf"))) {
                     f = Util.expandFilename(flEntry.getLink(), dirs);
-                    if (f != null)
+                    if (f != null) {
                         files.add(f);
+                    }
                 }
             }
         }
@@ -87,7 +91,6 @@ public class WriteXMPEntryEditorAction extends AbstractAction {
         panel.frame().setProgressBarVisible(false);
         setEnabled(true);
     }
-
 
     class WriteXMPWorker extends AbstractWorker {
 
@@ -107,19 +110,22 @@ public class WriteXMPEntryEditorAction extends AbstractAction {
                 int written = 0, error = 0;
                 for (File file : files) {
                     if (!file.exists()) {
-                        if (files.size() == 1)
+                        if (files.size() == 1) {
                             message = Globals.lang("PDF does not exist");
+                        }
                         error++;
 
                     } else {
                         try {
                             XMPUtil.writeXMP(file, entry, panel.database());
-                            if (files.size() == 1)
+                            if (files.size() == 1) {
                                 message = Globals.lang("Wrote XMP-metadata");
+                            }
                             written++;
                         } catch (Exception e) {
-                            if (files.size() == 1)
+                            if (files.size() == 1) {
                                 message = Globals.lang("Error while writing") + " '" + file.getPath() + "'";
+                            }
                             error++;
 
                         }
@@ -129,8 +135,9 @@ public class WriteXMPEntryEditorAction extends AbstractAction {
                     StringBuilder sb = new StringBuilder();
                     sb.append(Globals.lang("Finished writing XMP-metadata. Wrote to %0 file(s).",
                             String.valueOf(written)));
-                    if (error > 0)
+                    if (error > 0) {
                         sb.append(" ").append(Globals.lang("Error writing to %0 file(s).", String.valueOf(error)));
+                    }
                     message = sb.toString();
                 }
             }

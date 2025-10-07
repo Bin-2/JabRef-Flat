@@ -12,11 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 // function : wrapper and service class for the DatePicker handling at the
 //            EntryEditor
-
-package net.sf.jabref.gui.date ;
+package net.sf.jabref.gui.date;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
@@ -33,6 +32,7 @@ import net.sf.jabref.Util;
 import com.michaelbaranov.microba.calendar.DatePicker;
 
 public class DatePickerButton implements ActionListener {
+
     private DatePicker datePicker = new DatePicker();
     private JPanel panel = new JPanel();
     private FieldEditor editor;

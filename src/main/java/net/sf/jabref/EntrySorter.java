@@ -12,128 +12,122 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class EntrySorter implements DatabaseChangeListener {
 
-    //TreeSet set;
-    final ArrayList<BibtexEntry> set;
-    Comparator<BibtexEntry> comp;
-    String[] idArray;
-    BibtexEntry[] entryArray;
-    private boolean changed = false;
+    private final TreeSet<BibtexEntry> sortedSet;
+    private volatile boolean needsReindex = false;
+    private String[] cachedIdArray;
+    private BibtexEntry[] cachedEntryArray;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Comparator<BibtexEntry> comp;
 
     public EntrySorter(Map<String, BibtexEntry> entries, Comparator<BibtexEntry> comp) {
-	    //set = new TreeSet(comp);
-        set = new ArrayList<BibtexEntry>();
         this.comp = comp;
-        Set<String> keySet = entries.keySet();
-        for (String aKeySet : keySet) {
-            set.add(entries.get(aKeySet));
+        long startTime = System.nanoTime();
+
+        this.sortedSet = new TreeSet<>(comp);
+        this.sortedSet.addAll(entries.values());
+        this.needsReindex = true;
+        index(); // Initial indexing
+
+        long endTime = System.nanoTime();
+        System.out.println("[EntrySorter NEW] Constructor time: " + (endTime - startTime) / 1000000.0 + " ms for " + entries.size() + " entries");
+    }
+
+    @Override
+    public void databaseChanged(DatabaseChangeEvent e) {
+        long startTime = System.nanoTime();
+
+        lock.writeLock().lock();
+        try {
+            switch (e.getType()) {
+                case ADDED_ENTRY:
+                    sortedSet.add(e.getEntry());
+                    needsReindex = true;
+                    break;
+                case REMOVED_ENTRY:
+                    sortedSet.remove(e.getEntry());
+                    needsReindex = true;
+                    break;
+                case CHANGED_ENTRY:
+                    // TreeSet handles resorting automatically on re-insert
+                    sortedSet.remove(e.getEntry());
+                    sortedSet.add(e.getEntry());
+                    needsReindex = true;
+                    break;
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
-        //Collections.sort(set, comp);
-        changed = true;
-        index();
+
+        long endTime = System.nanoTime();
+        System.out.println("[EntrySorter NEW] databaseChanged(" + e.getType() + ") time: " + (endTime - startTime) / 1000000.0 + " ms");
     }
 
     public void index() {
-
-        /*  Old version, from when set was a TreeSet.
-
-        // The boolean "changing" is true in the situation that an entry is about to change,
-        // and has temporarily been removed from the entry set in this sorter. So, if we index
-        // now, we will cause exceptions other places because one entry has been left out of
-        // the indexed array. Simply waiting foth this to change can lead to deadlocks,
-        // so we have no other choice than to return without indexing.
-        if (changing)
+        if (!needsReindex) {
             return;
-        */
-
-
-        synchronized(set) {
-
-            // Resort if necessary:
-            if (changed) {
-                Collections.sort(set, comp);
-                changed = false;
-            }
-
-            // Create an array of IDs for quick access, since getIdAt() is called by
-            // getValueAt() in EntryTableModel, which *has* to be efficient.
-
-	        int count = set.size();
-            idArray = new String[count];
-            entryArray = new BibtexEntry[count];
-	        int piv = 0;
-            for (BibtexEntry entry : set) {
-                //        for (int i=0; i<idArray.length; i++) {
-                idArray[piv] = entry.getId();
-                entryArray[piv] = entry;
-                piv++;
-            }
         }
+
+        long startTime = System.nanoTime();
+
+        lock.writeLock().lock();
+        try {
+            int size = sortedSet.size();
+            cachedIdArray = new String[size];
+            cachedEntryArray = new BibtexEntry[size];
+
+            int i = 0;
+            for (BibtexEntry entry : sortedSet) {
+                cachedIdArray[i] = entry.getId();
+                cachedEntryArray[i] = entry;
+                i++;
+            }
+            needsReindex = false;
+        } finally {
+            lock.writeLock().unlock();
+        }
+
+        long endTime = System.nanoTime();
+        System.out.println("[EntrySorter NEW] index() time: " + (endTime - startTime) / 1000000.0 + " ms for " + cachedEntryArray.length + " entries");
     }
 
-    public boolean isOutdated() {
-        boolean outdated = false;
-        return outdated;
-    }
-
+    // Read methods use read lock
     public String getIdAt(int pos) {
-        synchronized(set) {
-            return idArray[pos];
+        lock.readLock().lock();
+        try {
+            return cachedIdArray[pos];
+        } finally {
+            lock.readLock().unlock();
         }
-	//return ((BibtexEntry)(entryArray[pos])).getId();
     }
 
     public BibtexEntry getEntryAt(int pos) {
-        synchronized(set) {
-            return entryArray[pos];
+        lock.readLock().lock();
+        try {
+            return cachedEntryArray[pos];
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
     public int getEntryCount() {
-        synchronized(set) {
-	        if (entryArray != null)
-	            return entryArray.length;
-	        else
-	        return 0;
+        lock.readLock().lock();
+        try {
+            return cachedEntryArray != null ? cachedEntryArray.length : 0;
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
-    public void databaseChanged(DatabaseChangeEvent e) {
-        synchronized(set) {
-        	int pos;
-        	switch (e.getType()) {
-        	case ADDED_ENTRY:
-                pos = -Collections.binarySearch(set, e.getEntry(), comp) - 1;
-                set.add(pos, e.getEntry());
-                //addEntry(e.getEntry());
-                //set.add(e.getEntry());
-                //changed = true;
-                //Collections.sort(set, comp);
-                break;
-        	case REMOVED_ENTRY:
-	            set.remove(e.getEntry());
-                changed = true;
-                break;
-            case CHANGED_ENTRY:
-                // Entry changed. Resort list:
-                //Collections.sort(set, comp);
-                pos = Collections.binarySearch(set, e.getEntry(), comp);
-                int posOld = set.indexOf(e.getEntry());
-                if (pos < 0) {
-                    set.remove(posOld);
-                    set.add(-pos-1, e.getEntry());
-                }
-                //changed = true;
-                break;
-            }
-
-    	}
-
+    public boolean isOutdated() {
+        return false;
     }
 }

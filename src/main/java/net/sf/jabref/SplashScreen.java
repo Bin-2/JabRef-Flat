@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 //import javax.swing.*;
@@ -26,18 +26,23 @@ import java.awt.Window;
 import java.net.URL;
 
 /**
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2003</p>
- * <p>Company: </p>
+ * <p>
+ * Title: </p>
+ * <p>
+ * Description: </p>
+ * <p>
+ * Copyright: Copyright (c) 2003</p>
+ * <p>
+ * Company: </p>
+ *
  * @author not attributable
  * @version 1.0
  */
-
 public class SplashScreen extends Window {
+
     private Image splashImage;
     private boolean paintCalled = false;
-    
+
     public SplashScreen(Frame owner) {
         super(owner);
         URL imageURL = SplashScreen.class.getResource("/images/splash.png");
@@ -45,29 +50,27 @@ public class SplashScreen extends Window {
 
         // Load the image
         MediaTracker mt = new MediaTracker(this);
-        mt.addImage(splashImage,0);
+        mt.addImage(splashImage, 0);
         try {
             mt.waitForID(0);
-        } catch(InterruptedException ignored) {}
+        } catch (InterruptedException ignored) {
+        }
 
-                                                                                
         // Center the window on the screen.
         int imgWidth = splashImage.getWidth(this);
-        int imgHeight = splashImage.getHeight(this);  
+        int imgHeight = splashImage.getHeight(this);
 
         setSize(imgWidth, imgHeight);
         setLocationRelativeTo(null);
-        
+
         /* Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
         setLocation(
             (screenDim.width - imgWidth) / 2,
             (screenDim.height - imgHeight) / 2
         );
-        */
-
+         */
     }
-    
-    
+
     /**
      * Updates the display area of the window.
      */
@@ -77,9 +80,10 @@ public class SplashScreen extends Window {
         // do not fill the component with its background color
         // here. This avoids flickering.
 
-        g.setColor(getForeground());
-        paint(g);
+//        g.setColor(getForeground());
+//        paint(g);
     }
+
     /**
      * Paints the image on the window.
      */
@@ -89,20 +93,21 @@ public class SplashScreen extends Window {
 
         // Notify method splash that the window
         // has been painted.
-        if (! paintCalled) {
+        if (!paintCalled) {
             paintCalled = true;
-            synchronized (this) { notifyAll(); }
+            synchronized (this) {
+                notifyAll();
+            }
         }
     }
-    
-      /**
+
+    /**
      * Constructs and displays a SplashWindow.<p>
-     * This method is useful for startup splashs.
-     * Dispose the returned frame to get rid of the splash window.<p>
+     * This method is useful for startup splashs. Dispose the returned frame to
+     * get rid of the splash window.<p>
      *
      * @return Returns the frame that owns the SplashWindow.
      */
-
     public static Frame splash() {
         Frame f = new Frame();
         SplashScreen w = new SplashScreen(f);
@@ -114,16 +119,16 @@ public class SplashScreen extends Window {
         // Note: To make sure the user gets a chance to see the
         // splash window we wait until its paint method has been
         // called at least once by the AWT event dispatcher thread.
-
         // sebwills adds: However, just in case the paint method never gets called
         // (e.g. if the splashscreen is completely obscured by an 'always on top'
         // window of some other application), we time-out after 5 seconds.
-        if (! EventQueue.isDispatchThread()) {
+        if (!EventQueue.isDispatchThread()) {
             synchronized (w) {
-                if (! w.paintCalled) {
-                    try { 
-                        w.wait(5000);
-                    } catch (InterruptedException ignored) {}
+                if (!w.paintCalled) {
+                    try {
+                        w.wait(3000);
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
         }
