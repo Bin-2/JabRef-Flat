@@ -1,0 +1,15 @@
+language: java
+jdk:
+  - openjdk6
+  - openjdk7
+  - oraclejdk7
+  - oraclejdk8
+
+before_install:
+  - chmod +x gradlew
+
+script:
+  - ./gradlew check --info
+
+after_success:
+  - ./gradlew jacocoTestReport coveralls
