@@ -244,14 +244,12 @@ public class FileListEditor extends JTable implements FieldEditor,
 
         // Force table background to gray
 //        setBackground(new Color(242, 242, 242));
-
         // Fill viewport height so the gray shows below last row too
         setFillsViewportHeight(true);
 
         // Optional: also force selection background if you want contrast
 //        setSelectionBackground(java.awt.Color.LIGHT_GRAY);
         //setSelectionForeground(java.awt.Color.WHITE);
-
     }
 
     @Override

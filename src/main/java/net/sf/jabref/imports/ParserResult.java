@@ -12,14 +12,15 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.io.File;
 import net.sf.jabref.BibtexEntryType;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import net.sf.jabref.BibtexDatabase;
 import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.MetaData;
@@ -32,10 +33,9 @@ public class ParserResult {
     private MetaData metaData;
     private HashMap<String, BibtexEntryType> entryTypes;
 
-
     private File file = null;
-    private ArrayList<String> warnings = new ArrayList<String>();
-    private ArrayList<String> duplicateKeys = new ArrayList<String>();
+    private final Set<String> warnings = new LinkedHashSet<String>();
+    private final Set<String> duplicateKeys = new LinkedHashSet<String>();
 
     private String errorMessage = null;
     private String encoding = null; // Which encoding was used?
@@ -49,18 +49,20 @@ public class ParserResult {
     private int jabrefMinor2Version = 0; // Numeric version representation
     private boolean toOpenTab = false;
 
-    public ParserResult(Collection<BibtexEntry> entries){
-    	this(ImportFormatReader.createDatabase(entries), null, new HashMap<String, BibtexEntryType>());
+    public ParserResult(Collection<BibtexEntry> entries) {
+        this(ImportFormatReader.createDatabase(entries), null, new HashMap<String, BibtexEntryType>());
     }
-    
+
     public ParserResult(BibtexDatabase base, MetaData metaData, HashMap<String, BibtexEntryType> entryTypes) {
-		this.base = base;
-		this.metaData = metaData;
-		this.entryTypes = entryTypes;
+        this.base = base;
+        this.metaData = metaData;
+        this.entryTypes = entryTypes;
     }
 
     /**
-     * Check if this base is marked to be added to the currently open tab. Default is false.
+     * Check if this base is marked to be added to the currently open tab.
+     * Default is false.
+     *
      * @return
      */
     public boolean toOpenTab() {
@@ -71,10 +73,11 @@ public class ParserResult {
         this.toOpenTab = toOpenTab;
     }
 
-
     /**
      * Find which version of JabRef, if any, produced this bib file.
-     * @return The version number string, or null if no JabRef signature could be read.
+     *
+     * @return The version number string, or null if no JabRef signature could
+     * be read.
      */
     public String getJabrefVersion() {
         return jabrefVersion;
@@ -82,12 +85,12 @@ public class ParserResult {
 
     /**
      * Set the JabRef version number string for this parser result.
-     * @param jabrefVersion The version number string.                                         
+     *
+     * @param jabrefVersion The version number string.
      */
     public void setJabrefVersion(String jabrefVersion) {
         this.jabrefVersion = jabrefVersion;
     }
-
 
     public int getJabrefMajorVersion() {
         return jabrefMajorVersion;
@@ -112,13 +115,13 @@ public class ParserResult {
     public void setJabrefMinor2Version(int jabrefMinor2Version) {
         this.jabrefMinor2Version = jabrefMinor2Version;
     }
-    
+
     public BibtexDatabase getDatabase() {
-    	return base;
+        return base;
     }
 
     public MetaData getMetaData() {
-	    return metaData;
+        return metaData;
     }
 
     public void setMetaData(MetaData md) {
@@ -126,15 +129,15 @@ public class ParserResult {
     }
 
     public HashMap<String, BibtexEntryType> getEntryTypes() {
-    	return entryTypes;
+        return entryTypes;
     }
 
     public File getFile() {
-      return file;
+        return file;
     }
 
     public void setFile(File f) {
-      file = f;
+        file = f;
     }
 
     /**
@@ -143,63 +146,65 @@ public class ParserResult {
      * @param enc String the name of the encoding.
      */
     public void setEncoding(String enc) {
-      encoding = enc;
+        encoding = enc;
     }
 
     /**
-     * Returns the name of the encoding used during parsing, or null if not specified
-     * (indicates that prefs.get("defaultEncoding") was used).
+     * Returns the name of the encoding used during parsing, or null if not
+     * specified (indicates that prefs.get("defaultEncoding") was used).
      */
     public String getEncoding() {
-      return encoding;
+        return encoding;
     }
 
     /**
      * Add a parser warning.
      *
-     * @param s String Warning text. Must be pretranslated. Only added if there isn't already a dupe.
+     * @param s String Warning text. Must be pretranslated. Only added if there
+     * isn't already a dupe.
      */
     public void addWarning(String s) {
-        if (!warnings.contains(s))
+        if (s != null) {
             warnings.add(s);
+        }
     }
 
     public boolean hasWarnings() {
-      return (warnings.size() > 0);
+        return !warnings.isEmpty();
     }
 
     public String[] warnings() {
-      String[] s = new String[warnings.size()];
-      for (int i=0; i<warnings.size(); i++)
-        s[i] = warnings.get(i);
-      return s;
+        return warnings.toArray(new String[warnings.size()]);
     }
 
     /**
      * Add a key to the list of duplicated BibTeX keys found in the database.
+     *
      * @param key The duplicated key
      */
     public void addDuplicateKey(String key) {
-        if (!duplicateKeys.contains(key))
+        if (key != null) {
             duplicateKeys.add(key);
+        }
     }
 
     /**
      * Query whether any duplicated BibTeX keys have been found in the database.
+     *
      * @return true if there is at least one duplicate key.
      */
     public boolean hasDuplicateKeys() {
-        return duplicateKeys.size() > 0;
+        return !duplicateKeys.isEmpty();
     }
 
     /**
      * Get all duplicated keys found in the database.
+     *
      * @return An array containing the duplicated keys.
      */
     public String[] getDuplicateKeys() {
         return duplicateKeys.toArray(new String[duplicateKeys.size()]);
     }
-    
 
     public boolean isPostponedAutosaveFound() {
         return postponedAutosaveFound;

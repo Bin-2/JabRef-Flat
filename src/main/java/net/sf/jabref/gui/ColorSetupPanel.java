@@ -38,6 +38,8 @@ public class ColorSetupPanel extends JPanel {
 
     private final ArrayList<ColorButton> buttons = new ArrayList<>();
 
+    private JLabel infoLabel;
+
     public ColorSetupPanel() {
 
         FormLayout layout = new FormLayout("30dlu, 4dlu, fill:pref, 4dlu, fill:pref, 8dlu, 30dlu, 4dlu, fill:pref, 4dlu, fill:pref", "");
@@ -99,7 +101,7 @@ public class ColorSetupPanel extends JPanel {
         builder.append(new JLabel(""), 11); // Empty row for spacing
 
         builder.nextLine();
-        JLabel infoLabel = new JLabel("<html><i><strike>Table color customization is only available in Light theme mode.</strike></i><br><i>Table color customization is set to default theme.</i></html>");
+        infoLabel = new JLabel();
         infoLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         infoLabel.setFont(infoLabel.getFont().deriveFont(Font.ITALIC, infoLabel.getFont().getSize() - 1f));
 
@@ -150,35 +152,29 @@ public class ColorSetupPanel extends JPanel {
             but.disableAdjacentTableButton();
         }
 
-        // Update the info label text based on current theme
-//        updateInfoLabel();
-        // Refresh the UI
+        updateInfoLabel();
         revalidate();
         repaint();
     }
 
     private void updateInfoLabel() {
-        // Find and update the info label if it exists
-        Component[] components = getComponents();
-        for (Component comp : components) {
-            if (comp instanceof JLabel) {
-                JLabel label = (JLabel) comp;
-                if (label.getText() != null && label.getText().contains("Table color customization")) {
-                    String theme = JabRefPreferences.getInstance().get("Theme");
-                    String theme_mode = theme.toLowerCase().contains("dark")
-                            || theme.toLowerCase().contains("carbon") ? "dark" : "light";
-
-                    boolean isLightTheme = "Light".equalsIgnoreCase(theme_mode);
-
-                    String newText = isLightTheme
-                            ? "<html><i>Table color settings are currently enabled (Light mode).</i></html>"
-                            : "<html><i>Table color customization is only available in Light theme mode.</i></html>";
-
-                    label.setText(newText);
-                    break;
-                }
-            }
+        if (infoLabel == null) {
+            return;
         }
+
+        String theme = JabRefPreferences.getInstance().get("Theme");
+        if (theme == null) {
+            theme = "";
+        }
+
+        boolean isLightTheme = !(theme.toLowerCase().contains("dark")
+                || theme.toLowerCase().contains("carbon"));
+
+        String newText = isLightTheme
+                ? "<html><i>Table color settings are currently enabled (Light mode).</i></html>"
+                : "<html><i>Table color customization is only available in Light theme mode.</i></html>";
+
+        infoLabel.setText(newText);
     }
 
     /**
@@ -197,7 +193,7 @@ public class ColorSetupPanel extends JPanel {
             setIcon(this);
             this.key = key;
             this.name = name;
-            this.tableOrMark = tableOrMark;
+            this.tableOrMark = null;
             setBorder(BorderFactory.createRaisedBevelBorder());
         }
 
@@ -218,11 +214,13 @@ public class ColorSetupPanel extends JPanel {
         public void applyButtonState() {
             if ("table".equalsIgnoreCase(tableOrMark)) {
                 String theme = JabRefPreferences.getInstance().get("Theme");
-                String theme_mode = theme.toLowerCase().contains("dark")
-                        || theme.toLowerCase().contains("carbon") ? "dark" : "light";
+                if (theme == null) {
+                    theme = "";
+                }
 
-                boolean shouldEnable = "Light".equalsIgnoreCase(theme_mode);
-                // System.out.println(shouldEnable);
+                boolean shouldEnable = !(theme.toLowerCase().contains("dark")
+                        || theme.toLowerCase().contains("carbon"));
+
                 setEnabled(shouldEnable);
                 if (!shouldEnable) {
                     setToolTipText("Table color customization is only available in Light theme");
@@ -235,10 +233,13 @@ public class ColorSetupPanel extends JPanel {
         private void applyDefaultButtonState(JButton defaultButton) {
             if ("table".equalsIgnoreCase(tableOrMark)) {
                 String theme = JabRefPreferences.getInstance().get("Theme");
-                String theme_mode = theme.toLowerCase().contains("dark")
-                        || theme.toLowerCase().contains("carbon") ? "dark" : "light";
+                if (theme == null) {
+                    theme = "";
+                }
 
-                boolean shouldEnable = "Light".equalsIgnoreCase(theme_mode);
+                boolean shouldEnable = !(theme.toLowerCase().contains("dark")
+                        || theme.toLowerCase().contains("carbon"));
+
                 defaultButton.setEnabled(shouldEnable);
                 if (!shouldEnable) {
                     defaultButton.setToolTipText("Table color customization is only available in Light theme");
@@ -319,14 +320,13 @@ public class ColorSetupPanel extends JPanel {
         }
 
         public void setColor(Color color) {
-            this.color = color;
+            this.color = (color != null) ? color : Color.white;
         }
 
         @Override
         public void paintIcon(Component c, Graphics g, int x, int y) {
-            Rectangle r = g.getClipBounds();
-            g.setColor(color);
-            g.fillRect(r.x, r.y, r.width, r.height);
+            g.setColor(color != null ? color : Color.white);
+            g.fillRect(x, y, getIconWidth(), getIconHeight());
         }
 
         @Override

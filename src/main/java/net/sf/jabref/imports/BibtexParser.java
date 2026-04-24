@@ -40,9 +40,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.sf.jabref.*;
-import net.sf.jabref.collab.FileUpdateMonitor;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Class for importing BibTeX-files.
@@ -65,6 +62,10 @@ import java.util.concurrent.TimeUnit;
  * @author Christopher Oezbek
  */
 public class BibtexParser {
+
+    private static final boolean PROFILE = false;
+    private static final Pattern VERSION_PATTERN = Pattern.compile("([0-9]+)\\.([0-9]+).*");
+    private static final Pattern VERSION_PATTERN_2 = Pattern.compile("([0-9]+)\\.([0-9]+)\\.([0-9]+).*");
 
     // Add these instance variables for timing
     private long _startTime;
@@ -102,10 +103,15 @@ public class BibtexParser {
 
     // Add this method for timing
     private void startTimer() {
-        _startTime = System.nanoTime();
+        if (PROFILE) {
+            _startTime = System.nanoTime();
+        }
     }
 
     private void recordTime(int phase) {
+        if (!PROFILE) {
+            return;
+        }
         if (phase < 0 || phase >= NUM_PHASES) {
             phase = PHASE_OTHER;
         }
@@ -116,17 +122,17 @@ public class BibtexParser {
     }
 
     private void printTimingStats() {
+        if (!PROFILE) {
+            return;
+        }
         System.out.println("=== BibTeX Parser Performance Profile ===");
         for (int i = 0; i < NUM_PHASES; i++) {
             double seconds = _phaseTimes[i] / 1_000_000_000.0;
-            if (seconds > 0.001) { // Only show phases that took significant time
+            if (seconds > 0.001) {
                 System.out.printf("%-15s: %.3f seconds%n", _phaseNames[i], seconds);
             }
         }
 
-        // Calculate and print percentage breakdown
-        // double totalSeconds = _phaseTimes[PHASE_TOTAL] / 1_000_000_000.0;
-        // Calculate total by summing all phases (excluding PHASE_TOTAL itself)
         long totalNanos = 0;
         for (int i = 1; i < NUM_PHASES; i++) {
             totalNanos += _phaseTimes[i];
@@ -138,7 +144,7 @@ public class BibtexParser {
             System.out.println("Percentage breakdown:");
             for (int i = 1; i < NUM_PHASES; i++) {
                 double percent = (_phaseTimes[i] * 100.0) / _phaseTimes[PHASE_TOTAL];
-                if (percent > 1.0) { // Only show phases > 1%
+                if (percent > 1.0) {
                     System.out.printf("%-15s: %.1f%%%n", _phaseNames[i], percent);
                 }
             }
@@ -173,7 +179,8 @@ public class BibtexParser {
             Globals.prefs = JabRefPreferences.getInstance();
         }
         autoDoubleBraces = Globals.prefs.getBoolean("autoDoubleBraces");
-        _in = new PushbackReader(in, LOOKAHEAD);
+        _bufferedReader = new BufferedReader(in, LOOKAHEAD);
+        _in = new PushbackReader(_bufferedReader, LOOKAHEAD);
     }
 
     /**
@@ -249,7 +256,7 @@ public class BibtexParser {
     }
 
     private void skipWhitespace() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             int c;
             while (true) {
@@ -267,7 +274,9 @@ public class BibtexParser {
                 }
             }
         } finally {
-            _phaseTimes[PHASE_WHITESPACE] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_WHITESPACE] += System.nanoTime() - start;
+            }
         }
     }
 
@@ -314,11 +323,12 @@ public class BibtexParser {
      * @throws IOException
      */
     public ParserResult parse() throws IOException {
-        // Initialize timing arrays
-        for (int i = 0; i < NUM_PHASES; i++) {
-            _phaseTimes[i] = 0;
+        if (PROFILE) {
+            for (int i = 0; i < NUM_PHASES; i++) {
+                _phaseTimes[i] = 0;
+            }
+            startTimer();
         }
-        startTimer();
 
         // If we already parsed this, just return it.
         if (_pr != null) {
@@ -510,57 +520,28 @@ public class BibtexParser {
     }
 
     private int read() throws IOException {
-        long start = System.nanoTime();
-        try {
-            if (_useLargeBuffer && _largeBufferPos < _largeBufferLength) {
-                char c = _largeBuffer[_largeBufferPos++];
-                if (c == '\n') {
-                    line++;
-                }
-                return c;
-            }
-
-            // Fall back to original reading if large buffer is exhausted
-            _useLargeBuffer = false;
-            int c = _in.read();
-            if (c == '\n') {
-                line++;
-            }
-            return c;
-        } finally {
-            _phaseTimes[PHASE_FILE_READING] += System.nanoTime() - start;
+        int c = _in.read();
+        if (c == '\n') {
+            line++;
         }
+        return c;
     }
 
     private void unread(int c) throws IOException {
-        long start = System.nanoTime();
-        try {
-            if (_largeBufferPos > 0) {
-                _largeBufferPos--;
-                if (c == '\n') {
-                    line--;
-                }
-            } else {
-                _in.unread(c);
-            }
-        } finally {
-            _phaseTimes[PHASE_FILE_READING] += System.nanoTime() - start;
+        _in.unread(c);
+        if (c == '\n') {
+            line--;
         }
     }
 
     private void fillLargeBuffer() throws IOException {
-        long start = System.nanoTime();
-        try {
-            _largeBufferLength = _bufferedReader.read(_largeBuffer);
-            _largeBufferPos = 0;
-            _useLargeBuffer = (_largeBufferLength > 0);
-        } finally {
-            _phaseTimes[PHASE_FILE_READING] += System.nanoTime() - start;
-        }
+        _largeBufferLength = _bufferedReader.read(_largeBuffer);
+        _largeBufferPos = 0;
+        _useLargeBuffer = (_largeBufferLength > 0);
     }
 
     public BibtexString parseString() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             // Util.pr("Parsing string");
             skipWhitespace();
@@ -580,16 +561,20 @@ public class BibtexParser {
             String id = Util.createNeutralId();
             return new BibtexString(id, name, content);
         } finally {
-            _phaseTimes[PHASE_STRING_OPS] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_STRING_OPS] += System.nanoTime() - start;
+            }
         }
     }
 
     private String parsePreamble() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             return parseBracketedText().toString();
         } finally {
-            _phaseTimes[PHASE_STRING_OPS] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_STRING_OPS] += System.nanoTime() - start;
+            }
         }
     }
 
@@ -633,10 +618,6 @@ public class BibtexParser {
 
             parseField(result);
             fieldCount++;
-
-            if (fieldCount > 100) { // Safety check
-                break;
-            }
         }
 
         consume('}', ')');
@@ -644,13 +625,13 @@ public class BibtexParser {
     }
 
     private void parseField(BibtexEntry entry) throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             String key = parseTextToken().toLowerCase();
             // Util.pr("Field: _"+key+"_");
             skipWhitespace();
             consume('=');
-            String content = parseFieldContent(key);
+            String content = parseFieldContentOptimized(key);
             // Now, if the field in question is set up to be fitted automatically
             // with braces around capitals, we should remove those now when reading the field:
             if (Globals.prefs.putBracesAroundCapitals(key)) {
@@ -675,12 +656,14 @@ public class BibtexParser {
                 }
             }
         } finally {
-            _phaseTimes[PHASE_FIELD_PARSING] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_FIELD_PARSING] += System.nanoTime() - start;
+            }
         }
     }
 
     private String parseFieldContent(String key) throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
 
             skipWhitespace();
@@ -769,13 +752,15 @@ public class BibtexParser {
             }
             return value.toString();
         } finally {
-            _phaseTimes[PHASE_FIELD_CONTENT] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_FIELD_CONTENT] += System.nanoTime() - start;
+            }
         }
     }
 
 ////////////////////////////////////////////////////////////////////////////
     private String parseFieldContentOptimized(String key) throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             skipWhitespace();
             StringBuilder value = new StringBuilder(1024); // Larger initial size
@@ -813,12 +798,14 @@ public class BibtexParser {
             // Optimize autoDoubleBraces processing
             return processAutoDoubleBraces(value);
         } finally {
-            _phaseTimes[PHASE_FIELD_CONTENT] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_FIELD_CONTENT] += System.nanoTime() - start;
+            }
         }
     }
 
     private String parseBracketedTextOptimized() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             consume('{');
             StringBuilder value = new StringBuilder(2048); // Even larger for content
@@ -858,12 +845,14 @@ public class BibtexParser {
 
             return value.toString();
         } finally {
-            _phaseTimes[PHASE_BRACKET_PARSING] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_BRACKET_PARSING] += System.nanoTime() - start;
+            }
         }
     }
 
     private StringBuffer parseQuotedFieldOptimized() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             consume('"');
             StringBuilder value = new StringBuilder(1024);
@@ -975,7 +964,7 @@ public class BibtexParser {
      * numbers outside brackets.
      */
     private String parseTextToken() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
 
             StringBuilder token = new StringBuilder(32);
@@ -990,8 +979,7 @@ public class BibtexParser {
 
                 // Optimized character checking
                 char ch = (char) c;
-                if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
-                        || (ch >= '0' && ch <= '9') || ":-_*+./'".indexOf(ch) >= 0) {
+                if (isTextTokenChar(ch)) {
                     token.append(ch);
                 } else {
                     unread(c);
@@ -999,9 +987,19 @@ public class BibtexParser {
                 }
             }
         } finally {
-            _phaseTimes[PHASE_TEXT_TOKEN] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_TEXT_TOKEN] += System.nanoTime() - start;
+            }
         }
 
+    }
+
+    private boolean isTextTokenChar(char ch) {
+        return ((ch >= 'a' && ch <= 'z')
+                || (ch >= 'A' && ch <= 'Z')
+                || (ch >= '0' && ch <= '9')
+                || (ch == ':') || (ch == '-') || (ch == '_') || (ch == '*')
+                || (ch == '+') || (ch == '.') || (ch == '/') || (ch == '\''));
     }
 
     /**
@@ -1233,7 +1231,7 @@ public class BibtexParser {
     }
 
     private StringBuffer parseBracketedTextExactly() throws IOException {
-        long start = System.nanoTime();
+        long start = PROFILE ? System.nanoTime() : 0L;
         try {
             consume('{');
             StringBuilder value = new StringBuilder(256);
@@ -1262,7 +1260,9 @@ public class BibtexParser {
 
             return new StringBuffer(value.toString());
         } finally {
-            _phaseTimes[PHASE_BRACKET_PARSING] += System.nanoTime() - start;
+            if (PROFILE) {
+                _phaseTimes[PHASE_BRACKET_PARSING] += System.nanoTime() - start;
+            }
         }
     }
 
@@ -1420,10 +1420,8 @@ public class BibtexParser {
      */
     private void setMajorMinorVersions() {
         String v = _pr.getJabrefVersion();
-        Pattern p = Pattern.compile("([0-9]+)\\.([0-9]+).*");
-        Pattern p2 = Pattern.compile("([0-9]+)\\.([0-9]+)\\.([0-9]+).*");
-        Matcher m = p.matcher(v);
-        Matcher m2 = p2.matcher(v);
+        Matcher m = VERSION_PATTERN.matcher(v);
+        Matcher m2 = VERSION_PATTERN_2.matcher(v);
         if (m.matches()) {
             if (m.groupCount() >= 2) {
                 _pr.setJabrefMajorVersion(Integer.parseInt(m.group(1)));

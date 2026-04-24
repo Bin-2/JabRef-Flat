@@ -41,7 +41,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,15 +49,19 @@ import javax.swing.JOptionPane;
 
 public class BibtexDatabase {
 
-    Map<String, BibtexEntry> _entries = new Hashtable<>();
+    private final Map<String, BibtexEntry> _entries = new HashMap<>();
 
     private final Map<String, BibtexEntry> _keyToEntryMap = new HashMap<>();
 
     String _preamble = null;
 
-    HashMap<String, BibtexString> _strings = new HashMap<>();
+    private final HashMap<String, BibtexString> _strings = new HashMap<>();
+
+    private final Map<String, BibtexString> _stringsByName = new HashMap<>();
 
     Set<DatabaseChangeListener> changeListeners = new HashSet<>();
+
+    private boolean suppressEvents = false;
 
     public boolean followCrossrefs = true;
 
@@ -309,6 +312,7 @@ public class BibtexDatabase {
         }
 
         _strings.put(string.getId(), string);
+        _stringsByName.put(string.getName().toLowerCase(), string);
     }
 
     /**
@@ -317,7 +321,10 @@ public class BibtexDatabase {
      * @param id
      */
     public synchronized void removeString(String id) {
-        _strings.remove(id);
+        BibtexString removed = _strings.remove(id);
+        if (removed != null) {
+            _stringsByName.remove(removed.getName().toLowerCase());
+        }
     }
 
     /**
@@ -366,12 +373,10 @@ public class BibtexDatabase {
      * @return
      */
     public synchronized boolean hasStringLabel(String label) {
-        for (BibtexString value : _strings.values()) {
-            if (value.getName().equals(label)) {
-                return true;
-            }
+        if (label == null) {
+            return false;
         }
-        return false;
+        return _stringsByName.containsKey(label.toLowerCase());
     }
 
     /**
@@ -453,33 +458,21 @@ public class BibtexDatabase {
      * returns null.
      */
     private String resolveString(String label, HashSet<String> usedIds) {
-        for (BibtexString string : _strings.values()) {
+        BibtexString string = _stringsByName.get(label.toLowerCase());
+        if (string != null) {
 
-            //Util.pr(label+" : "+string.getName());
-            if (string.getName().toLowerCase().equals(label.toLowerCase())) {
-
-                // First check if this string label has been resolved
-                // earlier in this recursion. If so, we have a
-                // circular reference, and have to stop to avoid
-                // infinite recursion.
-                if (usedIds.contains(string.getId())) {
-                    Util.pr("Stopped due to circular reference in strings: " + label);
-                    return label;
-                }
-                // If not, log this string's ID now.
-                usedIds.add(string.getId());
-
-                // Ok, we found the string. Now we must make sure we
-                // resolve any references to other strings in this one.
-                String res = string.getContent();
-                res = resolveContent(res, usedIds);
-
-                // Finished with recursing this branch, so we remove our
-                // ID again:
-                usedIds.remove(string.getId());
-
-                return res;
+            if (usedIds.contains(string.getId())) {
+                Util.pr("Stopped due to circular reference in strings: " + label);
+                return label;
             }
+            usedIds.add(string.getId());
+
+            String res = string.getContent();
+            res = resolveContent(res, usedIds);
+
+            usedIds.remove(string.getId());
+
+            return res;
         }
 
         // If we get to this point, the string has obviously not been defined locally.
@@ -629,9 +622,20 @@ public class BibtexDatabase {
     }
 
     public void fireDatabaseChanged(DatabaseChangeEvent e) {
+        if (suppressEvents) {
+            return;
+        }
         for (DatabaseChangeListener listener : changeListeners) {
             listener.databaseChanged(e);
         }
+    }
+
+    public void setSuppressEvents(boolean suppressEvents) {
+        this.suppressEvents = suppressEvents;
+    }
+
+    public boolean isSuppressEvents() {
+        return suppressEvents;
     }
 
     public void addDatabaseChangeListener(DatabaseChangeListener l) {

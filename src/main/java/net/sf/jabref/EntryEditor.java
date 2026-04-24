@@ -207,7 +207,9 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
     TabListener tabListener = new TabListener();
 
     String currentTheme = Globals.prefs.get("Theme", "FlatLight");
-    private final Map<Integer, String> iconKeys = new HashMap<>();
+    private ThemeAwareComponent sourceTabIconRefresher;
+    private final LatexFieldFormatter sourceFormatter = LatexFieldFormatter.buildIgnoreHashes();
+    private final LatexFieldFormatter validatingFormatter = new LatexFieldFormatter();
 
 //    private static final List<EntryEditor> activeEditors = new ArrayList<>();
     public EntryEditor(JabRefFrame frame_, BasePanel panel_, BibtexEntry entry_) {
@@ -294,10 +296,16 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 //        }
 //    }
     ////////////////////////////////////////////////////////////////////////////
-
     private void setupFieldPanels() {
+        if (sourceTabIconRefresher != null) {
+            unregisterThemeAwareComponent(sourceTabIconRefresher);
+            sourceTabIconRefresher = null;
+        }
         tabbed.removeAll();
         tabs.clear();
+        contentSelectors.clear();
+        fileListEditor = null;
+        sourceIndex = -1;
         String[] fields = entry.getRequiredFields();
 
         List<String> fieldList = null;
@@ -402,9 +410,10 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             tabIconKeys.put(srcPanel, "source"); // Save icon key for later update
 
             // Register icon refresher for this tab
-            ThemeWatcher.register(new TabIconRefresher(tabbed, srcPanel, "source"));
+            sourceTabIconRefresher = new TabIconRefresher(tabbed, srcPanel, "source");
+            ThemeWatcher.register(sourceTabIconRefresher);
+            sourceIndex = tabbed.getTabCount() - 1;
         }
-        sourceIndex = tabs.size() - 1; // Set the sourceIndex variable.
 //        srcPanel.setFocusCycleRoot(true);
     }
 
@@ -644,15 +653,17 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         if ((fieldName.equals(Globals.prefs.get("timeStampField")))
                 || ((s != null) && s.equals("datepicker"))) {
             // double click AND datefield => insert the current date (today)
-            ((JTextArea) ed).addMouseListener(new MouseAdapter() {
-                public void mouseClicked(MouseEvent e) {
-                    if (e.getClickCount() == 2) // double click
-                    {
-                        String date = Util.easyDateFormat();
-                        ed.setText(date);
+            if (ed instanceof JTextArea) {
+                ((JTextArea) ed).addMouseListener(new MouseAdapter() {
+                    public void mouseClicked(MouseEvent e) {
+                        if (e.getClickCount() == 2) // double click
+                        {
+                            String date = Util.easyDateFormat();
+                            ed.setText(date);
+                        }
                     }
-                }
-            });
+                });
+            }
 
             // insert a datepicker, if the extras field contains this command
             if ((s != null) && s.equals("datepicker")) {
@@ -664,7 +675,11 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         if ((s != null) && s.equals("external")) {
 
             // Add external viewer listener for "pdf" and "url" fields.
-            ((JComponent) ed).addMouseListener(new ExternalViewerListener());
+            if (ed instanceof JComponent) {
+                if (ed instanceof JComponent) {
+                ((JComponent) ed).addMouseListener(new ExternalViewerListener());
+            }
+            }
 
             return null;
         } else if ((s != null) && s.equals("journalNames")) {
@@ -733,8 +748,10 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
          * else if ((s != null) && s.equals("browsePs")) { ExternalFilePanel pan =
          * new ExternalFilePanel(frame, this, "ps", off, ed); return pan; }
          */ else if ((s != null) && s.equals("url")) {
-            ((JComponent) ed).setDropTarget(new DropTarget((Component) ed,
-                    DnDConstants.ACTION_NONE, new SimpleUrlDragDrop(ed, storeFieldAction)));
+            if (ed instanceof JComponent) {
+                ((JComponent) ed).setDropTarget(new DropTarget((Component) ed,
+                        DnDConstants.ACTION_NONE, new SimpleUrlDragDrop(ed, storeFieldAction)));
+            }
 
             return null;
         } else if ((s != null) && (s.equals("setOwner"))) {
@@ -794,8 +811,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             StringWriter sw = new StringWriter(200);
 
             try {
-                LatexFieldFormatter formatter = LatexFieldFormatter.buildIgnoreHashes();
-                entry.write(sw, formatter, false);
+                entry.write(sw, sourceFormatter, false);
 
                 String srcString = sw.getBuffer().toString();
                 source.setText(srcString);
@@ -807,18 +823,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 // an autogeneration of a BibTeX key.
                 // - ILC (16/02/2010) -
                 //////////////////////////////////////////////////////////
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        final int row = panel.mainTable.findEntry(entry);
-                        if (row >= 0) {
-                            if (panel.mainTable.getSelectedRowCount() == 0) {
-                                panel.mainTable.setRowSelectionInterval(row, row);
-                            }
-                            //scrollTo(row);
-                            panel.mainTable.ensureVisible(row);
-                        }
-                    }
-                });
+                ensureEntryVisibleLater(true);
                 //////////////////////////////////////////////////////////
 
             } catch (IOException ex) {
@@ -933,6 +938,48 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         panel.mainTable.ensureVisible(row);
     }
 
+    private void detachEntryListeners(BibtexEntry targetEntry) {
+        if (targetEntry == null) {
+            return;
+        }
+        targetEntry.removePropertyChangeListener(this);
+        targetEntry.removePropertyChangeListener(SpecialFieldUpdateListener.getInstance());
+    }
+
+    private void attachEntryListeners(BibtexEntry targetEntry) {
+        if (targetEntry == null) {
+            return;
+        }
+        targetEntry.addPropertyChangeListener(this);
+        targetEntry.addPropertyChangeListener(SpecialFieldUpdateListener.getInstance());
+    }
+
+    private void ensureEntryVisibleLater(final boolean selectIfNone) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                final int row = panel.mainTable.findEntry(entry);
+                if (row >= 0) {
+                    if (selectIfNone && panel.mainTable.getSelectedRowCount() == 0) {
+                        panel.mainTable.setRowSelectionInterval(row, row);
+                    }
+                    panel.mainTable.ensureVisible(row);
+                }
+            }
+        });
+    }
+
+    private void unregisterThemeAwareComponent(ThemeAwareComponent component) {
+        if (component == null) {
+            return;
+        }
+        try {
+            ThemeWatcher.class.getMethod("unregister", ThemeAwareComponent.class).invoke(null, component);
+        } catch (ReflectiveOperationException ex) {
+            logger.log(Level.FINE, "ThemeWatcher unregister not available.", ex);
+        }
+    }
+
     /**
      * Makes sure the current edit is stored.
      */
@@ -1006,12 +1053,13 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         storeCurrentEdit();
 
         // Remove this instance as property listener for the entry:
-        entry.removePropertyChangeListener(this);
+        detachEntryListeners(entry);
 
         // Register as property listener for the new entry:
-        be.addPropertyChangeListener(this);
+        attachEntryListeners(be);
 
         entry = be;
+        type = be.getType();
 
         updateAllFields();
         validateAllFields();
@@ -1144,21 +1192,10 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             panel.markBaseChanged();
 
             ///////////////////////////////////////////////////////
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    final int row = panel.mainTable.findEntry(entry);
-                    if (row >= 0) {
-                        //if (panel.mainTable.getSelectedRowCount() == 0)
-                        //    panel.mainTable.setRowSelectionInterval(row, row);
-                        //scrollTo(row);
-                        panel.mainTable.ensureVisible(row);
-                    }
-                }
-            });
+            ensureEntryVisibleLater(false);
 
             return true;
-        } catch (Throwable ex) {
+        } catch (Exception ex) {
             // ex.printStackTrace();
             // The source couldn't be parsed, so the user is given an
             // error message, and the choice to keep or revert the contents
@@ -1457,10 +1494,9 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            String s = (entry.getField(BibtexFields.KEY_FIELD));
-            StringSelection ss = new StringSelection(s);
-
+            String s = entry.getField(BibtexFields.KEY_FIELD);
             if (s != null) {
+                StringSelection ss = new StringSelection(s);
                 Toolkit.getDefaultToolkit().getSystemClipboard().setContents(ss, ss);
             }
         }
@@ -1551,7 +1587,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                         // properly formatted. If that happens, the field
                         // is not stored and the textarea turns red.
                         if (toSet != null) {
-                            (new LatexFieldFormatter()).format(toSet, fe.getFieldName());
+                            validatingFormatter.format(toSet, fe.getFieldName());
                         }
 
                         String oldValue = entry.getField(fe.getFieldName());
@@ -1601,18 +1637,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             // Should only be done if this editor is currently showing:
             //System.out.println(getType().getName()+": movingAway="+movingAway+", isShowing="+isShowing());
             if (!movingAway && isShowing()) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        final int row = panel.mainTable.findEntry(entry);
-                        if (row >= 0) {
-                            //if (panel.mainTable.getSelectedRowCount() == 0)
-                            //    panel.mainTable.setRowSelectionInterval(row, row);
-                            //scrollTo(row);
-                            panel.mainTable.ensureVisible(row);
-                        }
-                    }
-                });
+                ensureEntryVisibleLater(false);
             }
         }
     }
@@ -1959,6 +1984,16 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 fileListEditor.autoSetLinks();
             }
         }
+    }
+
+    @Override
+    public void removeNotify() {
+        detachEntryListeners(entry);
+        if (sourceTabIconRefresher != null) {
+            unregisterThemeAwareComponent(sourceTabIconRefresher);
+            sourceTabIconRefresher = null;
+        }
+        super.removeNotify();
     }
 
 }

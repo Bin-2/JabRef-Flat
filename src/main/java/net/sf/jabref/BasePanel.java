@@ -224,6 +224,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     private final HashMap<String, Object> actions = new HashMap<>();
     private SidePaneManager sidePaneManager;
 
+    private GroupTreeUpdater groupTreeUpdater;
+    private SearchAutoCompleterUpdater searchAutoCompleterUpdater;
+    private AutoCompletersUpdater autoCompletersUpdater;
+    private GlazedEntrySorter glazedEntrySorter;
+    private boolean specialFieldDatabaseChangeListenerRegistered = false;
+
     /**
      * Create a new BasePanel with an empty database.
      *
@@ -268,7 +274,10 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         metaData.setFile(file);
 
         // ensure that at each addition of a new entry, the entry is added to the groups interface
-        db.addDatabaseChangeListener(new GroupTreeUpdater());
+        if (groupTreeUpdater == null) {
+            groupTreeUpdater = new GroupTreeUpdater();
+        }
+        db.addDatabaseChangeListener(groupTreeUpdater);
 
         if (file == null) {
             if (!database.getEntries().isEmpty()) {
@@ -1953,12 +1962,19 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     public void createMainTable() {
         //Comparator comp = new FieldComparator("author");
 
-        GlazedEntrySorter eventList = new GlazedEntrySorter(database.getEntryMap());
+        if (glazedEntrySorter != null) {
+            database.removeDatabaseChangeListener(glazedEntrySorter);
+        }
+
+        glazedEntrySorter = new GlazedEntrySorter(database.getEntryMap());
         // Must initialize sort columns somehow:
 
-        database.addDatabaseChangeListener(eventList);
-        database.addDatabaseChangeListener(SpecialFieldDatabaseChangeListener.getInstance());
-        groupFilterList = new FilterList<>(eventList.getTheList(), NoSearchMatcher.INSTANCE);
+        database.addDatabaseChangeListener(glazedEntrySorter);
+        if (!specialFieldDatabaseChangeListenerRegistered) {
+            database.addDatabaseChangeListener(SpecialFieldDatabaseChangeListener.getInstance());
+            specialFieldDatabaseChangeListenerRegistered = true;
+        }
+        groupFilterList = new FilterList<>(glazedEntrySorter.getTheList(), NoSearchMatcher.INSTANCE);
         searchFilterList = new FilterList<>(groupFilterList, NoSearchMatcher.INSTANCE);
         //final SortedList sortedList = new SortedList(searchFilterList, null);
         tableFormat = new MainTableFormat(this);
@@ -2138,13 +2154,19 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         // Set up name autocompleter for search:
         //if (!Globals.prefs.getBoolean("searchAutoComplete")) {
         instantiateSearchAutoCompleter();
-        this.getDatabase().addDatabaseChangeListener(new SearchAutoCompleterUpdater());
+        if (searchAutoCompleterUpdater == null) {
+            searchAutoCompleterUpdater = new SearchAutoCompleterUpdater();
+            this.getDatabase().addDatabaseChangeListener(searchAutoCompleterUpdater);
+        }
 
         // Set up AutoCompleters for this panel:
         if (Globals.prefs.getBoolean("autoComplete")) {
             instantiateAutoCompleters();
             // ensure that the autocompleters are in sync with entries
-            this.getDatabase().addDatabaseChangeListener(new AutoCompletersUpdater());
+            if (autoCompletersUpdater == null) {
+                autoCompletersUpdater = new AutoCompletersUpdater();
+                this.getDatabase().addDatabaseChangeListener(autoCompletersUpdater);
+            }
         }
 
         splitPane.revalidate();
@@ -2166,6 +2188,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
     private void instantiateSearchAutoCompleter() {
         searchCompleter = new NameFieldAutoCompleter(new String[]{"author", "editor"}, true);
+        searchAutoCompleterHM.clear();
         searchAutoCompleterHM.put("x", searchCompleter);
         for (BibtexEntry entry : database.getEntries()) {
             Util.updateCompletersForEntry(searchAutoCompleterHM, entry);

@@ -65,7 +65,7 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     BasePanel panel;
     EventList<BibtexEntry> tableRows;
     private boolean previewActive = Globals.prefs.getBoolean("previewEnabled");
-    private boolean workingOnPreview = false;
+    private volatile boolean workingOnPreview = false;
 
     private boolean enabled = true;
 
@@ -179,6 +179,9 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     }
 
     private void updatePreview(final BibtexEntry toShow, final boolean changedPreview, int repeats) {
+
+        final PreviewPanel previewToUpdate = this.preview;
+
         if (workingOnPreview) {
             if (repeats > 0) {
                 return; // We've already waited once. Give up on this selection.
@@ -201,17 +204,17 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         workingOnPreview = true;
         final Runnable update = new Runnable() {
             public void run() {
-                // If nothing was already shown, set the preview and move the separator:
                 if (changedPreview || (mode == BasePanel.SHOWING_NOTHING)) {
-                    panel.showPreview(preview);
+                    panel.showPreview(previewToUpdate);
                     panel.adjustSplitter();
                 }
                 workingOnPreview = false;
             }
         };
+
         final Runnable worker = new Runnable() {
             public void run() {
-                preview.setEntry(toShow);
+                previewToUpdate.setEntry(toShow);
                 SwingUtilities.invokeLater(update);
             }
         };
@@ -236,14 +239,21 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
 
     public void mouseReleased(MouseEvent e) {
         // First find the column and row on which the user has clicked.
-        final int col = table.columnAtPoint(e.getPoint()),
-                row = table.rowAtPoint(e.getPoint());
+        final int col = table.columnAtPoint(e.getPoint());
+        final int row = table.rowAtPoint(e.getPoint());
+
+        if (col < 0) {
+            return;
+        }
 
         // Check if the user has clicked on an icon cell to open url or pdf.
         final String[] iconType = table.getIconTypeForColumn(col);
 
         // Check if the user has right-clicked. If so, open the right-click menu.
         if (e.isPopupTrigger() || (e.getButton() == MouseEvent.BUTTON3)) {
+            if (row < 0) {
+                return;
+            }
             if (iconType == null) {
                 processPopupTrigger(e, row);
             } else {
@@ -259,14 +269,17 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     public void mouseClicked(MouseEvent e) {
 
         // First find the column on which the user has clicked.
-        final int col = table.columnAtPoint(e.getPoint()),
-                row = table.rowAtPoint(e.getPoint());
+        final int col = table.columnAtPoint(e.getPoint());
+        final int row = table.rowAtPoint(e.getPoint());
 
-        // A double click on an entry should open the entry's editor.
+        if (row < 0 || col < 0) {
+            return;
+        }
+
         if (e.getClickCount() == 2) {
-
             BibtexEntry toShow = tableRows.get(row);
             editSignalled(toShow);
+            return;
         }
 
         // Check if the user has clicked on an icon cell to open url or pdf.

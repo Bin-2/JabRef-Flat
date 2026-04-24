@@ -16,9 +16,13 @@
 package net.sf.jabref.imports;
 
 import java.awt.event.ActionEvent;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -162,19 +166,18 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
     }
 
     public void openIt(File file, boolean raisePanel) {
+        long totalStartNanos = System.nanoTime();
+
         if ((file != null) && (file.exists())) {
             File fileToLoad = file;
             frame.output(Globals.lang("Opening") + ": '" + file.getPath() + "'");
             boolean tryingAutosave = false;
             boolean autoSaveFound = AutoSaveManager.newerAutoSaveExists(file);
+
             if (autoSaveFound && !Globals.prefs.getBoolean("promptBeforeUsingAutosave")) {
-                // We have found a newer autosave, and the preferences say we should load
-                // it without prompting, so we replace the fileToLoad:
                 fileToLoad = AutoSaveManager.getAutoSaveFile(file);
                 tryingAutosave = true;
             } else if (autoSaveFound) {
-                // We have found a newer autosave, but we are not allowed to use it without
-                // prompting.
                 int answer = JOptionPane.showConfirmDialog(null, "<html>"
                         + Globals.lang("An autosave file was found for this database. This could indicate ")
                         + Globals.lang("that JabRef didn't shut down cleanly last time the file was used.") + "<br>"
@@ -190,14 +193,12 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
             while (!done) {
                 String fileName = file.getPath();
                 Globals.prefs.put("workingDirectory", file.getPath());
-                // Should this be done _after_ we know it was successfully opened?
                 String encoding = Globals.prefs.get("defaultEncoding");
 
                 if (Util.hasLockFile(file)) {
                     long modTime = Util.getLockFileTimeStamp(file);
                     if ((modTime != -1) && (System.currentTimeMillis() - modTime
                             > SaveSession.LOCKFILE_CRITICAL_AGE)) {
-                        // The lock file is fairly old, so we can offer to "steal" the file:
                         int answer = JOptionPane.showConfirmDialog(null, "<html>" + Globals.lang("Error opening file")
                                 + " '" + fileName + "'. " + Globals.lang("File is locked by another JabRef instance.")
                                 + "<p>" + Globals.lang("Do you want to override the file lock?"),
@@ -213,17 +214,24 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                                 Globals.lang("Error"), JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-
                 }
+
                 ParserResult pr;
                 String errorMessage = null;
+                long loadStartNanos = System.nanoTime();
+
                 try {
                     pr = loadDatabase(fileToLoad, encoding);
                 } catch (Exception ex) {
-                    //ex.printStackTrace();
                     errorMessage = ex.getMessage();
                     pr = null;
+                } finally {
+                    double loadSeconds = (System.nanoTime() - loadStartNanos) / 1_000_000_000.0;
+                    frame.output(Globals.lang("Load time") + ": "
+                            + String.format(java.util.Locale.ROOT, "%.3f s", loadSeconds)
+                            + " (" + fileToLoad.getPath() + ")");
                 }
+
                 if ((pr == null) || (pr == ParserResult.INVALID_FORMAT)) {
                     JOptionPane.showMessageDialog(null, Globals.lang("Error opening file") + " '" + fileName + "'",
                             Globals.lang("Error"),
@@ -231,7 +239,7 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
 
                     String message = "<html>" + errorMessage + "<p>"
                             + (tryingAutosave ? Globals.lang("Error opening autosave of '%0'. Trying to load '%0' instead.", file.getName())
-                                    : ""/*Globals.lang("Error opening file '%0'.", file.getName())*/) + "</html>";
+                                    : "") + "</html>";
                     JOptionPane.showMessageDialog(null, message, Globals.lang("Error opening file"), JOptionPane.ERROR_MESSAGE);
 
                     if (tryingAutosave) {
@@ -250,11 +258,6 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                     panel.markNonUndoableBaseChanged();
                 }
 
-                // After adding the database, go through our list and see if
-                // any post open actions need to be done. For instance, checking
-                // if we found new entry types that can be imported, or checking
-                // if the database contents should be modified due to new features
-                // in this version of JabRef:
                 final ParserResult prf = pr;
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
@@ -262,8 +265,12 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                     }
                 });
             }
-
         }
+
+        double totalSeconds = (System.nanoTime() - totalStartNanos) / 1_000_000_000.0;
+        frame.output(Globals.lang("Total open time") + ": "
+                + String.format(java.util.Locale.ROOT, "%.3f s", totalSeconds)
+                + " (" + file.getPath() + ")");
     }
 
     /**
@@ -330,40 +337,17 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
     public static ParserResult loadDatabase(File fileToOpen, String encoding)
             throws IOException {
 
-        // First we make a quick check to see if this looks like a BibTeX file:
-        Reader reader;// = ImportFormatReader.getReader(fileToOpen, encoding);
-        //if (!BibtexParser.isRecognizedFormat(reader))
-        //    return null;
+        Reader reader;
+        String suppliedEncoding = detectEncodingFromHeader(fileToOpen);
 
-        // The file looks promising. Reinitialize the reader and go on:
-        //reader = getReader(fileToOpen, encoding);
-        // We want to check if there is a JabRef signature in the file, because that would tell us
-        // which character encoding is used. However, to read the signature we must be using a compatible
-        // encoding in the first place. Since the signature doesn't contain any fancy characters, we can
-        // read it regardless of encoding, with either UTF8 or UTF-16. That's the hypothesis, at any rate.
-        // 8 bit is most likely, so we try that first:
-        Reader utf8Reader = ImportFormatReader.getReader(fileToOpen, "UTF8");
-        String suppliedEncoding = checkForEncoding(utf8Reader);
-        utf8Reader.close();
-        // Now if that didn't get us anywhere, we check with the 16 bit encoding:
-        if (suppliedEncoding == null) {
-            Reader utf16Reader = ImportFormatReader.getReader(fileToOpen, "UTF-16");
-            suppliedEncoding = checkForEncoding(utf16Reader);
-            utf16Reader.close();
-            //System.out.println("Result of UTF-16 test: "+suppliedEncoding);
-        }
-
-        //System.out.println(suppliedEncoding != null ? "Encoding: '"+suppliedEncoding+"' Len: "+suppliedEncoding.length() : "no supplied encoding");
-        if ((suppliedEncoding != null)) {
+        if (suppliedEncoding != null) {
             try {
                 reader = ImportFormatReader.getReader(fileToOpen, suppliedEncoding);
-                encoding = suppliedEncoding; // Just so we put the right info into the ParserResult.
+                encoding = suppliedEncoding;
             } catch (Exception ex) {
-                ex.printStackTrace();
-                reader = ImportFormatReader.getReader(fileToOpen, encoding); // The supplied encoding didn't work out, so we use the default.
+                reader = ImportFormatReader.getReader(fileToOpen, encoding);
             }
         } else {
-            // We couldn't find a header with info about encoding. Use default:
             reader = ImportFormatReader.getReader(fileToOpen, encoding);
         }
 
@@ -375,7 +359,9 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
 
         if (SpecialFieldsUtils.keywordSyncEnabled()) {
             for (BibtexEntry entry : pr.getDatabase().getEntries()) {
-                SpecialFieldsUtils.syncSpecialFieldsFromKeywords(entry, null);
+                if (entry.getField("keywords") != null) {
+                    SpecialFieldsUtils.syncSpecialFieldsFromKeywords(entry, null);
+                }
             }
             logger.fine(Globals.lang("Synchronized special fields based on keywords"));
         }
@@ -387,73 +373,59 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
         return pr;
     }
 
-    private static String checkForEncoding(Reader reader) {
-        String suppliedEncoding = null;
-        StringBuffer headerText = new StringBuffer();
+    private static String detectEncodingFromHeader(File file) throws IOException {
+        final int maxBytes = 8192;
+        byte[] buffer = new byte[maxBytes];
+        int len;
+
+        InputStream in = new BufferedInputStream(new FileInputStream(file));
         try {
-            boolean keepon = true;
-            int piv = 0, offset = 0;
-            int c;
-
-            while (keepon) {
-                c = reader.read();
-                if ((piv == 0) && ((c == '%') || (Character.isWhitespace((char) c)))) {
-                    offset++;
-                } else {
-                    headerText.append((char) c);
-                    if (c == GUIGlobals.SIGNATURE.charAt(piv)) {
-                        piv++;
-                    } else //if (((char)c) == '@')
-                    {
-                        keepon = false;
-                    }
-                }
-                //System.out.println(headerText.toString());
-                found:
-                if (piv == GUIGlobals.SIGNATURE.length()) {
-                    keepon = false;
-
-                    //if (headerText.length() > GUIGlobals.SIGNATURE.length())
-                    //    System.out.println("'"+headerText.toString().substring(0, headerText.length()-GUIGlobals.SIGNATURE.length())+"'");
-                    // Found the signature. The rest of the line is unknown, so we skip
-                    // it:
-                    while (reader.read() != '\n') {
-                        // keep reading
-                    }
-                    // If the next line starts with something like "% ", handle this:
-                    while (((c = reader.read()) == '%') || (Character.isWhitespace((char) c))) {
-                        // keep reading
-                    }
-                    // Then we must skip the "Encoding: ". We may already have read the first
-                    // character:
-                    if ((char) c != GUIGlobals.encPrefix.charAt(0)) {
-                        break found;
-                    }
-
-                    for (int i = 1; i < GUIGlobals.encPrefix.length(); i++) {
-                        if (reader.read() != GUIGlobals.encPrefix.charAt(i)) {
-                            break found; // No,
-                        }                        // it
-                        // doesn't
-                        // seem
-                        // to
-                        // match.
-                    }
-
-                    // If ok, then read the rest of the line, which should contain the
-                    // name
-                    // of the encoding:
-                    StringBuilder sb = new StringBuilder();
-
-                    while ((c = reader.read()) != '\n') {
-                        sb.append((char) c);
-                    }
-
-                    suppliedEncoding = sb.toString();
-                }
-            }
-        } catch (IOException ignored) {
+            len = in.read(buffer);
+        } finally {
+            in.close();
         }
-        return suppliedEncoding != null ? suppliedEncoding.trim() : null;
+
+        if (len <= 0) {
+            return null;
+        }
+
+        String detected = detectEncodingFromDecodedPrefix(buffer, len, "UTF8");
+        if (detected != null) {
+            return detected;
+        }
+
+        return detectEncodingFromDecodedPrefix(buffer, len, "UTF-16");
+    }
+
+    private static String detectEncodingFromDecodedPrefix(byte[] buffer, int len, String charsetName) {
+        try {
+            String prefix = new String(buffer, 0, len, Charset.forName(charsetName));
+
+            int sigIndex = prefix.indexOf(GUIGlobals.SIGNATURE);
+            if (sigIndex < 0) {
+                return null;
+            }
+
+            int encIndex = prefix.indexOf(GUIGlobals.encPrefix, sigIndex + GUIGlobals.SIGNATURE.length());
+            if (encIndex < 0) {
+                return null;
+            }
+
+            int valueStart = encIndex + GUIGlobals.encPrefix.length();
+            int valueEnd = valueStart;
+
+            while (valueEnd < prefix.length()) {
+                char ch = prefix.charAt(valueEnd);
+                if (ch == '\r' || ch == '\n') {
+                    break;
+                }
+                valueEnd++;
+            }
+
+            String result = prefix.substring(valueStart, valueEnd).trim();
+            return result.length() > 0 ? result : null;
+        } catch (Exception ex) {
+            return null;
+        }
     }
 }

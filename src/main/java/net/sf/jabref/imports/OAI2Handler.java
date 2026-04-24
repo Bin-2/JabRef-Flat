@@ -100,6 +100,20 @@ public class OAI2Handler extends DefaultHandler {
 			entry.setField("comments", content);
 		} else if (qualifiedName.equals("report-no")) {
 			entry.setField("reportno", content);
+		} else if (qualifiedName.equals("doi")) {
+			if (content != null) {
+				content = content.trim();
+				if (content.startsWith("https://doi.org/")) {
+					content = content.substring("https://doi.org/".length());
+				} else if (content.startsWith("http://doi.org/")) {
+					content = content.substring("http://doi.org/".length());
+				} else if (content.startsWith("doi:")) {
+					content = content.substring("doi:".length());
+				}
+				if (content.length() > 0) {
+					entry.setField("doi", content);
+				}
+			}
 		} else if (qualifiedName.equals("author")) {
 			String author = forenames + " " + keyname;
 			if (authors.length() > 0)

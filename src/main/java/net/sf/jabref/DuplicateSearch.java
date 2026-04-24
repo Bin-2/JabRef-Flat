@@ -93,6 +93,8 @@ public class DuplicateSearch extends Thread {
                     DuplicateCallBack cb = new DuplicateCallBack(panel.frame, be[0], be[1],
                             askAboutExact ? DuplicateResolverDialog.DUPLICATE_SEARCH_WITH_EXACT
                                     : DuplicateResolverDialog.DUPLICATE_SEARCH);
+
+                    // THIS CallBack will trigger Errors in JDK25
                     ((CallBack) (Spin.over(cb))).update();
 
                     duplicateCounter++;

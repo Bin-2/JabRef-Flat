@@ -83,6 +83,7 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
 
     public MainTableFormat(BasePanel panel) {
         this.panel = panel;
+        updateTableFormat();
         ThemeWatcher.register(this);
     }
 
@@ -171,12 +172,7 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
      * @return
      */
     public String[] getIconTypeForColumn(int col) {
-        Object o = iconCols.get(new Integer(col));
-        if (o != null) {
-            return (String[]) o;
-        } else {
-            return null;
-        }
+        return iconCols.get(col);
     }
 
     /**
@@ -290,7 +286,7 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
                     o = be.getType().getName();
                 } else {
                     o = be.getFieldOrAlias(fld[i]);
-                    if (getColumnName(col).equals("Author") && o != null) {
+                    if ("author".equalsIgnoreCase(fld[i]) && o != null) {
                         o = panel.database().resolveForStrings((String) o);
                     }
                 }

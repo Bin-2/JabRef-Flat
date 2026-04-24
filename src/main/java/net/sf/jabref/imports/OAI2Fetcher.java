@@ -124,15 +124,72 @@ public class OAI2Fetcher implements EntryFetcher {
     /**
      * Remove "arxiv:" (case-insensitive), strip trailing version "v\\d+", then
      * apply legacy fixKey.
+     * New normalizer 09:46 2026-04-16
      */
     private static String normalizeArxivKey(String raw) {
+        if (raw == null) {
+            return null;
+        }
+
         String k = raw.trim();
+        if (k.length() == 0) {
+            return "";
+        }
+
+        // Extract arXiv id from common URLs:
+        //   https://arxiv.org/abs/1706.03762
+        //   https://arxiv.org/abs/1706.03762v2
+        //   https://arxiv.org/pdf/1706.03762.pdf
+        //   https://arxiv.org/pdf/1706.03762v2.pdf
+        //   https://arxiv.org/abs/hep-th/9901001
+        //   https://arxiv.org/pdf/hep-th/9901001v2.pdf
+        k = k.replace('\\', '/');
+
+        int p;
+        p = k.indexOf("arxiv.org/abs/");
+        if (p >= 0) {
+            k = k.substring(p + "arxiv.org/abs/".length());
+        } else {
+            p = k.indexOf("arxiv.org/pdf/");
+            if (p >= 0) {
+                k = k.substring(p + "arxiv.org/pdf/".length());
+            } else {
+                p = k.indexOf("export.arxiv.org/abs/");
+                if (p >= 0) {
+                    k = k.substring(p + "export.arxiv.org/abs/".length());
+                } else {
+                    p = k.indexOf("export.arxiv.org/pdf/");
+                    if (p >= 0) {
+                        k = k.substring(p + "export.arxiv.org/pdf/".length());
+                    }
+                }
+            }
+        }
+
+        // Drop query string or fragment
+        int q = k.indexOf('?');
+        if (q >= 0) {
+            k = k.substring(0, q);
+        }
+        int h = k.indexOf('#');
+        if (h >= 0) {
+            k = k.substring(0, h);
+        }
+
+        // Drop trailing .pdf for pdf URLs
+        if (k.toLowerCase().endsWith(".pdf")) {
+            k = k.substring(0, k.length() - 4);
+        }
+
+        // Remove leading arXiv: prefix if present
         if (k.regionMatches(true, 0, "arxiv:", 0, 6)) {
             k = k.substring(6).trim();
         }
-        // Strip version suffix (e.g., 1234.5678v2 -> 1234.5678)
+
+        // Strip version suffix
         k = k.replaceFirst("v\\d+$", "");
-        // Legacy normalization (keeps old category scheme behavior)
+
+        // Legacy normalization for old category ids
         return fixKey(k);
     }
 
@@ -247,6 +304,15 @@ public class OAI2Fetcher implements EntryFetcher {
                 be.setField("url", arxivAbsUrl);
                 be.setField("eprint", arxivId);
                 be.setField("eprinttype", "arxiv");
+
+                // DOI: arXiv assigns a canonical DOI to submissions.
+                // Keep any DOI parsed from OAI2 metadata, otherwise synthesize it
+                // from the normalized arXiv identifier.
+                String canonicalArxivDoi = "10.48550/arXiv." + arxivId;
+                String existingDoi = be.getField("doi");
+                if (existingDoi == null || existingDoi.trim().isEmpty()) {
+                    be.setField("doi", canonicalArxivDoi);
+                }
 
                 // Journal: requested pattern "arXiv preprint arXiv:<ID>"
                 be.setField("journal", "arXiv preprint arXiv:" + arxivId);

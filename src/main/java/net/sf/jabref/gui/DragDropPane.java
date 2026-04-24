@@ -18,6 +18,7 @@ package net.sf.jabref.gui;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.AlphaComposite;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -28,6 +29,7 @@ import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import javax.swing.Icon;
 
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -95,38 +97,56 @@ public class DragDropPane extends JTabbedPane {
 
         addMouseListener(new MouseAdapter() {
             public void mouseReleased(MouseEvent e) {
-                DragDropPane.this.markerPane.setVisible(false); //Set MarkerPane invisible
-                int indexActTab = getUI().tabForCoordinate(DragDropPane.this,
-                        e.getX(), e.getY());
-                if (indexDraggedTab >= 0 && indexActTab >= 0 && indexDraggedTab != indexActTab) { //Is it a valid scenario?
-                    if (draggingState) { //We are at tab tragging
-                        boolean toTheLeft = e.getX() <= getUI().getTabBounds(DragDropPane.this, indexActTab).getCenterX(); //Go to the left or to the right of the actual Tab
-                        DragDropPane.this.markerPane.setVisible(false);
+                DragDropPane.this.markerPane.setVisible(false);
 
-                        Component actTab = getComponentAt(indexDraggedTab); //Save dragged tab
-                        String actTabTitle = getTitleAt(indexDraggedTab); //Save Title of the dragged tab
-                        removeTabAt(indexDraggedTab); //Remove dragged tab
-                        int newTabPos;
-                        if (indexActTab < indexDraggedTab) { //We are dragging the tab to the left of its the position
-                            if (toTheLeft && indexActTab < (DragDropPane.this.getTabCount())) // The mouse is at the left side of a tab except the last one
-                            {
-                                newTabPos = indexActTab;
+                int indexActTab = getUI().tabForCoordinate(DragDropPane.this, e.getX(), e.getY());
+                try {
+                    if (indexDraggedTab >= 0 && indexActTab >= 0 && indexDraggedTab != indexActTab) {
+                        if (draggingState) {
+                            boolean toTheLeft = e.getX() <= getUI().getTabBounds(DragDropPane.this, indexActTab).getCenterX();
+
+                            Component actTab = getComponentAt(indexDraggedTab);
+                            String actTabTitle = getTitleAt(indexDraggedTab);
+                            Icon actTabIcon = getIconAt(indexDraggedTab);
+                            String actTabTooltip = getToolTipTextAt(indexDraggedTab);
+                            boolean actTabEnabled = isEnabledAt(indexDraggedTab);
+                            Component customTabComponent = getTabComponentAt(indexDraggedTab);
+                            int mnemonic = getMnemonicAt(indexDraggedTab);
+                            int displayedMnemonicIndex = getDisplayedMnemonicIndexAt(indexDraggedTab);
+                            Color foreground = getForegroundAt(indexDraggedTab);
+                            Color background = getBackgroundAt(indexDraggedTab);
+
+                            removeTabAt(indexDraggedTab);
+
+                            int newTabPos;
+                            if (indexActTab < indexDraggedTab) {
+                                if (toTheLeft && indexActTab < DragDropPane.this.getTabCount()) {
+                                    newTabPos = indexActTab;
+                                } else {
+                                    newTabPos = indexActTab + 1;
+                                }
                             } else {
-                                newTabPos = indexActTab + 1;
+                                if (toTheLeft && indexActTab > 0) {
+                                    newTabPos = indexActTab - 1;
+                                } else {
+                                    newTabPos = indexActTab;
+                                }
                             }
-                        } else { //We are dragging the tab to the right of the old position
-                            if (toTheLeft && indexActTab > 0) // The mouse is at the left side of a tab except the first one
-                            {
-                                newTabPos = indexActTab - 1;
-                            } else {
-                                newTabPos = indexActTab;
-                            }
+
+                            insertTab(actTabTitle, actTabIcon, actTab, actTabTooltip, newTabPos);
+                            setEnabledAt(newTabPos, actTabEnabled);
+                            setTabComponentAt(newTabPos, customTabComponent);
+                            setMnemonicAt(newTabPos, mnemonic);
+                            setDisplayedMnemonicIndexAt(newTabPos, displayedMnemonicIndex);
+                            setForegroundAt(newTabPos, foreground);
+                            setBackgroundAt(newTabPos, background);
+                            DragDropPane.this.setSelectedIndex(newTabPos);
                         }
-                        insertTab(actTabTitle, null, actTab, null, newTabPos); //Insert dragged tab at new position
-                        DragDropPane.this.setSelectedIndex(newTabPos); //Set selection back to the tab (at the new tab position
                     }
+                } finally {
+                    draggingState = false;
+                    indexDraggedTab = -1;
                 }
-                draggingState = false;
             }
         });
     }

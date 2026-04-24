@@ -43,8 +43,6 @@ public class EntrySorter implements DatabaseChangeListener {
 
     @Override
     public void databaseChanged(DatabaseChangeEvent e) {
-        long startTime = System.nanoTime();
-
         lock.writeLock().lock();
         try {
             switch (e.getType()) {
@@ -57,18 +55,16 @@ public class EntrySorter implements DatabaseChangeListener {
                     needsReindex = true;
                     break;
                 case CHANGED_ENTRY:
-                    // TreeSet handles resorting automatically on re-insert
                     sortedSet.remove(e.getEntry());
                     sortedSet.add(e.getEntry());
                     needsReindex = true;
+                    break;
+                default:
                     break;
             }
         } finally {
             lock.writeLock().unlock();
         }
-
-        long endTime = System.nanoTime();
-        System.out.println("[EntrySorter NEW] databaseChanged(" + e.getType() + ") time: " + (endTime - startTime) / 1000000.0 + " ms");
     }
 
     public void index() {
@@ -76,33 +72,38 @@ public class EntrySorter implements DatabaseChangeListener {
             return;
         }
 
-        long startTime = System.nanoTime();
-
         lock.writeLock().lock();
         try {
+            if (!needsReindex) {
+                return;
+            }
+
             int size = sortedSet.size();
-            cachedIdArray = new String[size];
-            cachedEntryArray = new BibtexEntry[size];
+            String[] newIdArray = new String[size];
+            BibtexEntry[] newEntryArray = new BibtexEntry[size];
 
             int i = 0;
             for (BibtexEntry entry : sortedSet) {
-                cachedIdArray[i] = entry.getId();
-                cachedEntryArray[i] = entry;
+                newIdArray[i] = entry.getId();
+                newEntryArray[i] = entry;
                 i++;
             }
+
+            cachedIdArray = newIdArray;
+            cachedEntryArray = newEntryArray;
             needsReindex = false;
         } finally {
             lock.writeLock().unlock();
         }
-
-        long endTime = System.nanoTime();
-        System.out.println("[EntrySorter NEW] index() time: " + (endTime - startTime) / 1000000.0 + " ms for " + cachedEntryArray.length + " entries");
     }
 
     // Read methods use read lock
     public String getIdAt(int pos) {
         lock.readLock().lock();
         try {
+            if (cachedIdArray == null) {
+                throw new IndexOutOfBoundsException("No indexed entries available");
+            }
             return cachedIdArray[pos];
         } finally {
             lock.readLock().unlock();
@@ -112,6 +113,9 @@ public class EntrySorter implements DatabaseChangeListener {
     public BibtexEntry getEntryAt(int pos) {
         lock.readLock().lock();
         try {
+            if (cachedEntryArray == null) {
+                throw new IndexOutOfBoundsException("No indexed entries available");
+            }
             return cachedEntryArray[pos];
         } finally {
             lock.readLock().unlock();
@@ -128,6 +132,6 @@ public class EntrySorter implements DatabaseChangeListener {
     }
 
     public boolean isOutdated() {
-        return false;
+        return needsReindex;
     }
 }

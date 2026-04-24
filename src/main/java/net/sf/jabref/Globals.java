@@ -141,8 +141,8 @@ public class Globals {
     public static final String FILETYPE_PREFS_EXT = "_dir", SELECTOR_META_PREFIX = "selector_",
             PROTECTED_FLAG_META = "protectedFlag",
             LAYOUT_PREFIX = "/resource/layout/", MAC = "Mac OS X",
-            DOI_LOOKUP_PREFIX = "http://dx.doi.org/", NONE = "_non__",
-            ARXIV_LOOKUP_PREFIX = "http://arxiv.org/abs/",
+            DOI_LOOKUP_PREFIX = "https://dx.doi.org/", NONE = "_non__",
+            ARXIV_LOOKUP_PREFIX = "https://arxiv.org/abs/",
             FORMATTER_PACKAGE = "net.sf.jabref.export.layout.format.";
 
     private static Handler consoleHandler;

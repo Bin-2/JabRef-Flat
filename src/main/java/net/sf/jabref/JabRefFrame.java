@@ -394,6 +394,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
     List<EntryFetcher> fetchers = new LinkedList<>();
     List<Action> fetcherActions = new LinkedList<>();
+    private boolean fetchersLoaded = false;
 
     private SearchManager2 searchManager;
 
@@ -644,15 +645,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         setTabTitle(bp, title, bp.getFile() != null ? bp.getFile().getAbsolutePath() : null);
     }
 
-    private void initSidePane() {
-        sidePaneManager = new SidePaneManager(this);
+    private void ensureFetchersLoaded() {
+        if (fetchersLoaded) {
+            return;
+        }
 
-        Globals.sidePaneManager = this.sidePaneManager;
-        Globals.helpDiag = this.helpDiag;
-
-        /*
-         * Load fetchers that are plug-in extensions
-         */
+        fetchersLoaded = true;
         JabRefPlugin jabrefPlugin = JabRefPlugin.getInstance(PluginCore.getManager());
         if (jabrefPlugin != null) {
             for (EntryFetcherExtension ext : jabrefPlugin.getEntryFetcherExtensions()) {
@@ -667,6 +665,13 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 }
             }
         }
+    }
+
+    private void initSidePane() {
+        sidePaneManager = new SidePaneManager(this);
+
+        Globals.sidePaneManager = this.sidePaneManager;
+        Globals.helpDiag = this.helpDiag;
 
         groupSelector = new GroupSelector(this, sidePaneManager);
         searchManager = new SearchManager2(this, sidePaneManager);
@@ -763,28 +768,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     // General preferences dialog.  The MacAdapter calls this method when "Preferences..."
     // is selected from the application menu.
     public void preferences() {
-        //PrefsDialog.showPrefsDialog(JabRefFrame.this, prefs);
-        AbstractWorker worker = new AbstractWorker() {
-            @Override
-            public void run() {
-                output(Globals.lang("Opening preferences..."));
-                if (prefsDialog == null) {
-                    prefsDialog = new PrefsDialog3(JabRefFrame.this);
-                    Util.placeDialog(prefsDialog, JabRefFrame.this);
-                } else {
-                    prefsDialog.setValues();
-                }
-
-            }
-
-            @Override
-            public void update() {
-                prefsDialog.setVisible(true);
-                output("");
-            }
-        };
-        worker.getWorker().run();
-        worker.getCallBack().update();
+        output(Globals.lang("Opening preferences..."));
+        if (prefsDialog == null) {
+            prefsDialog = new PrefsDialog3(JabRefFrame.this);
+            Util.placeDialog(prefsDialog, JabRefFrame.this);
+        } else {
+            prefsDialog.setValues();
+        }
+        prefsDialog.setVisible(true);
+        output("");
     }
 
     public JabRefPreferences prefs() {
@@ -1464,6 +1456,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         //search.add(strictDupliCheck);
         search.add(autoSetFile);
         search.addSeparator();
+        ensureFetchersLoaded();
         GeneralFetcher generalFetcher = new GeneralFetcher(sidePaneManager, this, fetchers);
         search.add(generalFetcher.getAction());
         if (prefs.getBoolean("webSearchVisible")) {
@@ -1742,8 +1735,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         tlb.revalidate();
         tlb.repaint();
-        revalidate();
-        repaint();
     }
 
     private void createToolBar() {
@@ -2136,21 +2127,25 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * called from PrefsDialog3, this updates to the new settings.
      */
     public void setupAllTables() {
-        // This action can be invoked without an open database, so
-        // we have to check if we have one before trying to invoke
-        // methods to execute changes in the preferences.
+        if (tabbedPane.getTabCount() == 0) {
+            return;
+        }
 
-        // We want to notify all tabs about the changes to
-        // avoid problems when changing the column set.
-        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-            BasePanel bf = baseAt(i);
-
-            // Update tables:
-            if (bf.database != null) {
-                bf.setupMainPanel();
-
+        Component selected = tabbedPane.getSelectedComponent();
+        Cursor oldCursor = getCursor();
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        try {
+            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                BasePanel bf = baseAt(i);
+                if (bf.database != null) {
+                    bf.setupMainPanel();
+                }
             }
-
+        } finally {
+            if (selected != null) {
+                tabbedPane.setSelectedComponent(selected);
+            }
+            setCursor(oldCursor);
         }
     }
 

@@ -61,23 +61,27 @@ public class PersistenceTableColumnListener implements TableColumnModelListener 
      * update columns names and their width, store it in the global prefs.
      */
     private void updateColumnPrefs() {
-        final int columnCount = mainTable.getColumnCount();
-        List<String> storedColumns = new ArrayList<>(columnCount - 1);
-        List<String> columnsWidths = new ArrayList<>(columnCount - 1);
-        int ncWidth = -1;
+        final int columnCount = mainTable.getColumnModel().getColumnCount();
+        List<String> storedColumns = new ArrayList<>(Math.max(0, columnCount - 1));
+        List<String> columnsWidths = new ArrayList<>(Math.max(0, columnCount - 1));
 
-        for (int i = 0; i < columnCount; i++) {
-            final String name = mainTable.getColumnName(i);
-            if (name == null || name.equals("")) {
-            } else if (name.equals("#")) { // TODO: get "#" from prefs?
-                ncWidth = mainTable.getColumnModel().getColumn(i).getWidth();
+        int ncWidth = Globals.prefs.getInt("numberColWidth");
 
-            } else {
-                storedColumns.add(name.toLowerCase());
-                columnsWidths.add(String.valueOf(mainTable.getColumnModel().getColumn(
-                        i).getWidth()));
+        for (int viewIndex = 0; viewIndex < columnCount; viewIndex++) {
+            String normalizedName = normalizeColumnName(mainTable.getColumnName(viewIndex));
+            int width = mainTable.getColumnModel().getColumn(viewIndex).getWidth();
 
+            if (normalizedName == null) {
+                continue;
             }
+
+            if ("#".equals(normalizedName)) {
+                ncWidth = width;
+                continue;
+            }
+
+            storedColumns.add(normalizedName);
+            columnsWidths.add(String.valueOf(width));
         }
 
         // Finally, we store the new preferences.
@@ -97,8 +101,6 @@ public class PersistenceTableColumnListener implements TableColumnModelListener 
      */
     @Override
     public void columnAdded(TableColumnModelEvent e) {
-        assert e != null : simpleClassName + " received null event";
-
         updateColumnPrefs();
     }
 
@@ -108,8 +110,6 @@ public class PersistenceTableColumnListener implements TableColumnModelListener 
      */
     @Override
     public void columnMarginChanged(ChangeEvent e) {
-        assert e != null : simpleClassName + " received null event";
-
         updateColumnPrefs();
     }
 
@@ -119,10 +119,7 @@ public class PersistenceTableColumnListener implements TableColumnModelListener 
      */
     @Override
     public void columnMoved(TableColumnModelEvent e) {
-        assert e != null : simpleClassName + " received null event";
-
-        // not really moved, ignore ...
-        if (e.getFromIndex() == e.getToIndex()) {
+        if ((e != null) && (e.getFromIndex() == e.getToIndex())) {
             return;
         }
         updateColumnPrefs();
@@ -135,10 +132,7 @@ public class PersistenceTableColumnListener implements TableColumnModelListener 
      */
     @Override
     public void columnRemoved(TableColumnModelEvent e) {
-        assert e != null : simpleClassName + " received null event";
-
         updateColumnPrefs();
-
     }
 
     /**
@@ -149,6 +143,17 @@ public class PersistenceTableColumnListener implements TableColumnModelListener 
     @Override
     public void columnSelectionChanged(ListSelectionEvent e) {
         // ignore
+    }
+
+    private String normalizeColumnName(String name) {
+        if (name == null) {
+            return null;
+        }
+        name = name.trim();
+        if (name.isEmpty() || "#".equals(name)) {
+            return name;
+        }
+        return name.toLowerCase();
     }
 
 }

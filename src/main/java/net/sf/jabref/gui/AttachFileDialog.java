@@ -31,6 +31,7 @@ import net.sf.jabref.external.ExternalFilePanel;
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
+import java.awt.Component;
 
 /**
  * Created by IntelliJ IDEA. User: alver Date: May 18, 2005 Time: 9:59:52 PM To
@@ -92,7 +93,7 @@ public class AttachFileDialog extends JDialog {
 
         download.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                extPan.downLoadFile(fieldName, editor, ths);
+                extPan.downLoadFile(fieldName, editor, AttachFileDialog.this);
             }
         });
 
@@ -102,7 +103,7 @@ public class AttachFileDialog extends JDialog {
             }
         });
 
-        ActionListener okListener = new ActionListener() {
+        final ActionListener okListener = new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 cancelled = false;
                 dispose();
@@ -110,9 +111,13 @@ public class AttachFileDialog extends JDialog {
         };
 
         ok.addActionListener(okListener);
-        ((JTextField) editor.getTextComponent()).addActionListener(okListener);
 
-        AbstractAction cancelListener = new AbstractAction() {
+        Component textComponent = editor.getTextComponent();
+        if (textComponent instanceof JTextField) {
+            ((JTextField) textComponent).addActionListener(okListener);
+        }
+
+        final AbstractAction cancelListener = new AbstractAction() {
             public void actionPerformed(ActionEvent event) {
                 cancelled = true;
                 dispose();
@@ -120,12 +125,18 @@ public class AttachFileDialog extends JDialog {
         };
 
         cancel.addActionListener(cancelListener);
-        editor.getTextComponent().getInputMap().put(Globals.prefs.getKey("Close dialog"), "close");
-        editor.getTextComponent().getActionMap().put("close", cancelListener);
+
+        KeyStroke closeKey = Globals.prefs.getKey("Close dialog");
+        JRootPane rootPane = getRootPane();
+        rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(closeKey, "close");
+        rootPane.getActionMap().put("close", cancelListener);
+        rootPane.setDefaultButton(ok);
+
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         FormLayout layout = new FormLayout("fill:160dlu, 4dlu, fill:pref", "");
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
-        //builder.append(Util.nCase(fieldName));//(editor.getLabel());
+
         builder.appendSeparator(Util.nCase(fieldName));
         builder.append(editor.getTextComponent());
         builder.append(browse);
@@ -139,7 +150,6 @@ public class AttachFileDialog extends JDialog {
         builder.appendSeparator();
 
         main = builder.getPanel();
-
         main.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         bb = new ButtonBarBuilder();
@@ -150,6 +160,9 @@ public class AttachFileDialog extends JDialog {
 
         getContentPane().add(main, BorderLayout.CENTER);
         getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);
+
         pack();
+        setLocationRelativeTo(getOwner());
     }
+
 }

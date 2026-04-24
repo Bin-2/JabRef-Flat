@@ -212,25 +212,23 @@ public final class JabRef {
     }
 
     // Do not use this code in release version, it contains some memory leaks
-    public static String getCurrentProcessExplicitAppUserModelID() {
-        final PointerByReference r = new PointerByReference();
-
-        if (GetCurrentProcessExplicitAppUserModelID(r).longValue() == 0) {
-            final Pointer p = r.getValue();
-
-            return p.getString(0, true); // here we leak native memory by lazyness
-        }
-        return "N/A";
-    }
-
+//    public static String getCurrentProcessExplicitAppUserModelID() {
+//        final PointerByReference r = new PointerByReference();
+//
+//        if (GetCurrentProcessExplicitAppUserModelID(r).longValue() == 0) {
+//            final Pointer p = r.getValue();
+//
+//            return p.getString(0, true); // here we leak native memory by lazyness
+//        }
+//        return "N/A";
+//    }
     public static void setCurrentProcessExplicitAppUserModelID(final String appID) {
         if (SetCurrentProcessExplicitAppUserModelID(new WString(appID)).longValue() != 0) {
             throw new RuntimeException("unable to set current process explicit AppUserModelID to: " + appID);
         }
     }
 
-    private static native NativeLong GetCurrentProcessExplicitAppUserModelID(PointerByReference appID);
-
+//    private static native NativeLong GetCurrentProcessExplicitAppUserModelID(PointerByReference appID);
     private static native NativeLong SetCurrentProcessExplicitAppUserModelID(WString appID);
 
     static {
@@ -1061,28 +1059,36 @@ public final class JabRef {
                     JOptionPane.ERROR_MESSAGE);
         }
 
-        for (int i = 0;
-                i < loaded.size();
-                i++) {
+        long warningsStartNanos = System.nanoTime();
+        for (int i = 0; i < loaded.size(); i++) {
             ParserResult pr = loaded.get(i);
             if (Globals.prefs.getBoolean("displayKeyWarningDialogAtStartup") && pr.hasWarnings()) {
                 String[] wrns = pr.warnings();
                 StringBuilder wrn = new StringBuilder();
+
                 for (int j = 0; j < Math.min(MAX_DIALOG_WARNINGS, wrns.length); j++) {
                     wrn.append(j + 1).append(". ").append(wrns[j]).append("\n");
                 }
+
                 if (wrns.length > MAX_DIALOG_WARNINGS) {
                     wrn.append("... ");
                     wrn.append(Globals.lang("%0 warnings", String.valueOf(wrns.length)));
                 } else if (wrn.length() > 0) {
                     wrn.deleteCharAt(wrn.length() - 1);
                 }
+
                 jrf.showBaseAt(i);
-                JOptionPane.showMessageDialog(jrf, wrn.toString(),
+                JOptionPane.showMessageDialog(
+                        jrf,
+                        wrn.toString(),
                         Globals.lang("Warnings") + " (" + pr.getFile().getName() + ")",
-                        JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.WARNING_MESSAGE
+                );
             }
         }
+        double warningsSeconds = (System.nanoTime() - warningsStartNanos) / 1_000_000_000.0;
+        Globals.logger("Startup warning-dialog phase: "
+                + String.format(java.util.Locale.ROOT, "%.3f s", warningsSeconds));
 
         // After adding the databases, go through each and see if
         // any post open actions need to be done. For instance, checking
@@ -1092,6 +1098,7 @@ public final class JabRef {
         // Note that we have to check whether i does not go over baseCount().
         // This is because importToOpen might have been used, which adds to
         // loaded, but not to baseCount()
+        warningsStartNanos = System.nanoTime();
         for (int i = 0;
                 (i < loaded.size()) && (i < jrf.baseCount()); i++) {
             ParserResult pr = loaded.get(i);
@@ -1111,6 +1118,9 @@ public final class JabRef {
             jrf.tabbedPane.setSelectedIndex(0);
             new FocusRequester(((BasePanel) jrf.tabbedPane.getComponentAt(0)).mainTable);
         }
+        warningsSeconds = (System.nanoTime() - warningsStartNanos) / 1_000_000_000.0;
+        Globals.logger("Startup checking phase: "
+                + String.format(java.util.Locale.ROOT, "%.3f s", warningsSeconds));
     }
 
     /**
@@ -1133,18 +1143,23 @@ public final class JabRef {
     }
 
     public static ParserResult openBibFile(String name, boolean ignoreAutosave) {
+        long startNanos = System.nanoTime();
         Globals.logger(Globals.lang("Opening") + ": " + name);
+
         File file = new File(name);
         if (!file.exists()) {
             ParserResult pr = new ParserResult(null, null, null);
             pr.setFile(file);
             pr.setInvalid(true);
             System.err.println(Globals.lang("Error") + ": " + Globals.lang("File not found"));
+
+            double elapsedSeconds = (System.nanoTime() - startNanos) / 1_000_000_000.0;
+            Globals.logger(Globals.lang("Open/load time") + ": " + String.format(java.util.Locale.ROOT, "%.3f s", elapsedSeconds));
+
             return pr;
-
         }
-        try {
 
+        try {
             if (!ignoreAutosave) {
                 boolean autoSaveFound = AutoSaveManager.newerAutoSaveExists(file);
                 if (autoSaveFound) {
@@ -1170,17 +1185,17 @@ public final class JabRef {
                 pr.setFile(file);
                 pr.setInvalid(true);
                 return pr;
-
             }
+
             pr.setFile(file);
             if (pr.hasWarnings()) {
                 String[] warn = pr.warnings();
                 for (String aWarn : warn) {
                     System.out.println(Globals.lang("Warning") + ": " + aWarn);
                 }
-
             }
             return pr;
+
         } catch (Throwable ex) {
             ParserResult pr = new ParserResult(null, null, null);
             pr.setFile(file);
@@ -1188,8 +1203,12 @@ public final class JabRef {
             pr.setErrorMessage(ex.getMessage());
             ex.printStackTrace();
             return pr;
+        } finally {
+            double elapsedSeconds = (System.nanoTime() - startNanos) / 1_000_000_000.0;
+            Globals.logger(Globals.lang("Open/load time") + ": "
+                    + String.format(java.util.Locale.ROOT, "%.3f s", elapsedSeconds)
+                    + " (" + name + ")");
         }
-
     }
 
     public static ParserResult importFile(String argument) {

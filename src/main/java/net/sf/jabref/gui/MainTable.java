@@ -64,6 +64,10 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     private Comparator<BibtexEntry> searchComparator, groupComparator,
             markingComparator = new IsMarkedComparator();
     private Matcher<BibtexEntry> searchMatcher, groupMatcher;
+    private boolean initializingSorting = false;
+    private Comparator<BibtexEntry> currentMarkingComparator = null;
+    private Comparator<BibtexEntry> currentSearchComparator = null;
+    private Comparator<BibtexEntry> currentGroupComparator = null;
 
     // needed to activate/deactivate the listener
     private final PersistenceTableColumnListener tableColumnListener;
@@ -141,8 +145,13 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         setTransferHandler(xfer);
         pane.setTransferHandler(xfer);
 
-        setupComparatorChooser();
-        refreshSorting();
+        initializingSorting = true;
+        try {
+            setupComparatorChooser();
+            refreshSorting();
+        } finally {
+            initializingSorting = false;
+        }
         setWidths();
 
         this.setOpaque(false);
@@ -154,19 +163,40 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     public void refreshSorting() {
-        sortedForMarking.getReadWriteLock().writeLock().lock();
-        if (Globals.prefs.getBoolean("floatMarkedEntries")) {
-            sortedForMarking.setComparator(markingComparator);
-        } else {
-            sortedForMarking.setComparator(null);
+        Comparator<BibtexEntry> newMarkingComparator = Globals.prefs.getBoolean("floatMarkedEntries")
+                ? markingComparator : null;
+        Comparator<BibtexEntry> newSearchComparator = searchComparator;
+        Comparator<BibtexEntry> newGroupComparator = groupComparator;
+
+        if (currentMarkingComparator != newMarkingComparator) {
+            sortedForMarking.getReadWriteLock().writeLock().lock();
+            try {
+                sortedForMarking.setComparator(newMarkingComparator);
+                currentMarkingComparator = newMarkingComparator;
+            } finally {
+                sortedForMarking.getReadWriteLock().writeLock().unlock();
+            }
         }
-        sortedForMarking.getReadWriteLock().writeLock().unlock();
-        sortedForSearch.getReadWriteLock().writeLock().lock();
-        sortedForSearch.setComparator(searchComparator);
-        sortedForSearch.getReadWriteLock().writeLock().unlock();
-        sortedForGrouping.getReadWriteLock().writeLock().lock();
-        sortedForGrouping.setComparator(groupComparator);
-        sortedForGrouping.getReadWriteLock().writeLock().unlock();
+
+        if (currentSearchComparator != newSearchComparator) {
+            sortedForSearch.getReadWriteLock().writeLock().lock();
+            try {
+                sortedForSearch.setComparator(newSearchComparator);
+                currentSearchComparator = newSearchComparator;
+            } finally {
+                sortedForSearch.getReadWriteLock().writeLock().unlock();
+            }
+        }
+
+        if (currentGroupComparator != newGroupComparator) {
+            sortedForGrouping.getReadWriteLock().writeLock().lock();
+            try {
+                sortedForGrouping.setComparator(newGroupComparator);
+                currentGroupComparator = newGroupComparator;
+            } finally {
+                sortedForGrouping.getReadWriteLock().writeLock().unlock();
+            }
+        }
     }
 
     /**
@@ -178,7 +208,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     public void showFloatSearch(Matcher<BibtexEntry> m) {
         showingFloatSearch = true;
         searchMatcher = m;
-        searchComparator = new HitOrMissComparator(m);
+        searchComparator = (m == null) ? null : new HitOrMissComparator(m);
         refreshSorting();
         scrollTo(0);
     }
@@ -203,7 +233,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     public void showFloatGrouping(Matcher<BibtexEntry> m) {
         showingFloatGrouping = true;
         groupMatcher = m;
-        groupComparator = new HitOrMissComparator(m);
+        groupComparator = (m == null) ? null : new HitOrMissComparator(m);
         refreshSorting();
     }
 
@@ -233,6 +263,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         return pane;
     }
 
+    @Override
     public TableCellRenderer getCellRenderer(int row, int column) {
 
         int score = -3;
@@ -247,8 +278,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             score += 2;
         }
 
-        // Now, a grayed out renderer is for entries with -1, and
-        // a very grayed out one for entries with -2
+        // Grayed-out logic for filtered rows stays unchanged
         if (score < -1) {
             if (column == 0) {
                 veryGrayedOutNumberRenderer.setNumber(row);
@@ -264,21 +294,29 @@ public class MainTable extends JTable implements ThemeAwareComponent {
                 renderer = grayedOutRenderer;
             }
         } else if (column == 0) {
-            // Return a renderer with red background if the entry is incomplete.
-            if (!isComplete(row)) {
-                incRenderer.setNumber(row);
-                renderer = incRenderer;
-            } else {
-                compRenderer.setNumber(row);
-                int marking = isMarked(row);
-                if (marking > 0) {
-                    marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
-                    renderer = markedNumberRenderers[marking - 1];
-                    markedNumberRenderers[marking - 1].setNumber(row);
+            // Important change:
+            // When table color coding is disabled, keep column 0 neutral.
+            compRenderer.setNumber(row);
+            renderer = compRenderer;
+
+            if (tableColorCodes) {
+                if (!isComplete(row)) {
+                    incRenderer.setNumber(row);
+                    renderer = incRenderer;
                 } else {
-                    renderer = compRenderer;
+                    int marking = isMarked(row);
+                    if (marking > 0) {
+                        marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
+                        markedNumberRenderers[marking - 1].setNumber(row);
+                        renderer = markedNumberRenderers[marking - 1];
+                    }
                 }
+            } else {
+                // Optional:
+                // If "marked" rows should still affect column 0 even when color coding is off,
+                // move the marking block here instead of leaving renderer = compRenderer.
             }
+
             renderer.setHorizontalAlignment(JLabel.CENTER);
         } else if (tableColorCodes) {
             if (status == REQUIRED) {
@@ -290,7 +328,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
         }
 
-        // For MARKED feature:
+        // Keep non-zero column marking logic as before
         int marking = isMarked(row);
         if ((column != 0) && (marking > 0)) {
             marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
@@ -298,7 +336,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         }
 
         return renderer;
-
     }
 
     public void setWidths() {
@@ -467,21 +504,34 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     public int getCellStatus(int row, int col) {
+        BibtexEntry be = null;
         try {
-            BibtexEntry be = sortedForGrouping.get(row);
-            BibtexEntryType type = be.getType();
-            String columnName = getColumnName(col).toLowerCase();
-            if (columnName.equals(BibtexFields.KEY_FIELD) || type.isRequired(columnName)) {
-                return REQUIRED;
-            }
-            if (type.isOptional(columnName)) {
-                return OPTIONAL;
-            }
-            return OTHER;
-        } catch (NullPointerException ex) {
-            //System.out.println("Exception: getCellStatus");
+            be = sortedForGrouping.get(row);
+        } catch (RuntimeException ex) {
             return OTHER;
         }
+        if (be == null) {
+            return OTHER;
+        }
+
+        BibtexEntryType type = be.getType();
+        if (type == null) {
+            return OTHER;
+        }
+
+        String columnName = getColumnName(col);
+        if (columnName == null) {
+            return OTHER;
+        }
+        columnName = columnName.toLowerCase();
+
+        if (columnName.equals(BibtexFields.KEY_FIELD) || type.isRequired(columnName)) {
+            return REQUIRED;
+        }
+        if (type.isOptional(columnName)) {
+            return OPTIONAL;
+        }
+        return OTHER;
     }
 
     /**
@@ -524,27 +574,35 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     private boolean matches(int row, Matcher<BibtexEntry> m) {
-        return m.matches(sortedForGrouping.get(row));
+        if (m == null) {
+            return false;
+        }
+        try {
+            BibtexEntry entry = sortedForGrouping.get(row);
+            return entry != null && m.matches(entry);
+        } catch (RuntimeException ex) {
+            return false;
+        }
     }
 
     private boolean isComplete(int row) {
+        BibtexEntry be = null;
         try {
-            BibtexEntry be = sortedForGrouping.get(row);
-            return be.hasAllRequiredFields(panel.database());
-        } catch (NullPointerException ex) {
-            //System.out.println("Exception: isComplete");
+            be = sortedForGrouping.get(row);
+        } catch (RuntimeException ex) {
             return true;
         }
+        return be != null && be.hasAllRequiredFields(panel.database());
     }
 
     private int isMarked(int row) {
+        BibtexEntry be = null;
         try {
-            BibtexEntry be = sortedForGrouping.get(row);
-            return Util.isMarked(be);
-        } catch (NullPointerException ex) {
-            //System.out.println("Exception: isMarked");
+            be = sortedForGrouping.get(row);
+        } catch (RuntimeException ex) {
             return 0;
         }
+        return be == null ? 0 : Util.isMarked(be);
     }
 
     public void scrollTo(int y) {
@@ -719,7 +777,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         reqRenderer = new GeneralRenderer(reqFieldBg, tableForeground);
         optRenderer = new GeneralRenderer(optFieldBg, tableForeground);
 
-        incRenderer = new IncompleteRenderer();
+        incRenderer = new IncompleteRenderer(incompleteBg);
         compRenderer = new CompleteRenderer(tableBackground);
         grayedOutNumberRenderer = new CompleteRenderer(grayedOutBg);
         veryGrayedOutNumberRenderer = new CompleteRenderer(veryGrayedOutBg);
@@ -821,6 +879,11 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     static class IncompleteRenderer extends GeneralRenderer {
 
+        public IncompleteRenderer(Color color) {
+            super(color);
+            super.setToolTipText(Globals.lang("This entry is incomplete"));
+        }
+
         public IncompleteRenderer() {
             super(Globals.prefs.getColor("incompleteEntryBackground"));
             super.setToolTipText(Globals.lang("This entry is incomplete"));
@@ -857,7 +920,9 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             public void actionPerformed(ActionEvent e) {
                 // We need to reset the stack of sorted list each time sorting order
                 // changes, or the sorting breaks down:
-                refreshSorting();
+                if (!initializingSorting) {
+                    refreshSorting();
+                }
             }
         });
         return result;
@@ -983,9 +1048,8 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
 //        System.out.println("After update - Table background: " + getBackground());
         // Force immediate visual update
-        repaint();
         revalidate();
-
+        repaint();
 //        System.out.println("=== THEME CHANGE COMPLETE ===");
     }
 

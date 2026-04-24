@@ -192,64 +192,95 @@ public class AdvancedTab extends JPanel implements PrefsTab {
     public void setValues() {
         oldUseDef = _prefs.getBoolean("useDefaultLookAndFeel");
         oldLnf = _prefs.get("lookAndFeel");
+
         useDefault.setSelected(!oldUseDef);
         className.setSelectedItem(oldLnf);
         className.setEnabled(!oldUseDef);
+
         useRemoteServer.setSelected(_prefs.getBoolean("useRemoteServer"));
         oldPort = _prefs.getInt("remoteServerPort");
         remoteServerPort.setText(String.valueOf(oldPort));
-        useNativeFileDialogOnMac.setSelected(Globals.prefs.getBoolean("useNativeFileDialogOnMac"));
-        filechooserDisableRename.setSelected(Globals.prefs.getBoolean("filechooserDisableRename"));
-        useIEEEAbrv.setSelected(Globals.prefs.getBoolean("useIEEEAbrv"));
-        oldBiblMode = Globals.prefs.getBoolean("biblatexMode");
+        remoteServerPort.setEnabled(useRemoteServer.isSelected());
+
+        useNativeFileDialogOnMac.setSelected(_prefs.getBoolean("useNativeFileDialogOnMac"));
+        filechooserDisableRename.setSelected(_prefs.getBoolean("filechooserDisableRename"));
+        useIEEEAbrv.setSelected(_prefs.getBoolean("useIEEEAbrv"));
+
+        oldBiblMode = _prefs.getBoolean("biblatexMode");
         biblatexMode.setSelected(oldBiblMode);
-        oldConvertToEquation = Globals.prefs.getBoolean("useConvertToEquation");
+
+        oldConvertToEquation = _prefs.getBoolean("useConvertToEquation");
         useConvertToEquation.setSelected(oldConvertToEquation);
-        oldCaseKeeperOnSearch = Globals.prefs.getBoolean("useCaseKeeperOnSearch");
+
+        oldCaseKeeperOnSearch = _prefs.getBoolean("useCaseKeeperOnSearch");
         useCaseKeeperOnSearch.setSelected(oldCaseKeeperOnSearch);
-        oldUnitFormatterOnSearch = Globals.prefs.getBoolean("useUnitFormatterOnSearch");
+
+        oldUnitFormatterOnSearch = _prefs.getBoolean("useUnitFormatterOnSearch");
         useUnitFormatterOnSearch.setSelected(oldUnitFormatterOnSearch);
     }
 
     public void storeSettings() {
-        _prefs.putBoolean("useDefaultLookAndFeel", !useDefault.isSelected());
-        _prefs.put("lookAndFeel", className.getSelectedItem().toString());
+        boolean newUseDefault = !useDefault.isSelected();
+
+        Object selectedItem = className.getSelectedItem();
+        String selectedLnf = (selectedItem == null) ? "" : selectedItem.toString().trim();
+
+        _prefs.putBoolean("useDefaultLookAndFeel", newUseDefault);
+        _prefs.put("lookAndFeel", selectedLnf);
+
         _prefs.putBoolean("useNativeFileDialogOnMac", useNativeFileDialogOnMac.isSelected());
         _prefs.putBoolean("filechooserDisableRename", filechooserDisableRename.isSelected());
         UIManager.put("FileChooser.readOnly", filechooserDisableRename.isSelected());
+
         _prefs.putBoolean("useIEEEAbrv", useIEEEAbrv.isSelected());
         if (useIEEEAbrv.isSelected()) {
             Globals.journalAbbrev = new JournalAbbreviations("/resource/IEEEJournalList.txt");
         }
-        try {
-            int port = Integer.parseInt(remoteServerPort.getText());
-            if (port != oldPort) {
-                _prefs.putInt("remoteServerPort", port);
-                /*JOptionPane.showMessageDialog(null, Glbals.lang("You have changed the menu and label font size. "
-                        + "You must restart JabRef for this to come into effect."), Globals.lang("Changed font settings"),
-                        JOptionPane.WARNING_MESSAGE);*/
-            }
 
-        } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+        boolean remoteEnabled = useRemoteServer.isSelected();
+        int newPort = oldPort;
+        boolean portValid = true;
+
+        if (remoteEnabled) {
+            try {
+                newPort = Integer.parseInt(remoteServerPort.getText().trim());
+                if (newPort < 1025 || newPort > 65535) {
+                    portValid = false;
+                } else if (newPort != oldPort) {
+                    _prefs.putInt("remoteServerPort", newPort);
+                }
+            } catch (NumberFormatException ex) {
+                portValid = false;
+            }
         }
-        _prefs.putBoolean("useRemoteServer", useRemoteServer.isSelected());
-        if (useRemoteServer.isSelected() && (JabRef.remoteListener == null)) {
-            // Start the listener now.
 
-            JabRef.remoteListener = RemoteListener.openRemoteListener(JabRef.singleton);
-            if (JabRef.remoteListener != null) {
-                JabRef.remoteListener.start();
+        _prefs.putBoolean("useRemoteServer", remoteEnabled);
+
+        if (remoteEnabled) {
+            if (portValid) {
+                boolean portChanged = (newPort != oldPort);
+
+                if (JabRef.remoteListener == null) {
+                    JabRef.remoteListener = RemoteListener.openRemoteListener(JabRef.singleton);
+                    if (JabRef.remoteListener != null) {
+                        JabRef.remoteListener.start();
+                    }
+                } else if (portChanged) {
+                    JabRef.remoteListener.disable();
+                    JabRef.remoteListener = RemoteListener.openRemoteListener(JabRef.singleton);
+                    if (JabRef.remoteListener != null) {
+                        JabRef.remoteListener.start();
+                    }
+                }
             }
-        } else if (!useRemoteServer.isSelected() && (JabRef.remoteListener != null)) {
+        } else if (JabRef.remoteListener != null) {
             JabRef.remoteListener.disable();
             JabRef.remoteListener = null;
         }
 
         _prefs.putBoolean("biblatexMode", biblatexMode.isSelected());
 
-        if ((useDefault.isSelected() == oldUseDef)
-                || !oldLnf.equals(className.getSelectedItem().toString())) {
+        if ((newUseDefault != oldUseDef) || !oldLnf.equals(selectedLnf)) {
             JOptionPane.showMessageDialog(null,
                     Globals.lang("You have changed the look and feel setting.")
                             .concat(" ")
@@ -272,24 +303,30 @@ public class AdvancedTab extends JPanel implements PrefsTab {
     }
 
     public boolean readyToClose() {
+        if (!useRemoteServer.isSelected()) {
+            return true;
+        }
 
         try {
-            int portNumber = Integer.parseInt(remoteServerPort.getText());
-            if (portNumber > 1024 && portNumber <= 65535) {
-                return true; // Ok, the number was legal.
+            int portNumber = Integer.parseInt(remoteServerPort.getText().trim());
+            if (portNumber >= 1025 && portNumber <= 65535) {
+                return true;
             } else {
-                JOptionPane.showMessageDialog(null, Globals.lang("You must enter an integer value in the interval 1025-65535 in the text field for") + " '"
-                        + Globals.lang("Remote server port") + "'", Globals.lang("Remote server port"),
+                JOptionPane.showMessageDialog(null,
+                        Globals.lang("You must enter an integer value in the interval 1025-65535 in the text field for") + " '"
+                        + Globals.lang("Remote server port") + "'",
+                        Globals.lang("Remote server port"),
                         JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(null, Globals.lang("You must enter an integer value in the interval 1025-65535 in the text field for") + " '"
-                    + Globals.lang("Remote server port") + "'", Globals.lang("Remote server port"),
+            JOptionPane.showMessageDialog(null,
+                    Globals.lang("You must enter an integer value in the interval 1025-65535 in the text field for") + " '"
+                    + Globals.lang("Remote server port") + "'",
+                    Globals.lang("Remote server port"),
                     JOptionPane.ERROR_MESSAGE);
             return false;
         }
-
     }
 
     public String getTabName() {
