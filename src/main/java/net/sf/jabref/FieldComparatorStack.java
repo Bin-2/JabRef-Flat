@@ -25,7 +25,15 @@ import java.util.List;
  */
 public class FieldComparatorStack<T> implements Comparator<T> {
 
+    private static final boolean PERF_TIMERS = true;
+    private static final long PERF_LOG_EVERY_COMPARISONS = 100000L;
+
     List<? extends Comparator<? super T>> comparators;
+
+    private long compareCount = 0;
+    private long totalNanos = 0;
+    private long fallThroughCount = 0;
+    private long zeroResultCount = 0;
 
     public FieldComparatorStack(List<? extends Comparator<? super T>> comparators) {
         this.comparators = comparators;
@@ -33,12 +41,43 @@ public class FieldComparatorStack<T> implements Comparator<T> {
 
     @Override
     public int compare(T o1, T o2) {
-        for (Comparator<? super T> comp : comparators) {
-            int res = comp.compare(o1, o2);
-            if (res != 0) {
-                return res;
+        long start = PERF_TIMERS ? System.nanoTime() : 0L;
+        try {
+            for (Comparator<? super T> comp : comparators) {
+                int res = comp.compare(o1, o2);
+                if (res != 0) {
+                    return res;
+                }
+                if (PERF_TIMERS) {
+                    fallThroughCount++;
+                }
+            }
+            if (PERF_TIMERS) {
+                zeroResultCount++;
+            }
+            return 0;
+        } finally {
+            if (PERF_TIMERS) {
+                totalNanos += System.nanoTime() - start;
+                compareCount++;
+                maybeLogPerf(false);
             }
         }
-        return 0;
+    }
+
+    private void maybeLogPerf(boolean force) {
+        if (!PERF_TIMERS) {
+            return;
+        }
+        if (!force && ((compareCount % PERF_LOG_EVERY_COMPARISONS) != 0)) {
+            return;
+        }
+        System.out.println("[FieldComparatorStack timer] comparisons=" + compareCount
+                + ", comparators=" + comparators.size()
+                + ", totalMs=" + (totalNanos / 1000000L)
+                + ", fallThroughCount=" + fallThroughCount
+                + ", zeroResultCount=" + zeroResultCount
+                + ", thread=" + Thread.currentThread().getName()
+                + ", edt=" + javax.swing.SwingUtilities.isEventDispatchThread());
     }
 }

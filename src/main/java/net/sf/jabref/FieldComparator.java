@@ -17,13 +17,15 @@ package net.sf.jabref;
 
 import net.sf.jabref.gui.MainTableFormat;
 
+import java.text.CollationKey;
 import java.text.Collator;
 import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
- *
  * A comparator for BibtexEntry fields
  *
  * Initial Version:
@@ -37,28 +39,80 @@ import java.util.Comparator;
  * @version $Revision$ ($Date$)
  *
  * TODO: Testcases
- *
  */
 public class FieldComparator implements Comparator<BibtexEntry> {
 
-    private static Collator collator;
+    private static final boolean PERF_TIMERS = false;
+    private static final long PERF_LOG_EVERY_COMPARISONS = 100000L;
+
+    private static final Collator collator;
 
     static {
+        Collator tmp;
         try {
-            collator = new RuleBasedCollator(
+            tmp = new RuleBasedCollator(
                     ((RuleBasedCollator) Collator.getInstance()).getRules()
                             .replaceAll("<'\u005f'", "<' '<'\u005f'"));
         } catch (ParseException e) {
-            collator = Collator.getInstance();
+            tmp = Collator.getInstance();
         }
+        collator = tmp;
     }
 
-    private String[] field;
-    private String fieldName;
+    private final String[] field;
+    private final String fieldName;
 
     boolean isNameField, isTypeHeader, isYearField, isMonthField, isNumeric;
 
     int multiplier;
+
+    /**
+     * Timestamp values are machine-generated date/time strings. Locale collation
+     * and lower-case allocation are unnecessary for them, and they dominate the
+     * initial table sort on large databases.
+     */
+    private final boolean useFastTimestampCompare;
+
+    /**
+     * These fields are identifiers or URLs, not human-language text. Locale
+     * collation is unnecessarily expensive and does not add useful ordering.
+     */
+    private final boolean useFastStringCompare;
+
+    /**
+     * Cache normalized sort values for this comparator instance. This is safe for
+     * normal table sorting because the raw field value is checked on every lookup;
+     * if an entry changes, the cached normalized value is rebuilt.
+     */
+    private final Map<BibtexEntry, CachedSortValue> sortValueCache = new IdentityHashMap<BibtexEntry, CachedSortValue>();
+
+    private long compareCount = 0;
+    private long getFieldNanos = 0;
+    private long normalizeNanos = 0;
+    private long compareNanos = 0;
+    private long totalNanos = 0;
+    private long nullComparisons = 0;
+    private long integerComparisons = 0;
+    private long collatorComparisons = 0;
+    private long fastTimestampComparisons = 0;
+    private long fastStringComparisons = 0;
+    private long nameNormalizations = 0;
+    private long yearNormalizations = 0;
+    private long monthNormalizations = 0;
+    private long numericNormalizations = 0;
+    private long cacheHits = 0;
+    private long cacheMisses = 0;
+    private long cacheRefreshes = 0;
+    private long collationKeyCreations = 0;
+
+    private static final class CachedSortValue {
+        private Object rawValue;
+        private Object normalizedValue;
+        private boolean numericCandidate;
+        private boolean numericParsed;
+        private int numericValue;
+        private CollationKey collationKey;
+    }
 
     public FieldComparator(String field) {
         this(field, false);
@@ -74,28 +128,32 @@ public class FieldComparator implements Comparator<BibtexEntry> {
         isYearField = this.field[0].equals("year");
         isMonthField = this.field[0].equals("month");
         isNumeric = BibtexFields.isNumeric(this.field[0]);
+        useFastTimestampCompare = (this.field.length == 1) && this.field[0].equals("timestamp");
+        useFastStringCompare = useFastTimestampCompare || isFastStringField(this.field);
     }
 
     @Override
     public int compare(BibtexEntry e1, BibtexEntry e2) {
-        Object f1, f2;
-
-        if (isTypeHeader) {
-            // Sort by type.
-            f1 = e1.getType().getName();
-            f2 = e2.getType().getName();
-        } else {
-
-            // If the field is author or editor, we rearrange names so they are
-            // sorted according to last name.
-            f1 = getField(e1);
-            f2 = getField(e2);
+        long start = PERF_TIMERS ? System.nanoTime() : 0L;
+        try {
+            return compareInternal(e1, e2);
+        } finally {
+            if (PERF_TIMERS) {
+                totalNanos += System.nanoTime() - start;
+                compareCount++;
+                maybeLogPerf(false);
+            }
         }
+    }
+
+    private int compareInternal(BibtexEntry e1, BibtexEntry e2) {
+        CachedSortValue v1 = getCachedSortValue(e1);
+        CachedSortValue v2 = getCachedSortValue(e2);
 
         /*
-		 * [ 1598777 ] Month sorting
-		 * 
-		 * http://sourceforge.net/tracker/index.php?func=detail&aid=1598777&group_id=92314&atid=600306
+         * [ 1598777 ] Month sorting
+         *
+         * http://sourceforge.net/tracker/index.php?func=detail&aid=1598777&group_id=92314&atid=600306
          */
         int localMultiplier = multiplier;
         if (isMonthField) {
@@ -103,83 +161,215 @@ public class FieldComparator implements Comparator<BibtexEntry> {
         }
 
         // Catch all cases involving null:
-        if (f1 == null) {
-            return f2 == null ? 0 : localMultiplier;
+        if (v1.rawValue == null) {
+            if (PERF_TIMERS) {
+                nullComparisons++;
+            }
+            return v2.rawValue == null ? 0 : localMultiplier;
         }
 
-        if (f2 == null) {
+        if (v2.rawValue == null) {
+            if (PERF_TIMERS) {
+                nullComparisons++;
+            }
             return -localMultiplier;
         }
 
-        // Now we now that both f1 and f2 are != null
-        if (isNameField) {
-            f1 = AuthorList.fixAuthorForAlphabetization((String) f1);
-            f2 = AuthorList.fixAuthorForAlphabetization((String) f2);
-        } else if (isYearField) {
-            /*
-			 * [ 1285977 ] Impossible to properly sort a numeric field
-			 * 
-			 * http://sourceforge.net/tracker/index.php?func=detail&aid=1285977&group_id=92314&atid=600307
-             */
-            f1 = Util.toFourDigitYear((String) f1);
-            f2 = Util.toFourDigitYear((String) f2);
-        } else if (isMonthField) {
-            /*
-			 * [ 1535044 ] Month sorting
-			 * 
-			 * http://sourceforge.net/tracker/index.php?func=detail&aid=1535044&group_id=92314&atid=600306
-             */
-            f1 = MonthUtil.getMonth((String) f1).number;
-            f2 = MonthUtil.getMonth((String) f2).number;
-        }
+        long compareStart = PERF_TIMERS ? System.nanoTime() : 0L;
+        int result;
 
         if (isNumeric) {
-            Integer i1 = null, i2 = null;
-            try {
-                i1 = Util.intValueOf((String) f1);
-            } catch (NumberFormatException ex) {
-                // Parsing failed.
+            result = compareNumericAware(v1, v2);
+        } else if ((v1.normalizedValue instanceof Integer) && (v2.normalizedValue instanceof Integer)) {
+            result = ((Integer) v1.normalizedValue).compareTo((Integer) v2.normalizedValue);
+            if (PERF_TIMERS) {
+                integerComparisons++;
             }
-
-            try {
-                i2 = Util.intValueOf((String) f2);
-            } catch (NumberFormatException ex) {
-                // Parsing failed.
+        } else if (useFastTimestampCompare) {
+            result = String.CASE_INSENSITIVE_ORDER.compare(
+                    String.valueOf(v1.normalizedValue),
+                    String.valueOf(v2.normalizedValue));
+            if (PERF_TIMERS) {
+                fastTimestampComparisons++;
             }
-
-            if (i2 != null && i1 != null) {
-                // Ok, parsing was successful. Update f1 and f2:
-                f1 = i1;
-                f2 = i2;
-            } else if (i1 != null) {
-                // The first one was parseable, but not the second one.
-                // This means we consider one < two
-                f1 = i1;
-                f2 = i1 + 1;
-            } else if (i2 != null) {
-                // The second one was parseable, but not the first one.
-                // This means we consider one > two
-                f2 = i2;
-                f1 = i2 + 1;
+        } else if (useFastStringCompare) {
+            result = String.CASE_INSENSITIVE_ORDER.compare(
+                    String.valueOf(v1.normalizedValue),
+                    String.valueOf(v2.normalizedValue));
+            if (PERF_TIMERS) {
+                fastStringComparisons++;
             }
-            // Else none of them were parseable, and we can fall back on comparing strings.    
+        } else {
+            result = compareUsingCollationKeys(v1, v2);
+            if (PERF_TIMERS) {
+                collatorComparisons++;
+            }
         }
 
-        int result = 0;
-        if ((f1 instanceof Integer) && (f2 instanceof Integer)) {
-            result = (((Integer) f1).compareTo((Integer) f2));
-        } else if (f2 instanceof Integer) {
-            Integer f1AsInteger = new Integer(f1.toString());
-            result = -((f1AsInteger).compareTo((Integer) f2));
-        } else if (f1 instanceof Integer) {
-            Integer f2AsInteger = new Integer(f2.toString());
-            result = -(((Integer) f1).compareTo(f2AsInteger));
-        } else {
-            String ours = ((String) f1).toLowerCase(), theirs = ((String) f2).toLowerCase();
-            result = collator.compare(ours, theirs);//ours.compareTo(theirs);
+        if (PERF_TIMERS) {
+            compareNanos += System.nanoTime() - compareStart;
         }
 
         return result * localMultiplier;
+    }
+
+    private int compareNumericAware(CachedSortValue v1, CachedSortValue v2) {
+        if (v1.numericParsed && v2.numericParsed) {
+            if (PERF_TIMERS) {
+                integerComparisons++;
+            }
+            return Integer.valueOf(v1.numericValue).compareTo(Integer.valueOf(v2.numericValue));
+        }
+        if (v1.numericParsed) {
+            if (PERF_TIMERS) {
+                integerComparisons++;
+            }
+            return -1;
+        }
+        if (v2.numericParsed) {
+            if (PERF_TIMERS) {
+                integerComparisons++;
+            }
+            return 1;
+        }
+
+        if (useFastStringCompare) {
+            if (PERF_TIMERS) {
+                fastStringComparisons++;
+            }
+            return String.CASE_INSENSITIVE_ORDER.compare(
+                    String.valueOf(v1.normalizedValue),
+                    String.valueOf(v2.normalizedValue));
+        }
+
+        if (PERF_TIMERS) {
+            collatorComparisons++;
+        }
+        return compareUsingCollationKeys(v1, v2);
+    }
+
+    private int compareUsingCollationKeys(CachedSortValue v1, CachedSortValue v2) {
+        CollationKey key1 = getOrCreateCollationKey(v1);
+        CollationKey key2 = getOrCreateCollationKey(v2);
+        return key1.compareTo(key2);
+    }
+
+    private CollationKey getOrCreateCollationKey(CachedSortValue value) {
+        if (value.collationKey == null) {
+            synchronized (collator) {
+                value.collationKey = collator.getCollationKey(String.valueOf(value.normalizedValue));
+            }
+            if (PERF_TIMERS) {
+                collationKeyCreations++;
+            }
+        }
+        return value.collationKey;
+    }
+
+    private CachedSortValue getCachedSortValue(BibtexEntry entry) {
+        long fieldStart = PERF_TIMERS ? System.nanoTime() : 0L;
+        Object rawValue = getRawField(entry);
+        if (PERF_TIMERS) {
+            getFieldNanos += System.nanoTime() - fieldStart;
+        }
+
+        CachedSortValue cached = sortValueCache.get(entry);
+        if ((cached != null) && rawValuesEqual(cached.rawValue, rawValue)) {
+            if (PERF_TIMERS) {
+                cacheHits++;
+            }
+            return cached;
+        }
+
+        CachedSortValue rebuilt = new CachedSortValue();
+        rebuilt.rawValue = rawValue;
+
+        long normalizeStart = PERF_TIMERS ? System.nanoTime() : 0L;
+        rebuildNormalizedValue(rebuilt);
+        if (PERF_TIMERS) {
+            normalizeNanos += System.nanoTime() - normalizeStart;
+            if (cached == null) {
+                cacheMisses++;
+            } else {
+                cacheRefreshes++;
+            }
+        }
+
+        sortValueCache.put(entry, rebuilt);
+        return rebuilt;
+    }
+
+    private void rebuildNormalizedValue(CachedSortValue value) {
+        Object raw = value.rawValue;
+        if (raw == null) {
+            value.normalizedValue = null;
+            return;
+        }
+
+        Object normalized = raw;
+
+        // Now we know that the value is not null.
+        if (isNameField) {
+            normalized = AuthorList.fixAuthorForAlphabetization((String) raw);
+            if (PERF_TIMERS) {
+                nameNormalizations++;
+            }
+        } else if (isYearField) {
+            /*
+             * [ 1285977 ] Impossible to properly sort a numeric field
+             *
+             * http://sourceforge.net/tracker/index.php?func=detail&aid=1285977&group_id=92314&atid=600307
+             */
+            normalized = Util.toFourDigitYear((String) raw);
+            if (PERF_TIMERS) {
+                yearNormalizations++;
+            }
+        } else if (isMonthField) {
+            /*
+             * [ 1535044 ] Month sorting
+             *
+             * http://sourceforge.net/tracker/index.php?func=detail&aid=1535044&group_id=92314&atid=600306
+             */
+            normalized = Integer.valueOf(MonthUtil.getMonth((String) raw).number);
+            if (PERF_TIMERS) {
+                monthNormalizations++;
+            }
+        }
+
+        if (isNumeric) {
+            value.numericCandidate = true;
+            if (normalized instanceof Integer) {
+                value.numericParsed = true;
+                value.numericValue = ((Integer) normalized).intValue();
+            } else {
+                try {
+                    value.numericValue = Util.intValueOf(String.valueOf(normalized));
+                    value.numericParsed = true;
+                } catch (NumberFormatException ex) {
+                    value.numericParsed = false;
+                }
+            }
+            if (PERF_TIMERS) {
+                numericNormalizations++;
+            }
+        }
+
+        if ((normalized instanceof String) && !useFastStringCompare) {
+            normalized = ((String) normalized).toLowerCase();
+        }
+
+        value.normalizedValue = normalized;
+    }
+
+    private Object getRawField(BibtexEntry entry) {
+        if (isTypeHeader) {
+            // Sort by type.
+            return entry.getType().getName();
+        }
+
+        // If the field is author or editor, we rearrange names later so they are
+        // sorted according to last name.
+        return getField(entry);
     }
 
     private Object getField(BibtexEntry entry) {
@@ -190,6 +380,58 @@ public class FieldComparator implements Comparator<BibtexEntry> {
             }
         }
         return null;
+    }
+
+    private static boolean rawValuesEqual(Object oldValue, Object newValue) {
+        return (oldValue == newValue) || ((oldValue != null) && oldValue.equals(newValue));
+    }
+
+    private static boolean isFastStringField(String[] fields) {
+        if (fields.length != 1) {
+            return false;
+        }
+        String f = fields[0];
+        return f.equals("bibtexkey")
+                || f.equals("doi")
+                || f.equals("url")
+                || f.equals("eprint")
+                || f.equals("timestamp");
+    }
+
+    private void maybeLogPerf(boolean force) {
+        if (!PERF_TIMERS) {
+            return;
+        }
+        if (!force && ((compareCount % PERF_LOG_EVERY_COMPARISONS) != 0)) {
+            return;
+        }
+        System.out.println("[FieldComparator timer] field=" + fieldName
+                + ", comparisons=" + compareCount
+                + ", totalMs=" + nanosToMs(totalNanos)
+                + ", getFieldMs=" + nanosToMs(getFieldNanos)
+                + ", normalizeMs=" + nanosToMs(normalizeNanos)
+                + ", compareMs=" + nanosToMs(compareNanos)
+                + ", nullComparisons=" + nullComparisons
+                + ", integerComparisons=" + integerComparisons
+                + ", collatorComparisons=" + collatorComparisons
+                + ", fastTimestampComparisons=" + fastTimestampComparisons
+                + ", fastStringComparisons=" + fastStringComparisons
+                + ", nameNormalizations=" + nameNormalizations
+                + ", yearNormalizations=" + yearNormalizations
+                + ", monthNormalizations=" + monthNormalizations
+                + ", numericNormalizations=" + numericNormalizations
+                + ", cacheHits=" + cacheHits
+                + ", cacheMisses=" + cacheMisses
+                + ", cacheRefreshes=" + cacheRefreshes
+                + ", collationKeyCreations=" + collationKeyCreations
+                + ", cacheSize=" + sortValueCache.size()
+                + ", multiplier=" + multiplier
+                + ", thread=" + Thread.currentThread().getName()
+                + ", edt=" + javax.swing.SwingUtilities.isEventDispatchThread());
+    }
+
+    private static long nanosToMs(long nanos) {
+        return nanos / 1000000L;
     }
 
     /**
