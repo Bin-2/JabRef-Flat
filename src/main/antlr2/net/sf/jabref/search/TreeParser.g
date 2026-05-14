@@ -5,6 +5,7 @@ import java.util.regex.*;
 import net.sf.jabref.*;
 }
 
+{@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})}
 class SearchExpressionTreeParser extends TreeParser;
 
 options {

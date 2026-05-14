@@ -3,6 +3,7 @@ package net.sf.jabref.search;
 import java.io.StringReader;
 }
 
+{@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})}
 class SearchExpressionParser extends Parser;
 
 options {

@@ -2,6 +2,9 @@ header {
 package net.sf.jabref.search;
 }
 
+{
+@SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
+}
 class SearchExpressionLexer extends Lexer;
 
 options {
