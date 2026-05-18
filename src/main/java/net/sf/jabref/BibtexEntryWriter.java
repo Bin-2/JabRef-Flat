@@ -8,6 +8,9 @@ import java.util.*;
 
 public class BibtexEntryWriter {
 
+    private static final boolean PERF_TIMERS = false;
+    private static final int PERF_SUMMARY_EVERY_ENTRIES = 5000;
+
     /**
      * Display name map for entry field names.
      */
@@ -56,12 +59,28 @@ public class BibtexEntryWriter {
     private final boolean includeEmptyFields = Globals.prefs.getBoolean("includeEmptyFields");
     private final int writeFieldSortStype = Globals.prefs.getInt(JabRefPreferences.WRITEFIELD_SORTSTYLE);
 
+    private final Map<String, String> fieldDisplayNameCache = new HashMap<>();
+    private final Map<BibtexEntryType, String[]> sortedRequiredFieldsCache = new HashMap<>();
+    private final Map<BibtexEntryType, String[]> sortedOptionalFieldsCache = new HashMap<>();
+
+    private long entriesWritten;
+    private long writeEntryNanos;
+    private long writeFieldAttempts;
+    private long fieldsWritten;
+    private long fieldsSkipped;
+    private long formatNanos;
+    private long outputWriteNanos;
+    private long remainingFieldBuildNanos;
+    private long charsFormatted;
+    private long maxEntryNanos;
+
     public BibtexEntryWriter(FieldFormatter fieldFormatter, boolean write) {
         this.fieldFormatter = fieldFormatter;
         this.write = write;
     }
 
     public void write(BibtexEntry entry, Writer out) throws IOException {
+        long start = System.nanoTime();
         switch (writeFieldSortStype) {
             case 0:
                 writeSorted(entry, out);
@@ -72,6 +91,18 @@ public class BibtexEntryWriter {
             case 2:
                 writeUserDefinedOrder(entry, out);
                 break;
+            default:
+                writeSorted(entry, out);
+                break;
+        }
+        long elapsed = System.nanoTime() - start;
+        entriesWritten++;
+        writeEntryNanos += elapsed;
+        if (elapsed > maxEntryNanos) {
+            maxEntryNanos = elapsed;
+        }
+        if (PERF_TIMERS && (entriesWritten % PERF_SUMMARY_EVERY_ENTRIES == 0)) {
+            printPerfSummary("periodic");
         }
     }
 
@@ -85,51 +116,53 @@ public class BibtexEntryWriter {
      */
     private void writeSorted(BibtexEntry entry, Writer out) throws IOException {
         // Write header with type and bibtex-key.
-        out.write("@" + entry.getType().getName() + "{");
-
         String str = Util.shaveString(entry.getField(BibtexFields.KEY_FIELD));
-        out.write(((str == null) ? "" : str) + "," + Globals.NEWLINE);
-        HashMap<String, String> written = new HashMap<>();
-        written.put(BibtexFields.KEY_FIELD, null);
-        // Write required fields first.
-        // Thereby, write the title field first.
+        out.write("@" + entry.getType().getName() + "{" + ((str == null) ? "" : str) + "," + Globals.NEWLINE);
+
+        Set<String> written = new HashSet<>();
+        written.add(BibtexFields.KEY_FIELD);
+
+        // Write required fields first. Thereby, write the title field first.
         boolean hasWritten = writeField(entry, out, "title", false, false);
-        written.put("title", null);
-        String[] s = entry.getRequiredFields();
+        written.add("title");
+
+        String[] s = getCachedSortedRequiredFields(entry);
         if (s != null) {
-            Arrays.sort(s); // Sorting in alphabetic order.
             for (String value : s) {
-                if (!written.containsKey(value)) { // If field appears both in req. and opt. don't repeat.
+                if (!written.contains(value)) { // If field appears both in req. and opt. don't repeat.
                     hasWritten = hasWritten | writeField(entry, out, value, hasWritten, false);
-                    written.put(value, null);
+                    written.add(value);
                 }
             }
         }
+
         // Then optional fields.
-        s = entry.getOptionalFields();
-        boolean first = true, previous = true;
-        previous = false;
+        s = getCachedSortedOptionalFields(entry);
+        boolean first = true;
+        boolean previous = false;
         if (s != null) {
-            Arrays.sort(s); // Sorting in alphabetic order.
             for (String value : s) {
-                if (!written.containsKey(value)) { // If field appears both in req. and opt. don't repeat.
-                    //writeField(s[i], out, fieldFormatter);
+                if (!written.contains(value)) { // If field appears both in req. and opt. don't repeat.
                     hasWritten = hasWritten | writeField(entry, out, value, hasWritten, hasWritten && first);
-                    written.put(value, null);
+                    written.add(value);
                     first = false;
                     previous = true;
                 }
             }
         }
+
         // Then write remaining fields in alphabetic order.
+        long remainingStart = System.nanoTime();
         TreeSet<String> remainingFields = new TreeSet<>();
         for (String key : entry.getAllFields()) {
             boolean writeIt = (write ? BibtexFields.isWriteableField(key)
                     : BibtexFields.isDisplayableField(key));
-            if (!written.containsKey(key) && writeIt) {
+            if (!written.contains(key) && writeIt) {
                 remainingFields.add(key);
             }
         }
+        remainingFieldBuildNanos += System.nanoTime() - remainingStart;
+
         first = previous;
         for (String field : remainingFields) {
             hasWritten = hasWritten | writeField(entry, out, field, hasWritten, hasWritten && first);
@@ -150,41 +183,45 @@ public class BibtexEntryWriter {
      */
     private void writeUnsorted(BibtexEntry entry, Writer out) throws IOException {
         // Write header with type and bibtex-key.
-        out.write("@" + entry.getType().getName().toUpperCase(Locale.US) + "{");
-
         String str = Util.shaveString(entry.getField(BibtexFields.KEY_FIELD));
-        out.write(((str == null) ? "" : str) + "," + Globals.NEWLINE);
-        HashMap<String, String> written = new HashMap<>();
-        written.put(BibtexFields.KEY_FIELD, null);
+        out.write("@" + entry.getType().getName().toUpperCase(Locale.US) + "{" + ((str == null) ? "" : str) + "," + Globals.NEWLINE);
+
+        Set<String> written = new HashSet<>();
+        written.add(BibtexFields.KEY_FIELD);
         boolean hasWritten = false;
+
         // Write required fields first.
         String[] s = entry.getRequiredFields();
         if (s != null) {
             for (String value : s) {
                 hasWritten = hasWritten | writeField(entry, out, value, hasWritten, false);
-                written.put(value, null);
+                written.add(value);
             }
         }
+
         // Then optional fields.
         s = entry.getOptionalFields();
         if (s != null) {
             for (String value : s) {
-                if (!written.containsKey(value)) { // If field appears both in req. and opt. don't repeat.
-                    //writeField(s[i], out, fieldFormatter);
+                if (!written.contains(value)) { // If field appears both in req. and opt. don't repeat.
                     hasWritten = hasWritten | writeField(entry, out, value, hasWritten, false);
-                    written.put(value, null);
+                    written.add(value);
                 }
             }
         }
+
         // Then write remaining fields in alphabetic order.
+        long remainingStart = System.nanoTime();
         TreeSet<String> remainingFields = new TreeSet<>();
         for (String key : entry.getAllFields()) {
             boolean writeIt = (write ? BibtexFields.isWriteableField(key)
                     : BibtexFields.isDisplayableField(key));
-            if (!written.containsKey(key) && writeIt) {
+            if (!written.contains(key) && writeIt) {
                 remainingFields.add(key);
             }
         }
+        remainingFieldBuildNanos += System.nanoTime() - remainingStart;
+
         for (String field : remainingFields) {
             hasWritten = hasWritten | writeField(entry, out, field, hasWritten, false);
         }
@@ -195,41 +232,39 @@ public class BibtexEntryWriter {
 
     private void writeUserDefinedOrder(BibtexEntry entry, Writer out) throws IOException {
         // Write header with type and bibtex-key.
-        out.write("@" + entry.getType().getName() + "{");
-
         String str = Util.shaveString(entry.getField(BibtexFields.KEY_FIELD));
-        out.write(((str == null) ? "" : str) + "," + Globals.NEWLINE);
-        HashMap<String, String> written = new HashMap<>();
-        written.put(BibtexFields.KEY_FIELD, null);
+        out.write("@" + entry.getType().getName() + "{" + ((str == null) ? "" : str) + "," + Globals.NEWLINE);
+
+        Set<String> written = new HashSet<>();
+        written.add(BibtexFields.KEY_FIELD);
         boolean hasWritten = false;
 
         // Write user defined fields first.
         String[] s = entry.getUserDefinedFields();
         if (s != null) {
-            //do not sort, write as it is.
+            // do not sort, write as it is.
             for (String value : s) {
-                if (!written.containsKey(value)) { // If field appears both in req. and opt. don't repeat.
+                if (!written.contains(value)) { // If field appears both in req. and opt. don't repeat.
                     hasWritten = hasWritten | writeField(entry, out, value, hasWritten, false);
-                    written.put(value, null);
+                    written.add(value);
                 }
             }
         }
 
         // Then write remaining fields in alphabetic order.
-        boolean first = true, previous = true;
-        previous = false;
-        //STA get remaining fields
+        boolean first = true;
+        boolean previous = false;
+
+        long remainingStart = System.nanoTime();
         TreeSet<String> remainingFields = new TreeSet<>();
         for (String key : entry.getAllFields()) {
-            //iterate through all fields
             boolean writeIt = (write ? BibtexFields.isWriteableField(key)
                     : BibtexFields.isDisplayableField(key));
-            //find the ones has not been written.
-            if (!written.containsKey(key) && writeIt) {
+            if (!written.contains(key) && writeIt) {
                 remainingFields.add(key);
             }
         }
-        //END get remaining fields
+        remainingFieldBuildNanos += System.nanoTime() - remainingStart;
 
         first = previous;
         for (String field : remainingFields) {
@@ -239,7 +274,6 @@ public class BibtexEntryWriter {
 
         // Finally, end the entry.
         out.write((hasWritten ? Globals.NEWLINE : "") + "}" + Globals.NEWLINE);
-
     }
 
     /**
@@ -254,23 +288,39 @@ public class BibtexEntryWriter {
      * @throws IOException In case of an IO error
      */
     private boolean writeField(BibtexEntry entry, Writer out, String name, boolean isNotFirst, boolean isNextGroup) throws IOException {
+        writeFieldAttempts++;
         String o = entry.getField(name);
         if (o != null || includeEmptyFields) {
-            if (isNotFirst) {
-                out.write("," + Globals.NEWLINE);
-            }
-            if (isNextGroup) {
-                out.write(Globals.NEWLINE);
-            }
-            out.write("  " + getFieldDisplayName(name) + " = ");
-
+            String formatted;
             try {
-                out.write(fieldFormatter.format(o, name));
+                long formatStart = System.nanoTime();
+                formatted = fieldFormatter.format(o, name);
+                formatNanos += System.nanoTime() - formatStart;
+                if (formatted != null) {
+                    charsFormatted += formatted.length();
+                }
             } catch (Throwable ex) {
                 throw new IOException(Globals.lang("Error in field") + " '" + name + "': " + ex.getMessage());
             }
+
+            StringBuilder fieldOutput = new StringBuilder((formatted == null ? 0 : formatted.length()) + 32);
+            if (isNotFirst) {
+                fieldOutput.append(',').append(Globals.NEWLINE);
+            }
+            if (isNextGroup) {
+                fieldOutput.append(Globals.NEWLINE);
+            }
+            fieldOutput.append("  ").append(getFieldDisplayName(name)).append(" = ");
+            fieldOutput.append(formatted);
+
+            long writeStart = System.nanoTime();
+            out.write(fieldOutput.toString());
+            outputWriteNanos += System.nanoTime() - writeStart;
+
+            fieldsWritten++;
             return true;
         } else {
+            fieldsSkipped++;
             return false;
         }
     }
@@ -289,28 +339,101 @@ public class BibtexEntryWriter {
      * @return The display version of the field name.
      */
     private String getFieldDisplayName(String field) {
-        if (field.length() == 0) {
+        String cacheKey = field;
+        String cached = fieldDisplayNameCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        String effectiveField = field;
+        if (effectiveField.length() == 0) {
             // hard coded "UNKNOWN" is assigned to a field without any name
-            field = "UNKNOWN";
+            effectiveField = "UNKNOWN";
         }
 
         String suffix = "";
         if (writeFieldAddSpaces) {
-            for (int i = MaxFieldLength - field.length(); i > 0; i--) {
-                suffix += " ";
-            }
+            suffix = repeatSpaces(Math.max(0, MaxFieldLength - effectiveField.length()));
         }
 
         String res;
         if (writeFieldCameCaseName) {
-            if (tagDisplayNameMap.containsKey(field.toLowerCase())) {
-                res = tagDisplayNameMap.get(field.toLowerCase()) + suffix;
+            String lookup = effectiveField.toLowerCase();
+            if (tagDisplayNameMap.containsKey(lookup)) {
+                res = tagDisplayNameMap.get(lookup) + suffix;
             } else {
-                res = (field.charAt(0) + "").toUpperCase() + field.substring(1) + suffix;
+                res = (effectiveField.charAt(0) + "").toUpperCase() + effectiveField.substring(1) + suffix;
             }
         } else {
-            res = field + suffix;
+            res = effectiveField + suffix;
         }
+        fieldDisplayNameCache.put(cacheKey, res);
         return res;
+    }
+
+    private String[] getCachedSortedRequiredFields(BibtexEntry entry) {
+        BibtexEntryType type = entry.getType();
+        if (!sortedRequiredFieldsCache.containsKey(type)) {
+            sortedRequiredFieldsCache.put(type, sortedCopy(entry.getRequiredFields()));
+        }
+        return sortedRequiredFieldsCache.get(type);
+    }
+
+    private String[] getCachedSortedOptionalFields(BibtexEntry entry) {
+        BibtexEntryType type = entry.getType();
+        if (!sortedOptionalFieldsCache.containsKey(type)) {
+            sortedOptionalFieldsCache.put(type, sortedCopy(entry.getOptionalFields()));
+        }
+        return sortedOptionalFieldsCache.get(type);
+    }
+
+    private static String[] sortedCopy(String[] fields) {
+        if (fields == null) {
+            return null;
+        }
+        String[] copy = new String[fields.length];
+        System.arraycopy(fields, 0, copy, 0, fields.length);
+        Arrays.sort(copy);
+        return copy;
+    }
+
+    private static String repeatSpaces(int count) {
+        if (count <= 0) {
+            return "";
+        }
+        char[] chars = new char[count];
+        Arrays.fill(chars, ' ');
+        return new String(chars);
+    }
+
+    private void printPerfSummary(String reason) {
+        System.out.println("[BibtexEntryWriter timer] " + reason
+                + " entries=" + entriesWritten
+                + ", fieldsWritten=" + fieldsWritten
+                + ", fieldAttempts=" + writeFieldAttempts
+                + ", fieldsSkipped=" + fieldsSkipped
+                + ", charsFormatted=" + charsFormatted
+                + ", entryTotalMs=" + nanosToMs(writeEntryNanos)
+                + ", maxEntryMs=" + nanosToMs(maxEntryNanos)
+                + ", formatMs=" + nanosToMs(formatNanos)
+                + ", outputWriteMs=" + nanosToMs(outputWriteNanos)
+                + ", remainingFieldBuildMs=" + nanosToMs(remainingFieldBuildNanos)
+                + ", displayNameCache=" + fieldDisplayNameCache.size()
+                + ", reqCache=" + sortedRequiredFieldsCache.size()
+                + ", optCache=" + sortedOptionalFieldsCache.size()
+                + ", thread=" + Thread.currentThread().getName()
+                + ", edt=" + isEventDispatchThread());
+    }
+
+    private static long nanosToMs(long nanos) {
+        return nanos / 1000000L;
+    }
+
+    private static boolean isEventDispatchThread() {
+        try {
+            return javax.swing.SwingUtilities.isEventDispatchThread();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }

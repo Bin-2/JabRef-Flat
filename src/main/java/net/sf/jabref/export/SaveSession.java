@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.FileOutputStream;
 import java.nio.charset.UnsupportedCharsetException;
 
+import javax.swing.SwingUtilities;
+
 /**
  * Class used to handle safe storage to disk. 
  * 
@@ -41,6 +43,9 @@ import java.nio.charset.UnsupportedCharsetException;
  */
 public class SaveSession {
 
+    private static final boolean PERF_TIMERS = false;
+    private static final long PERF_LOG_THRESHOLD_MS = 0L;
+
     public static final String LOCKFILE_SUFFIX = ".lock";
     // The age in ms of a lockfile before JabRef will offer to "steal" the locked file:
     public static final long LOCKFILE_CRITICAL_AGE = 60000;
@@ -53,14 +58,61 @@ public class SaveSession {
     boolean backup, useLockFile;
     VerifyingWriter writer;
 
+    private static long startTimer() {
+        return PERF_TIMERS ? System.nanoTime() : 0L;
+    }
+
+    private static void printTimer(String label, long start) {
+        if (!PERF_TIMERS) {
+            return;
+        }
+        long elapsedNs = System.nanoTime() - start;
+        long elapsedMs = elapsedNs / 1000000L;
+        if (elapsedMs >= PERF_LOG_THRESHOLD_MS) {
+            System.out.println("[SaveSession timer] " + label
+                    + " took " + elapsedMs + " ms (" + elapsedNs + " ns)"
+                    + " thread=" + Thread.currentThread().getName()
+                    + " edt=" + SwingUtilities.isEventDispatchThread());
+        }
+    }
+
+    private static long fileLength(File f) {
+        if (f == null || !f.exists()) {
+            return -1L;
+        }
+        return f.length();
+    }
+
+    private static String fileInfo(File f) {
+        if (f == null) {
+            return "null";
+        }
+        return f.getPath() + " exists=" + f.exists() + " bytes=" + fileLength(f);
+    }
+
     public SaveSession(File file, String encoding, boolean backup) throws IOException,
         UnsupportedCharsetException {
+        long totalStart = startTimer();
+        long blockStart;
+
         this.file = file;
+
+        blockStart = startTimer();
         tmp = File.createTempFile(TEMP_PREFIX, TEMP_SUFFIX);
+        printTimer("constructor createTempFile tmp=" + fileInfo(tmp), blockStart);
+
+        blockStart = startTimer();
         useLockFile = Globals.prefs.getBoolean("useLockFiles");
+        printTimer("constructor read useLockFiles value=" + useLockFile, blockStart);
+
         this.backup = backup;
         this.encoding = encoding;
+
+        blockStart = startTimer();
         writer = new VerifyingWriter(new FileOutputStream(tmp), encoding);
+        printTimer("constructor open VerifyingWriter encoding=" + encoding, blockStart);
+
+        printTimer("constructor total target=" + fileInfo(file) + " backup=" + backup, totalStart);
     }
 
     public VerifyingWriter getWriter() {
@@ -76,53 +128,87 @@ public class SaveSession {
     }
 
     public void commit() throws SaveException {
-        if (file == null)
-            return;
-        if (file.exists() && backup) {
-            String name = file.getName();
-            String path = file.getParent();
-            File backupFile = new File(path, name + GUIGlobals.backupExt);
-            try {
-                Util.copyFile(file, backupFile, true);
-            } catch (IOException ex) {
-                ex.printStackTrace();
-                throw SaveException.BACKUP_CREATION;
-                //throw new SaveException(Globals.lang("Save failed during backup creation")+": "+ex.getMessage());
-            }
-        }
+        long totalStart = startTimer();
+        long blockStart;
         try {
-            if (useLockFile) {
-                try {
-                    if (createLockFile()) {
-                        // Oops, the lock file already existed. Try to wait it out:
-                        if (!Util.waitForFileLock(file, 10))
-                            throw SaveException.FILE_LOCKED;
+            if (file == null) {
+                return;
+            }
 
-                    }
+            System.out.println("[SaveSession timer] commit start target=" + fileInfo(file)
+                    + " tmp=" + fileInfo(tmp)
+                    + " backup=" + backup
+                    + " useLockFile=" + useLockFile
+                    + " thread=" + Thread.currentThread().getName()
+                    + " edt=" + SwingUtilities.isEventDispatchThread());
+
+            if (file.exists() && backup) {
+                String name = file.getName();
+                String path = file.getParent();
+                File backupFile = new File(path, name + GUIGlobals.backupExt);
+                try {
+                    blockStart = startTimer();
+                    Util.copyFile(file, backupFile, true);
+                    printTimer("commit backup copy sourceBytes=" + fileLength(file)
+                            + " backup=" + fileInfo(backupFile), blockStart);
                 } catch (IOException ex) {
-                    System.err.println("Error when creating lock file");
                     ex.printStackTrace();
+                    throw SaveException.BACKUP_CREATION;
+                    //throw new SaveException(Globals.lang("Save failed during backup creation")+": "+ex.getMessage());
+                }
+            }
+            try {
+                if (useLockFile) {
+                    try {
+                        blockStart = startTimer();
+                        boolean lockAlreadyExisted = createLockFile();
+                        printTimer("commit createLockFile alreadyExisted=" + lockAlreadyExisted, blockStart);
+                        if (lockAlreadyExisted) {
+                            // Oops, the lock file already existed. Try to wait it out:
+                            blockStart = startTimer();
+                            if (!Util.waitForFileLock(file, 10)) {
+                                printTimer("commit waitForFileLock failed", blockStart);
+                                throw SaveException.FILE_LOCKED;
+                            }
+                            printTimer("commit waitForFileLock succeeded", blockStart);
+
+                        }
+                    } catch (IOException ex) {
+                        System.err.println("Error when creating lock file");
+                        ex.printStackTrace();
+                    }
+                }
+
+                blockStart = startTimer();
+                Util.copyFile(tmp, file, true);
+                printTimer("commit temp-to-target copy tmpBytes=" + fileLength(tmp)
+                        + " target=" + fileInfo(file), blockStart);
+            } catch (IOException ex2) {
+                // If something happens here, what can we do to correct the problem? The file is corrupted, but we still
+                // have a clean copy in tmp. However, we just failed to copy tmp to file, so it's not likely that
+                // repeating the action will have a different result.
+                // On the other hand, our temporary file should still be clean, and won't be deleted.
+                throw new SaveException(Globals.lang("Save failed while committing changes")+": "+ex2.getMessage());
+            } finally {
+                if (useLockFile) {
+                    blockStart = startTimer();
+                    boolean deleted = deleteLockFile();
+                    printTimer("commit deleteLockFile deleted=" + deleted, blockStart);
                 }
             }
 
-            Util.copyFile(tmp, file, true);
-        } catch (IOException ex2) {
-            // If something happens here, what can we do to correct the problem? The file is corrupted, but we still
-            // have a clean copy in tmp. However, we just failed to copy tmp to file, so it's not likely that
-            // repeating the action will have a different result.
-            // On the other hand, our temporary file should still be clean, and won't be deleted.
-            throw new SaveException(Globals.lang("Save failed while committing changes")+": "+ex2.getMessage());
+            blockStart = startTimer();
+            boolean tmpDeleted = tmp.delete();
+            printTimer("commit delete temp deleted=" + tmpDeleted + " tmp=" + fileInfo(tmp), blockStart);
         } finally {
-            if (useLockFile) {
-                deleteLockFile();
-            }
+            printTimer("commit total target=" + fileInfo(file), totalStart);
         }
-
-        tmp.delete();
     }
 
     public void cancel() {
-        tmp.delete();
+        long blockStart = startTimer();
+        boolean tmpDeleted = tmp.delete();
+        printTimer("cancel delete temp deleted=" + tmpDeleted + " tmp=" + fileInfo(tmp), blockStart);
     }
 
 
@@ -132,20 +218,28 @@ public class SaveSession {
      * @throws IOException if something happens during creation.
      */
     private boolean createLockFile() throws IOException {
+        long totalStart = startTimer();
         File lock = new File(file.getPath()+LOCKFILE_SUFFIX);
-        if (lock.exists()) {
-            return true;
-        }
-        FileOutputStream out = new FileOutputStream(lock);
-        out.write(0);
         try {
-            out.close();
-        } catch (IOException ex) {
-            System.err.println("Error when creating lock file");
-            ex.printStackTrace();
+            if (lock.exists()) {
+                return true;
+            }
+            FileOutputStream out = new FileOutputStream(lock);
+            try {
+                out.write(0);
+            } finally {
+                try {
+                    out.close();
+                } catch (IOException ex) {
+                    System.err.println("Error when creating lock file");
+                    ex.printStackTrace();
+                }
+            }
+            lock.deleteOnExit();
+            return false;
+        } finally {
+            printTimer("createLockFile total lock=" + fileInfo(lock), totalStart);
         }
-        lock.deleteOnExit();
-        return false;
     }
 
     /**
@@ -154,12 +248,16 @@ public class SaveSession {
      * @throws IOException if something goes wrong.
      */
     private boolean deleteLockFile() {
+        long totalStart = startTimer();
         File lock = new File(file.getPath()+LOCKFILE_SUFFIX);
-        if (!lock.exists()) {
-            return false;
+        try {
+            if (!lock.exists()) {
+                return false;
+            }
+            return lock.delete();
+        } finally {
+            printTimer("deleteLockFile total lock=" + fileInfo(lock), totalStart);
         }
-        lock.delete();
-        return true;
     }
 
     public File getTemporaryFile() {

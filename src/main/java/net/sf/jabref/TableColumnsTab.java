@@ -161,29 +161,31 @@ class TableColumnsTab extends JPanel implements PrefsTab {
 
             public void setValueAt(Object value, int row, int col) {
                 tableChanged = true;
-                // Make sure the vector is long enough.
-                while (row >= tableRows.size()) {
-                    tableRows.add(new TableRow("", -1));
-                }
 
                 if ((row == 0) && (col == 1)) {
-                    ncWidth = Integer.parseInt(value.toString());
+                    ncWidth = parseColumnWidth(value, ncWidth);
                     return;
+                }
+
+                if (row <= 0) {
+                    return;
+                }
+
+                // Make sure the vector is long enough. Row 0 is the number column
+                // and does not correspond to an entry in tableRows.
+                while ((row - 1) >= tableRows.size()) {
+                    tableRows.add(new TableRow("", -1));
                 }
 
                 TableRow rowContent = tableRows.get(row - 1);
 
                 if (col == 0) {
-                    rowContent.name = value.toString();
+                    rowContent.name = value == null ? "" : value.toString();
                     if (getValueAt(row, 1).equals("")) {
                         setValueAt("" + GUIGlobals.DEFAULT_FIELD_LENGTH, row, 1);
                     }
                 } else {
-                    if (value == null) {
-                        rowContent.length = -1;
-                    } else {
-                        rowContent.length = Integer.parseInt(value.toString());
-                    }
+                    rowContent.length = parseColumnWidth(value, -1);
                 }
             }
 
@@ -450,6 +452,36 @@ class TableColumnsTab extends JPanel implements PrefsTab {
 
     }
 
+    private int parseColumnWidth(Object value, int fallback) {
+        if (value == null) {
+            return fallback;
+        }
+        String text = value.toString().trim();
+        if (text.length() == 0) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(text);
+        } catch (NumberFormatException ex) {
+            return fallback;
+        }
+    }
+
+    private void updateConfiguredColumnWidth(String columnName, int width) {
+        String normalizedName = columnName.toLowerCase();
+
+        for (int row = 1; row < colSetup.getRowCount(); row++) {
+            Object configured = colSetup.getValueAt(row, 0);
+            if (configured == null) {
+                continue;
+            }
+            if (configured.toString().toLowerCase().equals(normalizedName)) {
+                colSetup.setValueAt("" + width, row, 1);
+                return;
+            }
+        }
+    }
+
     class DeleteRowAction extends AbstractAction {
 
         public DeleteRowAction() {
@@ -642,35 +674,40 @@ class TableColumnsTab extends JPanel implements PrefsTab {
 
         public void actionPerformed(ActionEvent e) {
             BasePanel panel = frame.basePanel();
-            if (panel == null) {
+            if ((panel == null) || (panel.mainTable == null)) {
                 return;
             }
+
             TableColumnModel colMod = panel.mainTable.getColumnModel();
-            colSetup.setValueAt("" + colMod.getColumn(0).getWidth(), 0, 1);
-            for (int i = 1; i < colMod.getColumnCount(); i++) {
-                try {
-                    String name = panel.mainTable.getColumnName(i).toLowerCase();
-                    int width = colMod.getColumn(i).getWidth();
-                    //Util.pr(":"+((String)colSetup.getValueAt(i-1, 0)).toLowerCase());
-                    //Util.pr("-"+name);
-                    if ((i <= tableRows.size()) && (((String) colSetup.getValueAt(i, 0)).toLowerCase()).equals(name)) {
-                        colSetup.setValueAt("" + width, i, 1);
-                    } else { // Doesn't match; search for a matching col in our table
-                        for (int j = 0; j < colSetup.getRowCount(); j++) {
-                            if ((j < tableRows.size())
-                                    && (((String) colSetup.getValueAt(j, 0)).toLowerCase()).equals(name)) {
-                                colSetup.setValueAt("" + width, j, 1);
-                                break;
-                            }
-                        }
-                    }
-                } catch (Throwable ex) {
-                    ex.printStackTrace();
-                }
-                colSetup.revalidate();
-                colSetup.repaint();
+            if (colMod == null || colMod.getColumnCount() == 0) {
+                return;
             }
 
+            colSetup.setValueAt("" + colMod.getColumn(0).getWidth(), 0, 1);
+
+            for (int i = 1; i < colMod.getColumnCount(); i++) {
+                try {
+                    // Icon columns intentionally have no normal table-field name
+                    // when one-letter headings are disabled. They are not stored
+                    // in the columnNames/columnWidths preference arrays.
+                    if (panel.mainTable.getIconTypeForColumn(i) != null) {
+                        continue;
+                    }
+
+                    String columnName = panel.mainTable.getColumnName(i);
+                    if ((columnName == null) || (columnName.trim().length() == 0)) {
+                        continue;
+                    }
+
+                    int width = colMod.getColumn(i).getWidth();
+                    updateConfiguredColumnWidth(columnName, width);
+                } catch (RuntimeException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            colSetup.revalidate();
+            colSetup.repaint();
         }
     }
 

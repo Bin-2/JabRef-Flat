@@ -123,7 +123,72 @@ public class Util {
 
     final static NumberFormat idFormat;
 
-    public static Pattern remoteLinkPattern = Pattern.compile("[a-z]+://.*");
+    public static Pattern remoteLinkPattern = Pattern.compile("(?i)^(https?|ftp)://.*");
+
+    private static boolean isWindowsDriveLetterPath(String link) {
+        return (link != null)
+                && (link.length() >= 3)
+                && Character.isLetter(link.charAt(0))
+                && (link.charAt(1) == ':')
+                && ((link.charAt(2) == '\\') || (link.charAt(2) == '/'));
+    }
+
+    private static boolean isWindowsUncPath(String link) {
+        return (link != null) && (link.startsWith("\\\\") || link.startsWith("//"));
+    }
+
+    /**
+     * Repairs URL strings that were accidentally converted to Windows path style.
+     *
+     * This method must not touch local Windows paths such as D:\\file.pdf or
+     * UNC paths such as \\server\\share\\file.pdf. Those strings are local files,
+     * not URLs, even though D: superficially looks like a URI scheme.
+     */
+    private static String normalizeUrlSlashes(String link) {
+        if (link == null) {
+            return null;
+        }
+
+        String trimmed = link.trim();
+        if (isWindowsDriveLetterPath(trimmed) || isWindowsUncPath(trimmed)) {
+            return trimmed;
+        }
+
+        java.util.regex.Matcher matcher = Pattern.compile("(?i)^(https?|ftp):(.*)$").matcher(trimmed);
+        if (!matcher.matches()) {
+            return trimmed;
+        }
+
+        String scheme = matcher.group(1).toLowerCase();
+        String rest = matcher.group(2);
+
+        // Repair common Windows-damaged URLs such as
+        // https:\\dx.doi.org\\10.1007\\... -> https://dx.doi.org/10.1007/...
+        if (rest.startsWith("\\") || rest.startsWith("/\\") || rest.startsWith("\\/")) {
+            rest = rest.replace('\\', '/');
+            while (rest.startsWith("/")) {
+                rest = rest.substring(1);
+            }
+            return scheme + "://" + rest;
+        }
+
+        if (rest.startsWith("//")) {
+            return scheme + ":" + rest.replace('\\', '/');
+        }
+
+        return trimmed;
+    }
+
+    private static boolean isRemoteLink(String link) {
+        if (link == null) {
+            return false;
+        }
+        if (isWindowsDriveLetterPath(link) || isWindowsUncPath(link)) {
+            return false;
+        }
+        String normalized = normalizeUrlSlashes(link);
+        return remoteLinkPattern.matcher(normalized).matches();
+    }
 
     public static int MARK_COLOR_LEVELS = 6,
             MAX_MARKING_LEVEL = MARK_COLOR_LEVELS - 1,
@@ -597,18 +662,18 @@ public class Util {
 
         } else if (fieldName.equals("doi")) {
             fieldName = "url";
-
-            // sanitizing is done below at the treatment of "URL"
-            // in sanatizeUrl a doi-link is correctly treated
+            link = sanitizeUrl(link);
         } else if (fieldName.equals("eprint")) {
             fieldName = "url";
 
             link = sanitizeUrl(link);
 
-            // Check to see if link field already contains a well formated URL
-            if (!link.startsWith("http://")) {
+            // Check to see if link field already contains a well formatted URL.
+            if (!link.startsWith("http://") && !link.startsWith("https://")) {
                 link = Globals.ARXIV_LOOKUP_PREFIX + link;
             }
+        } else if (fieldName.equals("url")) {
+            link = sanitizeUrl(link);
         }
 
         if (fieldName.equals("url")) { // html
@@ -684,10 +749,17 @@ public class Util {
      * @throws IOException
      */
     public static void openFileOnWindows(String link, boolean localFile) throws IOException {
-        if (localFile) {
-            Desktop.getDesktop().open(new File(link));
+        if (link == null) {
+            throw new IOException("Cannot open null link");
+        }
+
+        String cleanLink = normalizeUrlSlashes(link);
+        boolean remoteLink = isRemoteLink(cleanLink);
+
+        if (!localFile && remoteLink) {
+            Desktop.getDesktop().browse(URI.create(cleanLink));
         } else {
-            Desktop.getDesktop().browse(URI.create(link));
+            Desktop.getDesktop().open(new File(cleanLink));
         }
     }
 
@@ -765,11 +837,12 @@ public class Util {
     public static boolean openExternalFileAnyFormat(final MetaData metaData, String link,
             final ExternalFileType fileType) throws IOException {
 
-        boolean httpLink = false;
-
-        if (remoteLinkPattern.matcher(link.toLowerCase()).matches()) {
-            httpLink = true;
+        if (link == null) {
+            return false;
         }
+
+        link = normalizeUrlSlashes(link);
+        boolean httpLink = isRemoteLink(link);
         /*if (link.toLowerCase().startsWith("file://")) {
             link = link.substring(7);
         }
@@ -823,7 +896,10 @@ public class Util {
                     : new String[]{"/usr/bin/open", filePath};
             Runtime.getRuntime().exec(cmd);
         } else if (Globals.ON_WIN) {
-            if ((fileType.getOpenWith() != null) && (fileType.getOpenWith().length() > 0)) {
+            boolean remoteLink = isRemoteLink(filePath);
+            if (remoteLink) {
+                openFileOnWindows(filePath, false);
+            } else if ((fileType.getOpenWith() != null) && (fileType.getOpenWith().length() > 0)) {
                 // Application is specified. Use it:
                 openFileWithApplicationOnWindows(filePath, fileType.getOpenWith());
             } else {
@@ -956,7 +1032,10 @@ public class Util {
      * @return Sanitized URL
      */
     public static String sanitizeUrl(String link) {
-        link = link.trim();
+        link = normalizeUrlSlashes(link);
+        if (link == null) {
+            return "";
+        }
 
         // First check if it is enclosed in \\url{}. If so, remove
         // the wrapper.
@@ -976,7 +1055,7 @@ public class Util {
         // the trailing "/abstract" is included but doesn't lead to a resolvable DOI).
         // To prevent mangling of working URLs I'm disabling this check if the link is already
         // a full http link:
-        if (checkForPlainDOI(link) && !link.startsWith("http://")) {
+        if (checkForPlainDOI(link) && !link.startsWith("http://") && !link.startsWith("https://")) {
             link = Globals.DOI_LOOKUP_PREFIX + getDOI(link);
         }
 

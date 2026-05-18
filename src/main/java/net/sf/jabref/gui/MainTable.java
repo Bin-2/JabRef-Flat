@@ -72,6 +72,58 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     // needed to activate/deactivate the listener
     private final PersistenceTableColumnListener tableColumnListener;
 
+
+    private static final boolean PERF_TIMERS = true;
+    private static final long PERF_LOG_THRESHOLD_MS = 500L;
+    private static final int PERF_RENDERER_LOG_EVERY = 50000;
+    private static long perfRendererCalls = 0L;
+    private static long perfRendererNs = 0L;
+
+    private static long perfStart() {
+        return PERF_TIMERS ? System.nanoTime() : 0L;
+    }
+
+    private static void perfLog(String label, long startNs) {
+        if (!PERF_TIMERS || startNs == 0L) {
+            return;
+        }
+        long elapsedNs = System.nanoTime() - startNs;
+        long elapsedMs = elapsedNs / 1000000L;
+        if (elapsedMs >= PERF_LOG_THRESHOLD_MS) {
+            System.out.println("[MainTable timer] " + label
+                    + " took " + elapsedMs + " ms (" + elapsedNs + " ns)"
+                    + " thread=" + Thread.currentThread().getName()
+                    + " edt=" + SwingUtilities.isEventDispatchThread());
+        }
+    }
+
+    private static void perfLogRenderer(long startNs) {
+        if (!PERF_TIMERS || startNs == 0L) {
+            return;
+        }
+        long elapsedNs = System.nanoTime() - startNs;
+        perfRendererCalls++;
+        perfRendererNs += elapsedNs;
+        if ((perfRendererCalls % PERF_RENDERER_LOG_EVERY) == 0L) {
+            System.out.println("[MainTable timer] getCellRenderer periodic calls=" + perfRendererCalls
+                    + ", totalMs=" + (perfRendererNs / 1000000L)
+                    + ", avgNs=" + (perfRendererNs / perfRendererCalls)
+                    + " thread=" + Thread.currentThread().getName()
+                    + " edt=" + SwingUtilities.isEventDispatchThread());
+        }
+    }
+
+    private static int safeEventListSize(EventList<?> list) {
+        if (list == null) {
+            return -1;
+        }
+        try {
+            return list.size();
+        } catch (RuntimeException ex) {
+            return -2;
+        }
+    }
+
     // Constants used to define how a cell should be rendered.
     public static final int REQUIRED = 1, OPTIONAL = 2,
             REQ_STRING = 1,
@@ -88,33 +140,57 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     public MainTable(MainTableFormat tableFormat, EventList<BibtexEntry> list, JabRefFrame frame,
             BasePanel panel) {
         super();
+        long constructorStartNs = perfStart();
+        long blockStartNs;
 
+        blockStartNs = perfStart();
         addFocusListener(Globals.focusListener);
         setAutoResizeMode(Globals.prefs.getInt("autoResizeMode"));
-
         this.tableFormat = tableFormat;
         this.panel = panel;
+        perfLog("constructor focus/autoresize/basic fields listSize=" + safeEventListSize(list), blockStartNs);
+
         // This SortedList has a Comparator controlled by the TableComparatorChooser
-        // we are going to install, which responds to user sorting selctions:
+        // we are going to install, which responds to user sorting selections:
+        blockStartNs = perfStart();
         sortedForTable = new SortedList<BibtexEntry>(list, null);
+        perfLog("constructor new sortedForTable size=" + safeEventListSize(sortedForTable), blockStartNs);
+
         // This SortedList applies afterwards, and floats marked entries:
+        blockStartNs = perfStart();
         sortedForMarking = new SortedList<BibtexEntry>(sortedForTable, null);
+        perfLog("constructor new sortedForMarking size=" + safeEventListSize(sortedForMarking), blockStartNs);
+
         // This SortedList applies afterwards, and can float search hits:
+        blockStartNs = perfStart();
         sortedForSearch = new SortedList<BibtexEntry>(sortedForMarking, null);
+        perfLog("constructor new sortedForSearch size=" + safeEventListSize(sortedForSearch), blockStartNs);
+
         // This SortedList applies afterwards, and can float grouping hits:
+        blockStartNs = perfStart();
         sortedForGrouping = new SortedList<BibtexEntry>(sortedForSearch, null);
+        perfLog("constructor new sortedForGrouping size=" + safeEventListSize(sortedForGrouping), blockStartNs);
 
         searchMatcher = null;
         groupMatcher = null;
         searchComparator = null;//new HitOrMissComparator(searchMatcher);
         groupComparator = null;//new HitOrMissComparator(groupMatcher);
 
+        blockStartNs = perfStart();
         EventTableModel<BibtexEntry> tableModel = new EventTableModel<BibtexEntry>(sortedForGrouping, tableFormat);
-        setModel(tableModel);
+        perfLog("constructor new EventTableModel rows=" + safeEventListSize(sortedForGrouping), blockStartNs);
 
+        blockStartNs = perfStart();
+        setModel(tableModel);
+        perfLog("constructor setModel columns=" + tableModel.getColumnCount(), blockStartNs);
+
+        blockStartNs = perfStart();
         tableColorCodes = Globals.prefs.getBoolean("tableColorCodesOn");
         selectionModel = new EventSelectionModel<BibtexEntry>(sortedForGrouping);
         setSelectionModel(selectionModel);
+        perfLog("constructor selection model rows=" + safeEventListSize(sortedForGrouping), blockStartNs);
+
+        blockStartNs = perfStart();
         pane = new JScrollPane(this);
         pane.setBorder(BorderFactory.createEmptyBorder());
 //        pane.getViewport().setBackground(Globals.prefs.getColor("tableBackground"));
@@ -125,50 +201,80 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             setShowGrid(false);
             setIntercellSpacing(new Dimension(0, 0));
         }
+        perfLog("constructor scrollPane/grid", blockStartNs);
 
+        blockStartNs = perfStart();
         this.setTableHeader(new PreventDraggingJTableHeader(this.getColumnModel()));
+        perfLog("constructor tableHeader", blockStartNs);
 
+        blockStartNs = perfStart();
         comparatorChooser = this.createTableComparatorChooser(this, sortedForTable,
                 TableComparatorChooser.MULTIPLE_COLUMN_KEYBOARD);
+        perfLog("constructor createTableComparatorChooser rows=" + safeEventListSize(sortedForTable), blockStartNs);
 
+        blockStartNs = perfStart();
         this.tableColumnListener = new PersistenceTableColumnListener(this);
+        perfLog("constructor PersistenceTableColumnListener", blockStartNs);
         /*if (Globals.prefs.getBoolean(PersistenceTableColumnListener.ACTIVATE_PREF_KEY)) {
             getColumnModel().addColumnModelListener(this.tableColumnListener );
         }*/
 
-        // TODO: Figure out, whether this call is needed.
+        // TODO: Figure out whether this call is needed.
+        blockStartNs = perfStart();
         getSelected();
+        perfLog("constructor getSelected warmup", blockStartNs);
 
         // enable DnD
+        blockStartNs = perfStart();
         setDragEnabled(true);
         TransferHandler xfer = new EntryTableTransferHandler(this, frame, panel);
         setTransferHandler(xfer);
         pane.setTransferHandler(xfer);
+        perfLog("constructor drag/drop setup", blockStartNs);
 
         initializingSorting = true;
         try {
+            blockStartNs = perfStart();
             setupComparatorChooser();
+            perfLog("constructor setupComparatorChooser", blockStartNs);
+
+            blockStartNs = perfStart();
             refreshSorting();
+            perfLog("constructor refreshSorting", blockStartNs);
         } finally {
             initializingSorting = false;
         }
-        setWidths();
 
+        blockStartNs = perfStart();
+        setWidths();
+        perfLog("constructor setWidths", blockStartNs);
+
+        blockStartNs = perfStart();
         this.setOpaque(false);
+        perfLog("constructor setOpaque", blockStartNs);
         // this.setBackground(new Color(249, 250, 251));
 
         // Register for theme changes
+        blockStartNs = perfStart();
         ThemeWatcher.register(this);
+        perfLog("constructor ThemeWatcher.register", blockStartNs);
+
+        perfLog("constructor total rows=" + safeEventListSize(sortedForGrouping)
+                + ", columns=" + getColumnCount(), constructorStartNs);
 
     }
 
     public void refreshSorting() {
+        long totalStartNs = perfStart();
+        long blockStartNs;
+
         Comparator<BibtexEntry> newMarkingComparator = Globals.prefs.getBoolean("floatMarkedEntries")
                 ? markingComparator : null;
         Comparator<BibtexEntry> newSearchComparator = searchComparator;
         Comparator<BibtexEntry> newGroupComparator = groupComparator;
 
         if (currentMarkingComparator != newMarkingComparator) {
+            blockStartNs = perfStart();
             sortedForMarking.getReadWriteLock().writeLock().lock();
             try {
                 sortedForMarking.setComparator(newMarkingComparator);
@@ -176,9 +282,12 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             } finally {
                 sortedForMarking.getReadWriteLock().writeLock().unlock();
             }
+            perfLog("refreshSorting set marking comparator active=" + (newMarkingComparator != null)
+                    + ", rows=" + safeEventListSize(sortedForMarking), blockStartNs);
         }
 
         if (currentSearchComparator != newSearchComparator) {
+            blockStartNs = perfStart();
             sortedForSearch.getReadWriteLock().writeLock().lock();
             try {
                 sortedForSearch.setComparator(newSearchComparator);
@@ -186,9 +295,12 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             } finally {
                 sortedForSearch.getReadWriteLock().writeLock().unlock();
             }
+            perfLog("refreshSorting set search comparator active=" + (newSearchComparator != null)
+                    + ", rows=" + safeEventListSize(sortedForSearch), blockStartNs);
         }
 
         if (currentGroupComparator != newGroupComparator) {
+            blockStartNs = perfStart();
             sortedForGrouping.getReadWriteLock().writeLock().lock();
             try {
                 sortedForGrouping.setComparator(newGroupComparator);
@@ -196,7 +308,11 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             } finally {
                 sortedForGrouping.getReadWriteLock().writeLock().unlock();
             }
+            perfLog("refreshSorting set group comparator active=" + (newGroupComparator != null)
+                    + ", rows=" + safeEventListSize(sortedForGrouping), blockStartNs);
         }
+
+        perfLog("refreshSorting total rows=" + safeEventListSize(sortedForGrouping), totalStartNs);
     }
 
     /**
@@ -206,21 +322,25 @@ public class MainTable extends JTable implements ThemeAwareComponent {
      * @param m The Matcher that determines if an entry is a hit or not.
      */
     public void showFloatSearch(Matcher<BibtexEntry> m) {
+        long startNs = perfStart();
         showingFloatSearch = true;
         searchMatcher = m;
         searchComparator = (m == null) ? null : new HitOrMissComparator(m);
         refreshSorting();
         scrollTo(0);
+        perfLog("showFloatSearch matcher=" + (m != null) + ", rows=" + safeEventListSize(sortedForGrouping), startNs);
     }
 
     /**
      * Removes sorting by search results, and graying out of non-hits.
      */
     public void stopShowingFloatSearch() {
+        long startNs = perfStart();
         showingFloatSearch = false;
         searchMatcher = null;
         searchComparator = null;
         refreshSorting();
+        perfLog("stopShowingFloatSearch rows=" + safeEventListSize(sortedForGrouping), startNs);
     }
 
     /**
@@ -231,10 +351,12 @@ public class MainTable extends JTable implements ThemeAwareComponent {
      * group selection or not.
      */
     public void showFloatGrouping(Matcher<BibtexEntry> m) {
+        long startNs = perfStart();
         showingFloatGrouping = true;
         groupMatcher = m;
         groupComparator = (m == null) ? null : new HitOrMissComparator(m);
         refreshSorting();
+        perfLog("showFloatGrouping matcher=" + (m != null) + ", rows=" + safeEventListSize(sortedForGrouping), startNs);
     }
 
     public boolean isShowingFloatSearch() {
@@ -245,10 +367,12 @@ public class MainTable extends JTable implements ThemeAwareComponent {
      * Removes sorting by group, and graying out of non-hits.
      */
     public void stopShowingFloatGrouping() {
+        long startNs = perfStart();
         showingFloatGrouping = false;
         groupMatcher = null;
         groupComparator = null;
         refreshSorting();
+        perfLog("stopShowingFloatGrouping rows=" + safeEventListSize(sortedForGrouping), startNs);
     }
 
     public EventList<BibtexEntry> getTableRows() {
@@ -265,18 +389,21 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     @Override
     public TableCellRenderer getCellRenderer(int row, int column) {
+        long rendererStartNs = perfStart();
+
+        BibtexEntry entry = getEntrySafely(row);
 
         int score = -3;
         DefaultTableCellRenderer renderer = defRenderer;
 
-        int status = getCellStatus(row, column);
-
-        if (!showingFloatSearch || matches(row, searchMatcher)) {
+        if (!showingFloatSearch || matches(entry, searchMatcher)) {
             score++;
         }
-        if (!showingFloatGrouping || matches(row, groupMatcher)) {
+        if (!showingFloatGrouping || matches(entry, groupMatcher)) {
             score += 2;
         }
+
+        int marking = isMarked(entry);
 
         // Grayed-out logic for filtered rows stays unchanged
         if (score < -1) {
@@ -300,25 +427,19 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             renderer = compRenderer;
 
             if (tableColorCodes) {
-                if (!isComplete(row)) {
+                if (!isComplete(entry)) {
                     incRenderer.setNumber(row);
                     renderer = incRenderer;
-                } else {
-                    int marking = isMarked(row);
-                    if (marking > 0) {
-                        marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
-                        markedNumberRenderers[marking - 1].setNumber(row);
-                        renderer = markedNumberRenderers[marking - 1];
-                    }
+                } else if (marking > 0) {
+                    int boundedMarking = Math.min(marking, Util.MARK_COLOR_LEVELS);
+                    markedNumberRenderers[boundedMarking - 1].setNumber(row);
+                    renderer = markedNumberRenderers[boundedMarking - 1];
                 }
-            } else {
-                // Optional:
-                // If "marked" rows should still affect column 0 even when color coding is off,
-                // move the marking block here instead of leaving renderer = compRenderer.
             }
 
             renderer.setHorizontalAlignment(JLabel.CENTER);
         } else if (tableColorCodes) {
+            int status = getCellStatus(entry, column);
             if (status == REQUIRED) {
                 renderer = reqRenderer;
             } else if (status == OPTIONAL) {
@@ -329,16 +450,25 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         }
 
         // Keep non-zero column marking logic as before
-        int marking = isMarked(row);
         if ((column != 0) && (marking > 0)) {
             marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
             renderer = markedRenderers[marking - 1];
         }
 
+        perfLogRenderer(rendererStartNs);
         return renderer;
     }
 
+    private BibtexEntry getEntrySafely(int row) {
+        try {
+            return sortedForGrouping.get(row);
+        } catch (RuntimeException ex) {
+            return null;
+        }
+    }
+
     public void setWidths() {
+        long startNs = perfStart();
         // Setting column widths:
         int ncWidth = Globals.prefs.getInt("numberColWidth");
         String[] widths = Globals.prefs.getStringArray("columnWidths");
@@ -346,7 +476,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         cm.getColumn(0).setPreferredWidth(ncWidth);
         for (int i = 1; i < tableFormat.padleft; i++) {
 
-            // Check if the Column is an extended RankingColumn (and not a compact-ranking column) 
+            // Check if the Column is an extended RankingColumn (and not a compact-ranking column)
             // If this is the case, set a certain Column-width,
             // because the RankingIconColumn needs some more width
             if (tableFormat.isRankingColumn(i) && !Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_RANKING_COMPACT)) {
@@ -362,7 +492,8 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
 
         }
-        for (int i = tableFormat.padleft; i < getModel().getColumnCount(); i++) {
+        int modelColumnCount = getModel().getColumnCount();
+        for (int i = tableFormat.padleft; i < modelColumnCount; i++) {
             try {
                 cm.getColumn(i).setPreferredWidth(Integer.parseInt(widths[i - tableFormat.padleft]));
             } catch (Throwable ex) {
@@ -371,6 +502,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
 
         }
+        perfLog("setWidths columns=" + modelColumnCount, startNs);
     }
 
     public BibtexEntry getEntryAt(int row) {
@@ -415,12 +547,18 @@ public class MainTable extends JTable implements ThemeAwareComponent {
      */
     @SuppressWarnings("unchecked")
     private void setupComparatorChooser() {
+        long totalStartNs = perfStart();
+        long blockStartNs;
+
         // First column:
+        blockStartNs = perfStart();
         List<Comparator> comparators = comparatorChooser.getComparatorsForColumn(0);
         comparators.clear();
         comparators.add(new FirstColumnComparator(panel.database()));
+        perfLog("setupComparatorChooser first column", blockStartNs);
 
         // Icon columns:
+        blockStartNs = perfStart();
         for (int i = 1; i < tableFormat.padleft; i++) {
             comparators = comparatorChooser.getComparatorsForColumn(i);
             comparators.clear();
@@ -432,15 +570,20 @@ public class MainTable extends JTable implements ThemeAwareComponent {
                 comparators.add(new IconComparator(iconField));
             }
         }
+        perfLog("setupComparatorChooser icon columns count=" + Math.max(0, tableFormat.padleft - 1), blockStartNs);
+
         // Remaining columns:
+        blockStartNs = perfStart();
         for (int i = tableFormat.padleft; i < tableFormat.getColumnCount(); i++) {
             comparators = comparatorChooser.getComparatorsForColumn(i);
             comparators.clear();
             comparators.add(new FieldComparator(tableFormat.getColumnName(i).toLowerCase()));
         }
+        perfLog("setupComparatorChooser field columns count=" + Math.max(0, tableFormat.getColumnCount() - tableFormat.padleft), blockStartNs);
 
         // Set initial sort columns:
         // Default sort order:
+        blockStartNs = perfStart();
         String[] sortFields = new String[]{
             Globals.prefs.get(JabRefPreferences.PRIMARY_SORT_FIELD),
             Globals.prefs.get(JabRefPreferences.SECONDARY_SORT_FIELD),
@@ -451,27 +594,41 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             Globals.prefs.getBoolean(JabRefPreferences.SECONDARY_SORT_DESCENDING),
             Globals.prefs.getBoolean(JabRefPreferences.TERTIARY_SORT_DESCENDING)
         }; // descending
+        perfLog("setupComparatorChooser read sort prefs", blockStartNs);
 
+        blockStartNs = perfStart();
+        int appendedComparators = 0;
         sortedForTable.getReadWriteLock().writeLock().lock();
-        for (int i = 0; i < sortFields.length; i++) {
-            int index = -1;
-            if (!sortFields[i].startsWith(MainTableFormat.ICON_COLUMN_PREFIX)) {
-                index = tableFormat.getColumnIndex(sortFields[i]);
-            } else {
-                for (int j = 0; j < tableFormat.getColumnCount(); j++) {
-                    if (sortFields[i].equals(tableFormat.getColumnType(j))) {
-                        index = j;
-                        break;
+        try {
+            for (int i = 0; i < sortFields.length; i++) {
+                int index = -1;
+                if (!sortFields[i].startsWith(MainTableFormat.ICON_COLUMN_PREFIX)) {
+                    index = tableFormat.getColumnIndex(sortFields[i]);
+                } else {
+                    for (int j = 0; j < tableFormat.getColumnCount(); j++) {
+                        if (sortFields[i].equals(tableFormat.getColumnType(j))) {
+                            index = j;
+                            break;
+                        }
                     }
                 }
+                if (index >= 0) {
+                    long appendStartNs = perfStart();
+                    comparatorChooser.appendComparator(index, 0, sortDirections[i]);
+                    perfLog("setupComparatorChooser appendComparator sortField=" + sortFields[i]
+                            + ", index=" + index + ", descending=" + sortDirections[i]
+                            + ", rows=" + safeEventListSize(sortedForTable), appendStartNs);
+                    appendedComparators++;
+                }
             }
-            if (index >= 0) {
-                comparatorChooser.appendComparator(index, 0, sortDirections[i]);
-            }
+        } finally {
+            sortedForTable.getReadWriteLock().writeLock().unlock();
         }
-        sortedForTable.getReadWriteLock().writeLock().unlock();
+        perfLog("setupComparatorChooser append comparators count=" + appendedComparators
+                + ", rows=" + safeEventListSize(sortedForTable), blockStartNs);
 
         // Add action listener so we can remember the sort order:
+        blockStartNs = perfStart();
         comparatorChooser.addSortActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 // Get the information about the current sort order:
@@ -500,16 +657,17 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
 
         });
+        perfLog("setupComparatorChooser add persist sort listener", blockStartNs);
+        perfLog("setupComparatorChooser total columns=" + tableFormat.getColumnCount()
+                + ", rows=" + safeEventListSize(sortedForTable), totalStartNs);
 
     }
 
     public int getCellStatus(int row, int col) {
-        BibtexEntry be = null;
-        try {
-            be = sortedForGrouping.get(row);
-        } catch (RuntimeException ex) {
-            return OTHER;
-        }
+        return getCellStatus(getEntrySafely(row), col);
+    }
+
+    private int getCellStatus(BibtexEntry be, int col) {
         if (be == null) {
             return OTHER;
         }
@@ -574,34 +732,33 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     private boolean matches(int row, Matcher<BibtexEntry> m) {
-        if (m == null) {
+        return matches(getEntrySafely(row), m);
+    }
+
+    private boolean matches(BibtexEntry entry, Matcher<BibtexEntry> m) {
+        if ((m == null) || (entry == null)) {
             return false;
         }
         try {
-            BibtexEntry entry = sortedForGrouping.get(row);
-            return entry != null && m.matches(entry);
+            return m.matches(entry);
         } catch (RuntimeException ex) {
             return false;
         }
     }
 
     private boolean isComplete(int row) {
-        BibtexEntry be = null;
-        try {
-            be = sortedForGrouping.get(row);
-        } catch (RuntimeException ex) {
-            return true;
-        }
+        return isComplete(getEntrySafely(row));
+    }
+
+    private boolean isComplete(BibtexEntry be) {
         return be != null && be.hasAllRequiredFields(panel.database());
     }
 
     private int isMarked(int row) {
-        BibtexEntry be = null;
-        try {
-            be = sortedForGrouping.get(row);
-        } catch (RuntimeException ex) {
-            return 0;
-        }
+        return isMarked(getEntrySafely(row));
+    }
+
+    private int isMarked(BibtexEntry be) {
         return be == null ? 0 : Util.isMarked(be);
     }
 
@@ -747,6 +904,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 //    }
     //////////////////////////////////////////////////////////////////////////////
     public static void updateRenderers() {
+        long startNs = perfStart();
         // Always use FlatLaf's current theme colors as base
         Color tableBackground = UIManager.getColor("Table.background");
         Color tableForeground = UIManager.getColor("Table.foreground");
@@ -801,7 +959,9 @@ public class MainTable extends JTable implements ThemeAwareComponent {
                     blend(tableColor, selectionBackground, 0.3f));
             markedNumberRenderers[i] = new CompleteRenderer(tableColor);
         }
-    }
+    
+        perfLog("updateRenderers total", startNs);
+}
 
     private static Color adjustColorForTheme(Color original) {
         // Adjust the original marking color to work better with current theme
@@ -915,7 +1075,11 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     public TableComparatorChooser<BibtexEntry> createTableComparatorChooser(JTable table, SortedList<BibtexEntry> list,
             Object sortingStrategy) {
+        long startNs = perfStart();
+        long blockStartNs = perfStart();
         final TableComparatorChooser<BibtexEntry> result = TableComparatorChooser.install(table, list, sortingStrategy);
+        perfLog("createTableComparatorChooser install rows=" + safeEventListSize(list), blockStartNs);
+        blockStartNs = perfStart();
         result.addSortActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 // We need to reset the stack of sorted list each time sorting order
@@ -925,6 +1089,8 @@ public class MainTable extends JTable implements ThemeAwareComponent {
                 }
             }
         });
+        perfLog("createTableComparatorChooser add refresh listener", blockStartNs);
+        perfLog("createTableComparatorChooser total rows=" + safeEventListSize(list), startNs);
         return result;
     }
 
@@ -936,10 +1102,12 @@ public class MainTable extends JTable implements ThemeAwareComponent {
      * @param newUI
      */
     public void setUI(TableUI newUI) {
+        long startNs = perfStart();
         super.setUI(newUI);
         TransferHandler handler = getTransferHandler();
         setTransferHandler(null);
         setTransferHandler(handler);
+        perfLog("setUI newUI=" + (newUI == null ? "null" : newUI.getClass().getName()), startNs);
     }
 
     /**
@@ -987,70 +1155,68 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     public void forceIconUpdate() {
-        // Clear any cached icons in GUIGlobals
         GUIGlobals.clearTableIconCache();
         GUIGlobals.initTableIcons();
 
-        // Force the table format to update
         if (tableFormat != null) {
             tableFormat.updateTableFormat();
         }
 
-        // Force complete table refresh
-        if (getModel() instanceof EventTableModel) {
-            SwingUtilities.invokeLater(() -> {
-                ((EventTableModel<?>) getModel()).fireTableDataChanged();
-            });
+        refreshTableData();
+        repaint();
+    }
+
+    private void refreshTableData() {
+        if (!(getModel() instanceof EventTableModel)) {
+            return;
         }
 
-        // Force repaint
-        repaint();
+        Runnable refresh = new Runnable() {
+            public void run() {
+                ((EventTableModel<?>) getModel()).fireTableDataChanged();
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            refresh.run();
+        } else {
+            SwingUtilities.invokeLater(refresh);
+        }
     }
 
     @Override
     public void onThemeChanged() {
-//        System.out.println("=== THEME CHANGE START ===");
-//        System.out.println("Before update - Table.background: " + UIManager.getColor("Table.background"));
-        // Force complete renderer refresh
         updateRenderers();
-        forceIconUpdate();
-        // Clear the table's renderer cache
-        setDefaultRenderer(Object.class, null);
 
-        // Force the table format to update icons
+        GUIGlobals.clearTableIconCache();
+        GUIGlobals.initTableIcons();
+
         if (tableFormat != null) {
             tableFormat.updateTableFormat();
         }
 
-        // Force table model refresh
-        if (getModel() instanceof EventTableModel) {
-            ((EventTableModel<?>) getModel()).fireTableDataChanged();
+        Color tableBackground = UIManager.getColor("Table.background");
+        Color tableForeground = UIManager.getColor("Table.foreground");
+        Color gridColor = UIManager.getColor("Table.gridColor");
+
+        if (tableBackground != null) {
+            setBackground(tableBackground);
+        }
+        if (tableForeground != null) {
+            setForeground(tableForeground);
+        }
+        if (gridColor != null) {
+            setGridColor(gridColor);
         }
 
-        // Force the table to recreate all cell renderers
-        TableColumnModel columnModel = getColumnModel();
-        for (int i = 0; i < columnModel.getColumnCount(); i++) {
-            columnModel.getColumn(i).setCellRenderer(null);
+        if ((pane != null) && (tableBackground != null)) {
+            pane.getViewport().setBackground(tableBackground);
+            pane.setBackground(tableBackground);
         }
 
-        // Update the table's own background
-        setBackground(UIManager.getColor("Table.background"));
-        setForeground(UIManager.getColor("Table.foreground"));
-
-        // Update grid color
-        setGridColor(UIManager.getColor("Table.gridColor"));
-
-        // Force the scroll pane background update
-        if (pane != null) {
-            pane.getViewport().setBackground(UIManager.getColor("Table.background"));
-            pane.setBackground(UIManager.getColor("Table.background"));
-        }
-
-//        System.out.println("After update - Table background: " + getBackground());
-        // Force immediate visual update
+        refreshTableData();
         revalidate();
         repaint();
-//        System.out.println("=== THEME CHANGE COMPLETE ===");
     }
 
     public void cleanup() {

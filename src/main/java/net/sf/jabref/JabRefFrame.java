@@ -396,6 +396,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     List<Action> fetcherActions = new LinkedList<>();
     private boolean fetchersLoaded = false;
 
+    private final Map<String, Icon> menuIconCache = new HashMap<>();
+    private final Map<String, Icon> toolbarIconCache = new HashMap<>();
+    private final Map<String, Icon> toolbarIconOnlyCache = new HashMap<>();
+    private final Map<String, Icon> menuIconOnlyCache = new HashMap<>();
+
     private SearchManager2 searchManager;
 
     public GroupSelector groupSelector;
@@ -700,15 +705,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
 
         if (file.exists()) {
-            // Run the actual open in a thread to prevent the program
-            // locking until the file is loaded.
+            // Run the actual open outside the event dispatch thread to prevent
+            // the program from locking until the file is loaded.
             final File theFile = new File(filePath);
-            (new Thread() {
+            runInBackground("JabRef-open-file", new Runnable() {
                 @Override
                 public void run() {
                     open.openIt(theFile, true);
                 }
-            }).start();
+            });
         }
     }
 
@@ -1557,7 +1562,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     /**
      * Create menu action with consistent SVG icon handling (16x16 for menus)
      */
-    private Action createMenuAction(Action originalAction, String iconName) {
+    private Action createMenuAction(final Action originalAction, String iconName) {
         Action menuAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -1565,27 +1570,94 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             }
         };
 
-        // Copy properties from original action
-        menuAction.putValue(Action.NAME, originalAction.getValue(Action.NAME));
-        menuAction.putValue(Action.SHORT_DESCRIPTION, originalAction.getValue(Action.SHORT_DESCRIPTION));
-        menuAction.putValue(Action.ACCELERATOR_KEY, originalAction.getValue(Action.ACCELERATOR_KEY));
-
-        // Set menu-specific icon (16x16)
-        Icon menuIcon = GUIGlobals.getIcon(iconName, GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE);
+        copyActionProperties(originalAction, menuAction, true);
+        Icon menuIcon = getCachedMenuIcon(iconName);
         if (menuIcon != null) {
             menuAction.putValue(Action.SMALL_ICON, menuIcon);
         } else {
-            // Fallback: use original action's icon (get it from SMALL_ICON, not SHORT_DESCRIPTION)
             Icon originalIcon = (Icon) originalAction.getValue(Action.SMALL_ICON);
             if (originalIcon != null) {
                 menuAction.putValue(Action.SMALL_ICON, originalIcon);
-            } else {
-                System.err.println("Warning: No menu icon found for: " + iconName);
-                // Don't set any icon if none is available
             }
         }
 
         return menuAction;
+    }
+
+    private void copyActionProperties(final Action source, final Action target, final boolean includeAccelerator) {
+        target.putValue(Action.NAME, source.getValue(Action.NAME));
+        target.putValue(Action.SHORT_DESCRIPTION, source.getValue(Action.SHORT_DESCRIPTION));
+        if (includeAccelerator) {
+            target.putValue(Action.ACCELERATOR_KEY, source.getValue(Action.ACCELERATOR_KEY));
+        }
+        target.setEnabled(source.isEnabled());
+
+        source.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            @Override
+            public void propertyChange(java.beans.PropertyChangeEvent evt) {
+                String propertyName = evt.getPropertyName();
+                if (Action.NAME.equals(propertyName)
+                        || Action.SHORT_DESCRIPTION.equals(propertyName)
+                        || (includeAccelerator && Action.ACCELERATOR_KEY.equals(propertyName))) {
+                    target.putValue(propertyName, evt.getNewValue());
+                } else if ("enabled".equals(propertyName)) {
+                    target.setEnabled(Boolean.TRUE.equals(evt.getNewValue()));
+                }
+            }
+        });
+    }
+
+    private Icon getCachedMenuIcon(String iconName) {
+        if (iconName == null) {
+            return null;
+        }
+        Icon cached = menuIconCache.get(iconName);
+        if (cached == null && !menuIconCache.containsKey(iconName)) {
+            cached = GUIGlobals.getIcon(iconName, GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE);
+            menuIconCache.put(iconName, cached);
+        }
+        return cached;
+    }
+
+    private Icon getCachedToolbarIcon(String iconName) {
+        if (iconName == null) {
+            return null;
+        }
+        Icon cached = toolbarIconCache.get(iconName);
+        if (cached == null && !toolbarIconCache.containsKey(iconName)) {
+            cached = GUIGlobals.getIcon(iconName, GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE, GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE);
+            toolbarIconCache.put(iconName, cached);
+        }
+        return cached;
+    }
+
+    private Icon getCachedToolbarIconOnly(String iconName) {
+        if (iconName == null) {
+            return null;
+        }
+        Icon cached = toolbarIconOnlyCache.get(iconName);
+        if (cached == null && !toolbarIconOnlyCache.containsKey(iconName)) {
+            cached = GUIGlobals.getToolbarIconOnly(iconName);
+            toolbarIconOnlyCache.put(iconName, cached);
+        }
+        return cached;
+    }
+
+    private Icon getCachedMenuIconOnly(String iconName) {
+        if (iconName == null) {
+            return null;
+        }
+        Icon cached = menuIconOnlyCache.get(iconName);
+        if (cached == null && !menuIconOnlyCache.containsKey(iconName)) {
+            cached = GUIGlobals.getMenuIconOnly(iconName);
+            menuIconOnlyCache.put(iconName, cached);
+        }
+        return cached;
+    }
+
+    private void clearToolbarIconCaches() {
+        toolbarIconCache.clear();
+        toolbarIconOnlyCache.clear();
     }
 
     public static JMenu subMenu(String name) {
@@ -1696,13 +1768,17 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     newSize = GUIGlobals.TOOLBAR_ICON_MEDIUM;
             }
 
+            if (newSize == GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE) {
+                return;
+            }
+
             // Update global size
             GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE = newSize;
 
             // Save preference
             Globals.prefs.putInt("toolbarIconSize", newSize);
 
-            // Refresh the toolbar
+            clearToolbarIconCaches();
             refreshToolbarIcons();
         }
     }
@@ -1923,38 +1999,25 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * Helper method to create actions with Icons (supports both SVG and legacy)
      */
     private Action createActionWithIcon(Action action, String iconName) {
-        // Store the icon name in the action for later updates
         action.putValue("iconName", iconName);
 
-        Icon icon = GUIGlobals.getImage(iconName);
+        Icon icon = getCachedToolbarIcon(iconName);
+        if (icon == null) {
+            icon = getCachedMenuIconOnly(iconName);
+        }
+        if (icon == null) {
+            icon = GUIGlobals.getImage(iconName);
+        }
         if (icon != null) {
             action.putValue(Action.SMALL_ICON, icon);
         }
         return action;
     }
-//    private Action createActionWithIcon(Action originalAction, String iconName) {
-//        Action toolbarAction = new AbstractAction() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//                originalAction.actionPerformed(e);
-//            }
-//        };
-//
-//        // Copy properties
-//        toolbarAction.putValue(Action.NAME, originalAction.getValue(Action.NAME));
-//        toolbarAction.putValue(Action.SHORT_DESCRIPTION, originalAction.getValue(Action.SHORT_DESCRIPTION));
-//
-//        // Try to get toolbar icon first
-//        Icon toolbarIcon = GUIGlobals.getIcon(iconName, GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE);
-//
-//        toolbarAction.putValue(Action.SMALL_ICON, toolbarIcon);
-//        return toolbarAction;
-//    }
 
     /**
-     * Create toolbar action with toolbar-specific icon
+     * Create toolbar action with toolbar-specific icon.
      */
-    private Action createToolbarAction(Action originalAction, String iconName) {
+    private Action createToolbarAction(final Action originalAction, String iconName) {
         Action toolbarAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -1962,68 +2025,39 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             }
         };
 
-        // Debug: Check if icon exists
-        Icon testIcon = GUIGlobals.getToolbarIconOnly(iconName);
-        if (testIcon == null) {
-//            System.out.println("Missing toolbar icon: " + iconName);
-            // List all available icons for reference
-            Map<String, String> allIcons = GUIGlobals.getAllIcons();
-//            System.out.println("Available icons: " + allIcons.keySet());
+        copyActionProperties(originalAction, toolbarAction, false);
+
+        Icon toolbarIcon = getCachedToolbarIconOnly(iconName);
+        if (toolbarIcon == null) {
+            toolbarIcon = getCachedMenuIconOnly(iconName);
         }
-
-        // Copy properties
-        toolbarAction.putValue(Action.NAME, originalAction.getValue(Action.NAME));
-        toolbarAction.putValue(Action.SHORT_DESCRIPTION, originalAction.getValue(Action.SHORT_DESCRIPTION));
-
-        // Try to get toolbar icon first
-        Icon toolbarIcon = GUIGlobals.getToolbarIconOnly(iconName);
-
+        if (toolbarIcon == null) {
+            toolbarIcon = (Icon) originalAction.getValue(Action.SMALL_ICON);
+        }
         if (toolbarIcon != null) {
             toolbarAction.putValue(Action.SMALL_ICON, toolbarIcon);
-        } else {
-            // Fallback 1: Try menu icon
-            Icon menuIcon = GUIGlobals.getMenuIconOnly(iconName);
-            if (menuIcon != null) {
-                toolbarAction.putValue(Action.SMALL_ICON, menuIcon);
-            } else {
-                // Fallback 2: Use original action's icon
-                Icon originalIcon = (Icon) originalAction.getValue(Action.SMALL_ICON);
-                if (originalIcon != null) {
-                    toolbarAction.putValue(Action.SMALL_ICON, originalIcon);
-                } else {
-                    System.err.println("Warning: No icon found for: " + iconName);
-                }
-            }
         }
         return toolbarAction;
     }
 
     /**
-     * Create toolbar toggle button with consistent styling and icon handling
+     * Create toolbar toggle button with consistent styling and icon handling.
      */
     private JToggleButton createToolbarToggleButton(Action action, String iconName) {
         JToggleButton button = new JToggleButton(action);
         button.setText(null);
 
-        // Set toolbar-specific icon (24x24)
-        Icon toolbarIcon = GUIGlobals.getToolbarIconOnly(iconName);
+        Icon toolbarIcon = getCachedToolbarIconOnly(iconName);
+        if (toolbarIcon == null) {
+            toolbarIcon = getCachedToolbarIcon(iconName);
+        }
+        if (toolbarIcon == null) {
+            toolbarIcon = (Icon) action.getValue(Action.SMALL_ICON);
+        }
         if (toolbarIcon != null) {
             button.setIcon(toolbarIcon);
-        } else {
-            // Fallback: try regular icon
-            Icon fallbackIcon = GUIGlobals.getIcon(iconName);
-            if (fallbackIcon != null) {
-                button.setIcon(fallbackIcon);
-            } else {
-                // Final fallback: use the action's icon
-                Icon actionIcon = (Icon) action.getValue(Action.SMALL_ICON);
-                if (actionIcon != null) {
-                    button.setIcon(actionIcon);
-                }
-            }
         }
 
-        // Apply consistent styling
         if (!Globals.ON_MAC) {
             button.setMargin(marg);
         }
@@ -2031,9 +2065,22 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         return button;
     }
 
-    public void output(final String s) {
-        SwingUtilities.invokeLater(new Runnable() {
+    private void runOnEdt(Runnable runnable) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            SwingUtilities.invokeLater(runnable);
+        }
+    }
 
+    private void runInBackground(final String taskName, final Runnable runnable) {
+        Thread worker = new Thread(runnable, taskName);
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    public void output(final String s) {
+        runOnEdt(new Runnable() {
             @Override
             public void run() {
                 statusLine.setText(s);
@@ -2676,17 +2723,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * @param visible
      */
     public void setProgressBarVisible(final boolean visible) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            progressBar.setVisible(visible);
-        } else {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                @Override
-                public void run() {
-                    progressBar.setVisible(visible);
-                }
-            });
-        }
+        runOnEdt(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setVisible(visible);
+            }
+        });
     }
 
     /**
@@ -2697,17 +2739,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * @param value
      */
     public void setProgressBarValue(final int value) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            progressBar.setValue(value);
-        } else {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                @Override
-                public void run() {
-                    progressBar.setValue(value);
-                }
-            });
-        }
+        runOnEdt(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setValue(value);
+            }
+        });
 
     }
 
@@ -2719,17 +2756,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * @param value
      */
     public void setProgressBarIndeterminate(final boolean value) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            progressBar.setIndeterminate(value);
-        } else {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                @Override
-                public void run() {
-                    progressBar.setIndeterminate(value);
-                }
-            });
-        }
+        runOnEdt(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setIndeterminate(value);
+            }
+        });
 
     }
 
@@ -2742,17 +2774,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * @param value
      */
     public void setProgressBarMaximum(final int value) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            progressBar.setMaximum(value);
-        } else {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                @Override
-                public void run() {
-                    progressBar.setMaximum(value);
-                }
-            });
-        }
+        runOnEdt(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setMaximum(value);
+            }
+        });
 
     }
 
@@ -2810,7 +2837,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     class LoadSessionAction
             extends MnemonicAwareAction {
 
-        boolean running = false;
+        private volatile boolean running = false;
 
         public LoadSessionAction() {
             super(GUIGlobals.getImage("loadSession"));
@@ -2826,39 +2853,42 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             }
             if (running) {
                 return;
-            } else {
-                running = true;
             }
-            output(Globals.lang("Loading session..."));
-            (new Thread() {
 
+            running = true;
+            output(Globals.lang("Loading session..."));
+
+            final HashSet<String> currentFiles = new HashSet<>();
+            if (tabbedPane.getTabCount() > 0) {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    File currentFile = baseAt(i).getFile();
+                    if (currentFile != null) {
+                        currentFiles.add(currentFile.getPath());
+                    }
+                }
+            }
+
+            final String[] names = prefs.getStringArray("savedSession");
+            runInBackground("JabRef-load-session", new Runnable() {
                 @Override
                 public void run() {
-                    HashSet<String> currentFiles = new HashSet<>();
-                    if (tabbedPane.getTabCount() > 0) {
-                        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                            if (baseAt(i).getFile() != null) {
-                                currentFiles.add(baseAt(i).getFile().getPath());
+                    int opened = 0;
+                    try {
+                        for (int i = 0; i < names.length; i++) {
+                            if (!currentFiles.contains(names[i])) {
+                                File file = new File(names[i]);
+                                if (file.exists()) {
+                                    open.openIt(file, i == 0);
+                                    opened++;
+                                }
                             }
                         }
+                        output(Globals.lang("Files opened") + ": " + opened);
+                    } finally {
+                        running = false;
                     }
-                    int i0 = tabbedPane.getTabCount();
-                    String[] names = prefs.getStringArray("savedSession");
-                    for (int i = 0; i < names.length; i++) {
-                        if (!currentFiles.contains(names[i])) {
-                            File file = new File(names[i]);
-                            if (file.exists()) {
-                                //Util.pr("Opening last edited file:"
-                                //+fileToOpen.getName());
-                                open.openIt(file, i == 0);
-                            }
-                        }
-                    }
-                    output(Globals.lang("Files opened") + ": "
-                            + (tabbedPane.getTabCount() - i0));
-                    running = false;
                 }
-            }).start();
+            });
 
         }
     }

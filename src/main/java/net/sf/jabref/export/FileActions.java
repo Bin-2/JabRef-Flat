@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
+import javax.swing.SwingUtilities;
 import java.util.regex.Pattern;
 
 import net.sf.jabref.*;
@@ -45,6 +46,59 @@ public class FileActions {
 
     private static Pattern refPat = Pattern.compile("(#[A-Za-z]+#)"); // Used to detect string references in strings
     private static BibtexString.Type previousStringType;
+
+    private static final boolean PERF_TIMERS = true;
+    private static final long PERF_LOG_THRESHOLD_MS = 500L;
+
+    private static long perfStart() {
+        return System.nanoTime();
+    }
+
+    private static void logPerf(String label, long startNanos) {
+        logPerf(label, startNanos, null);
+    }
+
+    private static void logPerf(String label, long startNanos, String details) {
+        if (!PERF_TIMERS) {
+            return;
+        }
+        long elapsedNanos = System.nanoTime() - startNanos;
+        long elapsedMillis = elapsedNanos / 1000000L;
+        if (elapsedMillis < PERF_LOG_THRESHOLD_MS) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder(160);
+        sb.append("[FileActions timer] ");
+        sb.append(label);
+        if ((details != null) && (details.length() > 0)) {
+            sb.append(' ');
+            sb.append(details);
+        }
+        sb.append(" took ");
+        sb.append(elapsedMillis);
+        sb.append(" ms (");
+        sb.append(elapsedNanos);
+        sb.append(" ns) thread=");
+        sb.append(Thread.currentThread().getName());
+        sb.append(" edt=");
+        sb.append(SwingUtilities.isEventDispatchThread());
+        System.out.println(sb.toString());
+    }
+
+    private static long fileSize(File file) {
+        if ((file == null) || !file.exists()) {
+            return -1L;
+        }
+        return file.length();
+    }
+
+    private static String fileDetails(File file) {
+        if (file == null) {
+            return "file=null";
+        }
+        return "file=" + file.getPath() + " exists=" + file.exists() + " bytes=" + fileSize(file);
+    }
+
 
     private static void writePreamble(Writer fw, String preamble) throws IOException {
         if (preamble != null) {
@@ -63,28 +117,48 @@ public class FileActions {
      * @throws IOException If anthing goes wrong in writing.
      */
     private static void writeStrings(Writer fw, BibtexDatabase database) throws IOException {
+        long totalStart = perfStart();
         previousStringType = BibtexString.Type.AUTHOR;
-        List<BibtexString> strings = new ArrayList<BibtexString>();
-        for (String s : database.getStringKeySet()) {
+
+        long keySetStart = perfStart();
+        Set<String> stringKeySet = database.getStringKeySet();
+        int stringKeyCount = stringKeySet.size();
+        logPerf("writeStrings getStringKeySet", keySetStart, "keys=" + stringKeyCount);
+
+        long collectStart = perfStart();
+        List<BibtexString> strings = new ArrayList<BibtexString>(stringKeyCount);
+        for (String s : stringKeySet) {
             strings.add(database.getString(s));
         }
+        logPerf("writeStrings collect strings", collectStart, "strings=" + strings.size());
+
+        long sortStart = perfStart();
         Collections.sort(strings, new BibtexStringComparator(true));
+        logPerf("writeStrings sort strings", sortStart, "strings=" + strings.size());
+
         // First, make a Map of all entries:
-        HashMap<String, BibtexString> remaining = new HashMap<String, BibtexString>();
+        long mapStart = perfStart();
+        HashMap<String, BibtexString> remaining = new HashMap<String, BibtexString>(Math.max(16, strings.size() * 2));
         int maxKeyLength = 0;
         for (BibtexString string : strings) {
             remaining.put(string.getName(), string);
             maxKeyLength = Math.max(maxKeyLength, string.getName().length());
         }
+        logPerf("writeStrings build remaining map", mapStart, "strings=" + strings.size());
 
+        long writeStart = perfStart();
+        int writtenStrings = 0;
         for (BibtexString.Type t : BibtexString.Type.values()) {
             for (BibtexString bs : strings) {
                 if (remaining.containsKey(bs.getName()) && bs.getType() == t) {
                     writeString(fw, bs, remaining, maxKeyLength);
+                    writtenStrings++;
                 }
             }
         }
         fw.write(Globals.NEWLINE);
+        logPerf("writeStrings write loop", writeStart, "writtenTopLevel=" + writtenStrings + ", remaining=" + remaining.size());
+        logPerf("writeStrings total", totalStart, "strings=" + strings.size());
     }
 
     private static void writeString(Writer fw, BibtexString bs, HashMap<String, BibtexString> remaining, int maxKeyLength) throws IOException {
@@ -120,15 +194,12 @@ public class FileActions {
 //        long sortTime = System.currentTimeMillis() - startTime;
 //        System.out.println("string building original: " + sortTime + "ms");
 //******************************************************************************
-        long startTime = System.currentTimeMillis();
         int spacesNeeded = Math.max(0, maxKeyLength - bs.getName().length());
         StringBuilder sb = new StringBuilder(spacesNeeded);
         for (int i = 0; i < spacesNeeded; i++) {
             sb.append(' ');
         }
         String suffix = sb.toString();
-        long buildTime = System.currentTimeMillis() - startTime;
-//        System.out.println("string building new: " + buildTime + "ms");
 
         fw.write("@String { " + bs.getName() + suffix + " = ");
         if (!bs.getContent().equals("")) {
@@ -173,18 +244,30 @@ public class FileActions {
             boolean checkSearch, boolean checkGroup, String encoding, boolean suppressBackup)
             throws SaveException {
 
+        long totalStart = perfStart();
+        int entryCount = database.getEntryCount();
         TreeMap<String, BibtexEntryType> types = new TreeMap<String, BibtexEntryType>();
 
         boolean backup = prefs.getBoolean("backup");
         if (suppressBackup) {
             backup = false;
         }
+        System.out.println("[FileActions timer] saveDatabase start entries=" + entryCount
+                + " checkSearch=" + checkSearch
+                + " checkGroup=" + checkGroup
+                + " backup=" + backup
+                + " encoding=" + encoding
+                + " " + fileDetails(file)
+                + " thread=" + Thread.currentThread().getName()
+                + " edt=" + SwingUtilities.isEventDispatchThread());
 
         SaveSession session;
         BibtexEntry exceptionCause = null;
+        long sessionStart = perfStart();
         try {
             session = new SaveSession(file, encoding, backup);
         } catch (Throwable e) {
+            logPerf("saveDatabase new SaveSession failed", sessionStart, "encoding=" + encoding + " " + fileDetails(file));
             if (encoding != null) {
                 System.err.println("Error from encoding: '" + encoding + "' Len: " + encoding.length());
             }
@@ -195,34 +278,52 @@ public class FileActions {
             e.printStackTrace();
             throw new SaveException(e.getMessage());
         }
+        logPerf("saveDatabase new SaveSession", sessionStart, "tmpBytes=" + fileSize(session.getTemporaryFile()));
 
         try {
 
             // Get our data stream. This stream writes only to a temporary file,
             // until committed.
+            long writerStart = perfStart();
             VerifyingWriter fw = session.getWriter();
+            logPerf("saveDatabase getWriter", writerStart);
 
             // Write signature.
+            long headerStart = perfStart();
             writeBibFileHeader(fw, encoding);
+            logPerf("saveDatabase writeBibFileHeader", headerStart);
 
             // Write preamble if there is one.
-            writePreamble(fw, database.getPreamble());
+            String preamble = database.getPreamble();
+            long preambleStart = perfStart();
+            writePreamble(fw, preamble);
+            logPerf("saveDatabase writePreamble", preambleStart, "hasPreamble=" + (preamble != null));
 
             // Write strings if there are any.
+            long stringsStart = perfStart();
             writeStrings(fw, database);
+            logPerf("saveDatabase writeStrings", stringsStart);
 
             // Write database entries. Take care, using CrossRefEntry-
             // Comparator, that referred entries occur after referring
             // ones. Apart from crossref requirements, entries will be
             // sorted as they appear on the screen.
-            long startTime = System.currentTimeMillis();
+            long sortStart = perfStart();
             List<BibtexEntry> sorter = getSortedEntries(database, metaData, null, true);
-            long sortTime = System.currentTimeMillis() - startTime;
+            logPerf("saveDatabase getSortedEntries", sortStart, "sortedEntries=" + sorter.size());
 
+            long entryWriterStart = perfStart();
             BibtexEntryWriter bibtexEntryWriter = new BibtexEntryWriter(new LatexFieldFormatter(), true);
+            logPerf("saveDatabase new BibtexEntryWriter", entryWriterStart);
 
-            startTime = System.currentTimeMillis();
+            long writeStart = perfStart();
+            int consideredEntries = 0;
+            int writtenEntries = 0;
+            int skippedSearch = 0;
+            int skippedGroup = 0;
+            int customTypeHits = 0;
             for (BibtexEntry be : sorter) {
+                consideredEntries++;
                 exceptionCause = be;
 
                 // Check if we must write the type definition for this
@@ -231,6 +332,9 @@ public class FileActions {
                 BibtexEntryType tp = be.getType();
 
                 if (BibtexEntryType.getStandardType(tp.getName()) == null) {
+                    if (!types.containsKey(tp.getName())) {
+                        customTypeHits++;
+                    }
                     types.put(tp.getName(), tp);
                 }
 
@@ -239,26 +343,37 @@ public class FileActions {
 
                 if (checkSearch && !nonZeroField(be, BibtexFields.SEARCH)) {
                     write = false;
+                    skippedSearch++;
                 }
 
                 if (checkGroup && !nonZeroField(be, BibtexFields.GROUPSEARCH)) {
                     write = false;
+                    skippedGroup++;
                 }
 
                 if (write) {
                     bibtexEntryWriter.write(be, fw);
                     fw.write(Globals.NEWLINE);
+                    writtenEntries++;
                 }
             }
-            long writeTime = System.currentTimeMillis() - startTime;
-            // System.out.println("Sort: " + sortTime + "ms, Write: " + writeTime + "ms");
+            logPerf("saveDatabase write entries", writeStart,
+                    "considered=" + consideredEntries
+                    + ", written=" + writtenEntries
+                    + ", skippedSearch=" + skippedSearch
+                    + ", skippedGroup=" + skippedGroup
+                    + ", customTypes=" + customTypeHits);
 
             // Write meta data.
+            long metaStart = perfStart();
             if (metaData != null) {
                 metaData.writeMetaData(fw);
             }
+            logPerf("saveDatabase writeMetaData", metaStart, "hasMetaData=" + (metaData != null));
 
             // Write type definitions, if any:
+            long typeStart = perfStart();
+            int customTypesWritten = 0;
             if (types.size() > 0) {
                 for (String s : types.keySet()) {
                     BibtexEntryType type = types.get(s);
@@ -266,19 +381,32 @@ public class FileActions {
                         CustomEntryType tp = (CustomEntryType) type;
                         tp.save(fw);
                         fw.write(Globals.NEWLINE);
+                        customTypesWritten++;
                     }
                 }
 
             }
+            logPerf("saveDatabase write custom type definitions", typeStart,
+                    "types=" + types.size() + ", written=" + customTypesWritten);
 
+            long closeStart = perfStart();
             fw.close();
+            logPerf("saveDatabase writer.close", closeStart,
+                    "tmpBytes=" + fileSize(session.getTemporaryFile()));
         } catch (Throwable ex) {
             ex.printStackTrace();
+            long cancelStart = perfStart();
             session.cancel();
+            logPerf("saveDatabase cancel after exception", cancelStart,
+                    "tmpBytes=" + fileSize(session.getTemporaryFile()));
             // repairAfterError(file, backup, INIT_OK);
             throw new SaveException(ex.getMessage(), exceptionCause);
         }
 
+        logPerf("saveDatabase total", totalStart,
+                "entries=" + entryCount
+                + ", tmpBytes=" + fileSize(session.getTemporaryFile())
+                + ", " + fileDetails(file));
         return session;
 
     }
@@ -365,6 +493,7 @@ public class FileActions {
     public static SaveSession savePartOfDatabase(BibtexDatabase database, MetaData metaData,
             File file, JabRefPreferences prefs, BibtexEntry[] bes, String encoding, DatabaseSaveType saveType) throws SaveException {
 
+        long totalStart = perfStart();
         TreeMap<String, BibtexEntryType> types = new TreeMap<String, BibtexEntryType>(); // Map
         // to
         // collect
@@ -375,43 +504,75 @@ public class FileActions {
 
         BibtexEntry be = null;
         boolean backup = prefs.getBoolean("backup");
+        int inputEntries = (bes == null) ? 0 : bes.length;
+        System.out.println("[FileActions timer] savePartOfDatabase start entries=" + inputEntries
+                + " saveType=" + saveType
+                + " backup=" + backup
+                + " encoding=" + encoding
+                + " " + fileDetails(file)
+                + " thread=" + Thread.currentThread().getName()
+                + " edt=" + SwingUtilities.isEventDispatchThread());
 
         SaveSession session;
+        long sessionStart = perfStart();
         try {
             session = new SaveSession(file, encoding, backup);
         } catch (IOException e) {
+            logPerf("savePartOfDatabase new SaveSession failed", sessionStart, "encoding=" + encoding + " " + fileDetails(file));
             throw new SaveException(e.getMessage());
         }
+        logPerf("savePartOfDatabase new SaveSession", sessionStart, "tmpBytes=" + fileSize(session.getTemporaryFile()));
 
         try {
 
             // Define our data stream.
+            long writerStart = perfStart();
             VerifyingWriter fw = session.getWriter();
+            logPerf("savePartOfDatabase getWriter", writerStart);
 
             if (saveType != DatabaseSaveType.PLAIN_BIBTEX) {
                 // Write signature.
+                long headerStart = perfStart();
                 writeBibFileHeader(fw, encoding);
+                logPerf("savePartOfDatabase writeBibFileHeader", headerStart);
             }
 
             // Write preamble if there is one.
-            writePreamble(fw, database.getPreamble());
+            String preamble = database.getPreamble();
+            long preambleStart = perfStart();
+            writePreamble(fw, preamble);
+            logPerf("savePartOfDatabase writePreamble", preambleStart, "hasPreamble=" + (preamble != null));
 
             // Write strings if there are any.
+            long stringsStart = perfStart();
             writeStrings(fw, database);
+            logPerf("savePartOfDatabase writeStrings", stringsStart);
 
             // Write database entries. Take care, using CrossRefEntry-
             // Comparator, that referred entries occur after referring
             // ones. Apart from crossref requirements, entries will be
             // sorted as they appear on the screen.
+            long comparatorStart = perfStart();
             List<Comparator<BibtexEntry>> comparators = getSaveComparators(true, metaData);
+            logPerf("savePartOfDatabase getSaveComparators", comparatorStart, "comparators=" + comparators.size());
 
             // Use glazed lists to get a sorted view of the entries:
+            long copyStart = perfStart();
             List<BibtexEntry> sorter = new ArrayList<BibtexEntry>(bes.length);
             Collections.addAll(sorter, bes);
+            logPerf("savePartOfDatabase copy selected entries", copyStart, "entries=" + sorter.size());
+
+            long sortStart = perfStart();
             Collections.sort(sorter, new FieldComparatorStack<BibtexEntry>(comparators));
+            logPerf("savePartOfDatabase sort selected entries", sortStart, "entries=" + sorter.size());
 
+            long entryWriterStart = perfStart();
             BibtexEntryWriter bibtexEntryWriter = new BibtexEntryWriter(new LatexFieldFormatter(), true);
+            logPerf("savePartOfDatabase new BibtexEntryWriter", entryWriterStart);
 
+            long writeStart = perfStart();
+            int writtenEntries = 0;
+            int customTypeHits = 0;
             for (BibtexEntry aSorter : sorter) {
                 be = (aSorter);
 
@@ -420,35 +581,59 @@ public class FileActions {
                 // types (*not* customized standard types) must be written.
                 BibtexEntryType tp = be.getType();
                 if (BibtexEntryType.getStandardType(tp.getName()) == null) {
+                    if (!types.containsKey(tp.getName())) {
+                        customTypeHits++;
+                    }
                     types.put(tp.getName(), tp);
                 }
 
                 bibtexEntryWriter.write(be, fw);
                 fw.write(Globals.NEWLINE);
+                writtenEntries++;
             }
+            logPerf("savePartOfDatabase write entries", writeStart,
+                    "written=" + writtenEntries + ", customTypes=" + customTypeHits);
 
             // Write meta data.
+            long metaStart = perfStart();
             if (saveType != DatabaseSaveType.PLAIN_BIBTEX && metaData != null) {
                 metaData.writeMetaData(fw);
             }
+            logPerf("savePartOfDatabase writeMetaData", metaStart,
+                    "writeMetaData=" + (saveType != DatabaseSaveType.PLAIN_BIBTEX && metaData != null));
 
             // Write type definitions, if any:
+            long typeStart = perfStart();
+            int customTypesWritten = 0;
             if (types.size() > 0) {
                 for (String s : types.keySet()) {
                     CustomEntryType tp = (CustomEntryType) types.get(s);
                     tp.save(fw);
                     fw.write(Globals.NEWLINE);
+                    customTypesWritten++;
                 }
 
             }
+            logPerf("savePartOfDatabase write custom type definitions", typeStart,
+                    "types=" + types.size() + ", written=" + customTypesWritten);
 
+            long closeStart = perfStart();
             fw.close();
+            logPerf("savePartOfDatabase writer.close", closeStart,
+                    "tmpBytes=" + fileSize(session.getTemporaryFile()));
         } catch (Throwable ex) {
+            long cancelStart = perfStart();
             session.cancel();
+            logPerf("savePartOfDatabase cancel after exception", cancelStart,
+                    "tmpBytes=" + fileSize(session.getTemporaryFile()));
             //repairAfterError(file, backup, status);
             throw new SaveException(ex.getMessage(), be);
         }
 
+        logPerf("savePartOfDatabase total", totalStart,
+                "entries=" + inputEntries
+                + ", tmpBytes=" + fileSize(session.getTemporaryFile())
+                + ", " + fileDetails(file));
         return session;
 
     }
@@ -490,6 +675,8 @@ public class FileActions {
      */
     @SuppressWarnings("unchecked")
     public static List<BibtexEntry> getSortedEntries(BibtexDatabase database, MetaData metaData, Set<String> keySet, boolean isSaveOperation) {
+        long totalStart = perfStart();
+        long orderStart = perfStart();
         boolean inOriginalOrder;
         if (isSaveOperation) {
             List<String> storedSaveOrderConfig = metaData.getData(net.sf.jabref.gui.DatabasePropertiesDialog.SAVE_ORDER_CONFIG);
@@ -502,6 +689,10 @@ public class FileActions {
         } else {
             inOriginalOrder = Globals.prefs.getBoolean("exportInOriginalOrder");
         }
+        logPerf("getSortedEntries determine order", orderStart,
+                "isSaveOperation=" + isSaveOperation + ", inOriginalOrder=" + inOriginalOrder);
+
+        long comparatorStart = perfStart();
         List<Comparator<BibtexEntry>> comparators;
         if (inOriginalOrder) {
             // Sort entries based on their creation order, utilizing the fact
@@ -512,24 +703,42 @@ public class FileActions {
         } else {
             comparators = getSaveComparators(isSaveOperation, metaData);
         }
-
         FieldComparatorStack<BibtexEntry> comparatorStack = new FieldComparatorStack<BibtexEntry>(comparators);
-        List<BibtexEntry> sorter = new ArrayList<BibtexEntry>();
+        logPerf("getSortedEntries build comparators", comparatorStart,
+                "comparators=" + comparators.size());
 
+        long keySetStart = perfStart();
         if (keySet == null) {
             keySet = database.getKeySet();
         }
+        int keyCount = (keySet == null) ? 0 : keySet.size();
+        logPerf("getSortedEntries getKeySet", keySetStart, "keys=" + keyCount);
+
+        long buildListStart = perfStart();
+        List<BibtexEntry> sorter = new ArrayList<BibtexEntry>(keyCount);
+        int nullEntries = 0;
 
         if (keySet != null) {
             Iterator<String> i = keySet.iterator();
 
             for (; i.hasNext();) {
-                sorter.add(database.getEntryById((i.next())));
+                BibtexEntry entry = database.getEntryById((i.next()));
+                if (entry == null) {
+                    nullEntries++;
+                }
+                sorter.add(entry);
             }
         }
+        logPerf("getSortedEntries build entry list", buildListStart,
+                "keys=" + keyCount + ", entries=" + sorter.size() + ", nullEntries=" + nullEntries);
 
+        long sortStart = perfStart();
         Collections.sort(sorter, comparatorStack);
+        logPerf("getSortedEntries Collections.sort", sortStart,
+                "entries=" + sorter.size() + ", comparators=" + comparators.size());
 
+        logPerf("getSortedEntries total", totalStart,
+                "entries=" + sorter.size() + ", isSaveOperation=" + isSaveOperation + ", inOriginalOrder=" + inOriginalOrder);
         return sorter;
     }
 

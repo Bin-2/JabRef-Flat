@@ -30,36 +30,112 @@ import java.util.TreeSet;
  */
 public class VerifyingWriter extends OutputStreamWriter {
 
-	CharsetEncoder encoder;
-	private boolean couldEncodeAll = true;
-	private TreeSet<Character> problemCharacters = new TreeSet<Character>();
+    private static final boolean PERF_TIMERS = true;
 
-	public VerifyingWriter(OutputStream out, String encoding)
-			throws UnsupportedEncodingException {
-		super(out, encoding);
-		encoder = Charset.forName(encoding).newEncoder();
-	}
+    CharsetEncoder encoder;
+    private boolean couldEncodeAll = true;
+    private TreeSet<Character> problemCharacters = new TreeSet<Character>();
+    private final String encodingName;
+    private final boolean skipEncodingVerification;
 
-	public void write(String str) throws IOException {
-		super.write(str);
-		if (!encoder.canEncode(str)) {
-			for (int i = 0; i < str.length(); i++) {
-				if (!encoder.canEncode(str.charAt(i)))
-					problemCharacters.add(str.charAt(i));
-			}
-			couldEncodeAll = false;
-		}
-	}
+    private long writeCalls;
+    private long charsWritten;
+    private long delegateWriteNanos;
+    private long verifyNanos;
+    private long failedStringChecks;
+    private long failedCharChecks;
+    private boolean summaryPrinted;
 
-	public boolean couldEncodeAll() {
-		return couldEncodeAll;
-	}
+    public VerifyingWriter(OutputStream out, String encoding)
+            throws UnsupportedEncodingException {
+        super(out, encoding);
+        Charset charset = Charset.forName(encoding);
+        encoder = charset.newEncoder();
+        encodingName = charset.name();
+        skipEncodingVerification = isAlwaysUnicodeEncoding(encodingName);
+    }
 
-	public String getProblemCharacters() {
-		StringBuilder chars = new StringBuilder();
-		for (Character ch : problemCharacters) {
-			chars.append(ch.charValue());
-		}
-		return chars.toString();
-	}
+    public void write(String str) throws IOException {
+        long start = System.nanoTime();
+        super.write(str);
+        delegateWriteNanos += System.nanoTime() - start;
+
+        writeCalls++;
+        if (str != null) {
+            charsWritten += str.length();
+        }
+
+        if (!skipEncodingVerification) {
+            long verifyStart = System.nanoTime();
+            if (!encoder.canEncode(str)) {
+                failedStringChecks++;
+                for (int i = 0; i < str.length(); i++) {
+                    if (!encoder.canEncode(str.charAt(i))) {
+                        problemCharacters.add(str.charAt(i));
+                        failedCharChecks++;
+                    }
+                }
+                couldEncodeAll = false;
+            }
+            verifyNanos += System.nanoTime() - verifyStart;
+        }
+    }
+
+    public void close() throws IOException {
+        try {
+            super.close();
+        } finally {
+            printSummary("close");
+        }
+    }
+
+    public boolean couldEncodeAll() {
+        return couldEncodeAll;
+    }
+
+    public String getProblemCharacters() {
+        StringBuilder chars = new StringBuilder();
+        for (Character ch : problemCharacters) {
+            chars.append(ch.charValue());
+        }
+        return chars.toString();
+    }
+
+    private static boolean isAlwaysUnicodeEncoding(String canonicalName) {
+        return "UTF-8".equalsIgnoreCase(canonicalName)
+                || "UTF-16".equalsIgnoreCase(canonicalName)
+                || "UTF-16BE".equalsIgnoreCase(canonicalName)
+                || "UTF-16LE".equalsIgnoreCase(canonicalName);
+    }
+
+    private void printSummary(String reason) {
+        if (!PERF_TIMERS || summaryPrinted) {
+            return;
+        }
+        summaryPrinted = true;
+        System.out.println("[VerifyingWriter timer] " + reason
+                + " encoding=" + encodingName
+                + ", skipEncodingVerification=" + skipEncodingVerification
+                + ", writeCalls=" + writeCalls
+                + ", charsWritten=" + charsWritten
+                + ", delegateWriteMs=" + nanosToMs(delegateWriteNanos)
+                + ", verifyMs=" + nanosToMs(verifyNanos)
+                + ", failedStringChecks=" + failedStringChecks
+                + ", failedCharChecks=" + failedCharChecks
+                + ", problemChars=" + problemCharacters.size()
+                + ", thread=" + Thread.currentThread().getName()
+                + ", edt=" + isEventDispatchThread());
+    }
+
+    private static long nanosToMs(long nanos) {
+        return nanos / 1000000L;
+    }
+
+    private static boolean isEventDispatchThread() {
+        try {
+            return javax.swing.SwingUtilities.isEventDispatchThread();
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
 }

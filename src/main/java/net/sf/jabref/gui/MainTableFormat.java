@@ -17,6 +17,8 @@ package net.sf.jabref.gui;
 
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import net.sf.jabref.AuthorList;
 import net.sf.jabref.BasePanel;
@@ -79,7 +81,26 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
     // special columns (number column or icon column).
     private HashMap<Integer, String[]> iconCols = new HashMap<>();
     int[][] nameCols = null;
+    private String[] columnNameCache = null;
+    private String[] columnTypeCache = null;
+    private boolean[][] nameColumnLookup = null;
+    private final HashMap<Icon, JLabel> multipleLinkIconCache = new HashMap<>();
+    private static final int FILE_FIELD_CACHE_SIZE = 2048;
+    private final LinkedHashMap<String, FileFieldInfo> fileFieldInfoCache =
+            new LinkedHashMap<String, FileFieldInfo>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, FileFieldInfo> eldest) {
+            return size() > FILE_FIELD_CACHE_SIZE;
+        }
+    };
     boolean namesAsIs, abbr_names, namesNatbib, namesFf, namesLf, namesLastOnly, showShort;
+
+    private static class FileFieldInfo {
+
+        private int rowCount;
+        private JLabel firstLabel;
+        private String[] fileTypes;
+    }
 
     public MainTableFormat(BasePanel panel) {
         this.panel = panel;
@@ -89,9 +110,9 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
 
     @Override
     public void onThemeChanged() {
-        // Clear any cached icons or resources
-        // The icons will be reloaded with the new theme when getColumnValue is called
-        // Force refresh by updating the table format
+        // Theme changes can replace icon instances and colors. Keep the cached
+        // table structure, but discard any icon-derived values.
+        clearRenderCaches();
         updateTableFormat();
     }
 
@@ -111,37 +132,39 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
      */
     @Override
     public String getColumnName(int col) {
+        if ((columnNameCache != null) && (col >= 0) && (col < columnNameCache.length)) {
+            return columnNameCache[col];
+        }
+        return buildColumnName(col);
+    }
+
+    private String buildColumnName(int col) {
         if (col == 0) {
             return GUIGlobals.NUMBER_COL;
-        } else if (getIconTypeForColumn(col) != null) {
-            if (Globals.prefs.getBoolean(JabRefPreferences.SHOW_ONE_LETTER_HEADING_FOR_ICON_COLUMNS)) {
-                return getIconTypeForColumn(col)[0].substring(0, 1).toUpperCase();
-            } else {
-                return null;
-            }
-        } else // try to find an alternative fieldname (for display)
-        {
-            String[] fld = columns[col - padleft];
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < fld.length; i++) {
-                if (i > 0) {
-                    sb.append('/');
-                }
-                String disName = BibtexFields.getFieldDisplayName(fld[i]);
-                if (disName != null) {
-                    sb.append(disName);
-                } else {
-                    sb.append(Util.nCase(fld[i]));
-                }
-            }
-            return sb.toString();
-            /*String disName = BibtexFields.getFieldDisplayName(columns[col - padleft]) ;
-          if ( disName != null)
-          {
-            return disName ;
-          } */
         }
-        //return Util.nCase(columns[col - padleft]);
+
+        String[] iconType = getIconTypeForColumn(col);
+        if (iconType != null) {
+            if (Globals.prefs.getBoolean(JabRefPreferences.SHOW_ONE_LETTER_HEADING_FOR_ICON_COLUMNS)) {
+                return iconType[0].substring(0, 1).toUpperCase();
+            }
+            return null;
+        }
+
+        String[] fld = columns[col - padleft];
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < fld.length; i++) {
+            if (i > 0) {
+                sb.append('/');
+            }
+            String disName = BibtexFields.getFieldDisplayName(fld[i]);
+            if (disName != null) {
+                sb.append(disName);
+            } else {
+                sb.append(Util.nCase(fld[i]));
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -152,7 +175,14 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
      * @return the String identifying the column
      */
     public String getColumnType(int col) {
-        String name = getColumnName(col);
+        if ((columnTypeCache != null) && (col >= 0) && (col < columnTypeCache.length)) {
+            return columnTypeCache[col];
+        }
+        return buildColumnType(col);
+    }
+
+    private String buildColumnType(int col) {
+        String name = buildColumnName(col);
         if (name != null) {
             return name;
         }
@@ -198,16 +228,21 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
      * @return Is Ranking-Column or not?
      */
     public boolean isRankingColumn(int col) {
-        if (iconCols.get(col) != null) {
-            if (iconCols.get(col)[0].equals(RANKING[0])) {
-                return true;
-            }
-        }
-        return false;
+        String[] iconCol = iconCols.get(col);
+        return (iconCol != null) && iconCol[0].equals(RANKING[0]);
     }
 
     private Object modifyIconForMultipleLinks(JLabel label) {
+        if ((label == null) || (label.getIcon() == null)) {
+            return label;
+        }
+
         Icon icon = label.getIcon();
+        JLabel cached = multipleLinkIconCache.get(icon);
+        if (cached != null) {
+            return cached;
+        }
+
         BufferedImage bufImg = new BufferedImage(
                 icon.getIconWidth(),
                 icon.getIconHeight(),
@@ -220,7 +255,80 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
         g.setFont(new java.awt.Font("Serif", java.awt.Font.PLAIN, 12));
         g.drawString("m", bufImg.getWidth() - g.getFontMetrics().stringWidth("m"), bufImg.getHeight());
         g.dispose();
-        return new JLabel(new ImageIcon(bufImg));
+
+        JLabel result = new JLabel(new ImageIcon(bufImg));
+        multipleLinkIconCache.put(icon, result);
+        return result;
+    }
+
+    private void clearRenderCaches() {
+        multipleLinkIconCache.clear();
+        fileFieldInfoCache.clear();
+    }
+
+    private String getUpperCaseExtension(String link) {
+        if (link == null) {
+            return null;
+        }
+
+        String clean = link.trim();
+        int queryIndex = clean.indexOf('?');
+        if (queryIndex >= 0) {
+            clean = clean.substring(0, queryIndex);
+        }
+        int fragmentIndex = clean.indexOf('#');
+        if (fragmentIndex >= 0) {
+            clean = clean.substring(0, fragmentIndex);
+        }
+
+        int slashIndex = Math.max(clean.lastIndexOf('/'), clean.lastIndexOf('\\'));
+        int dotIndex = clean.lastIndexOf('.');
+        if ((dotIndex < 0) || (dotIndex <= slashIndex) || (dotIndex == clean.length() - 1)) {
+            return null;
+        }
+        return clean.substring(dotIndex + 1).toUpperCase();
+    }
+
+    private FileFieldInfo getFileFieldInfo(String content) {
+        if (content == null) {
+            return null;
+        }
+
+        FileFieldInfo cached = fileFieldInfoCache.get(content);
+        if (cached != null) {
+            return cached;
+        }
+
+        FileListTableModel fileList = new FileListTableModel();
+        fileList.setContent(content);
+
+        FileFieldInfo info = new FileFieldInfo();
+        info.rowCount = fileList.getRowCount();
+        info.fileTypes = new String[info.rowCount];
+        for (int i = 0; i < info.rowCount; i++) {
+            FileListEntry flEntry = fileList.getEntry(i);
+            if (flEntry == null) {
+                info.fileTypes[i] = null;
+                System.out.println("[MainTableFormat] Ignoring malformed file field entry index="
+                        + i + " content=" + content);
+            } else if (flEntry.getType() != null) {
+                info.fileTypes[i] = flEntry.getType().toString();
+            } else {
+                // Unknown or unregistered external file type. Keep the table robust and
+                // use the link extension for matching extra file columns such as MP4.
+                info.fileTypes[i] = getUpperCaseExtension(flEntry.getLink());
+                if (info.fileTypes[i] == null) {
+                    System.out.println("[MainTableFormat] Ignoring malformed file field entry index="
+                            + i + " content=" + content);
+                } else {
+                    System.out.println("[MainTableFormat] Unregistered file type index="
+                            + i + " extension=" + info.fileTypes[i] + " content=" + content);
+                }
+            }
+        }
+
+        fileFieldInfoCache.put(content, info);
+        return info;
     }
 
     @Override
@@ -242,7 +350,12 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
 
             // Ok, so we are going to display an icon. Find out which one, and return it:
             if (iconType[hasField].equals(GUIGlobals.FILE_FIELD)) {
-                o = FileListTableModel.getFirstLabel(be.getField(GUIGlobals.FILE_FIELD));
+                String fileField = be.getField(GUIGlobals.FILE_FIELD);
+                FileFieldInfo fileInfo = getFileFieldInfo(fileField);
+                if ((fileInfo != null) && (fileInfo.firstLabel == null)) {
+                    fileInfo.firstLabel = FileListTableModel.getFirstLabel(fileField);
+                }
+                o = fileInfo == null ? null : fileInfo.firstLabel;
 
                 if (fieldCount[1] > 1) {
                     o = modifyIconForMultipleLinks((JLabel) o);
@@ -296,10 +409,14 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
                 }
             }
 
-            for (int[] nameCol : nameCols) {
-                if ((col - padleft == nameCol[0]) && (nameCol[1] == j)) {
-                    return formatName(o);
-                }
+            int logicalColumn = col - padleft;
+            if ((nameColumnLookup != null)
+                    && (logicalColumn >= 0)
+                    && (logicalColumn < nameColumnLookup.length)
+                    && (j >= 0)
+                    && (j < nameColumnLookup[logicalColumn].length)
+                    && nameColumnLookup[logicalColumn][j]) {
+                return formatName(o);
             }
 
         }
@@ -355,23 +472,23 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
             }
             return new int[]{hasField, -1};
         } else {
-            // We use a FileListTableModel to parse the field content:
-            Object o = be.getField(GUIGlobals.FILE_FIELD);
-            FileListTableModel fileList = new FileListTableModel();
-            fileList.setContent((String) o);
+            FileFieldInfo fileInfo = getFileFieldInfo(be.getField(GUIGlobals.FILE_FIELD));
+            if (fileInfo == null) {
+                return new int[]{-1, -1};
+            }
             if (field.length == 1) {
-                if (fileList.getRowCount() == 0) {
+                if (fileInfo.rowCount == 0) {
                     return new int[]{-1, -1};
                 } else {
-                    return new int[]{0, fileList.getRowCount()};
+                    return new int[]{0, fileInfo.rowCount};
                 }
             }
             int lastLinkPosition = -1, countLinks = 0;
             for (int i = 1; i < field.length; i++) {
                 // Count the number of links of correct type.
-                for (int j = 0; j < fileList.getRowCount(); j++) {
-                    FileListEntry flEntry = fileList.getEntry(j);
-                    if (flEntry.getType().toString().equals(field[i])) {
+                for (int j = 0; j < fileInfo.fileTypes.length; j++) {
+                    if ((fileInfo.fileTypes[j] != null)
+                            && fileInfo.fileTypes[j].equalsIgnoreCase(field[i])) {
                         lastLinkPosition = i;
                         countLinks++;
                     }
@@ -382,6 +499,8 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
     }
 
     public void updateTableFormat() {
+
+        clearRenderCaches();
 
         // Read table columns from prefs:
         String[] colSettings = Globals.prefs.getStringArray("columnNames");
@@ -474,6 +593,22 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
         nameCols = new int[tmp.size()][];
         for (int i = 0; i < nameCols.length; i++) {
             nameCols[i] = tmp.get(i);
+        }
+
+        nameColumnLookup = new boolean[columns.length][];
+        for (int i = 0; i < columns.length; i++) {
+            nameColumnLookup[i] = new boolean[columns[i].length];
+            for (int j = 0; j < columns[i].length; j++) {
+                nameColumnLookup[i][j] = columns[i][j].equals("author")
+                        || columns[i][j].equals("editor");
+            }
+        }
+
+        columnNameCache = new String[getColumnCount()];
+        columnTypeCache = new String[getColumnCount()];
+        for (int i = 0; i < getColumnCount(); i++) {
+            columnNameCache[i] = buildColumnName(i);
+            columnTypeCache[i] = buildColumnType(i);
         }
     }
 

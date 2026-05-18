@@ -852,27 +852,30 @@ public class BibtexParser {
     }
 
     private StringBuffer parseQuotedFieldOptimized() throws IOException {
-        long start = PROFILE ? System.nanoTime() : 0L;
-        try {
-            consume('"');
-            StringBuilder value = new StringBuilder(1024);
+        consume('"');
 
-            int c;
-            while (true) {
-                c = read();
-                if (c == '"') {
-                    break;
-                }
-                if ((c == -1) || (c == 65535)) {
-                    throw new RuntimeException("Error in line " + line + ": EOF in quoted string");
-                }
-                value.append((char) c);
+        StringBuilder value = new StringBuilder(256);
+        int brackets = 0;
+
+        while (true) {
+            int c = read();
+
+            if ((c == -1) || (c == 65535)) {
+                throw new RuntimeException("Error in line " + line + ": EOF in quoted string");
             }
 
-            return new StringBuffer(value.toString());
-        } finally {
-            // This time is included in FieldContent timing
+            if (c == '{') {
+                brackets++;
+            } else if (c == '}') {
+                brackets--;
+            } else if ((c == '"') && (brackets == 0)) {
+                break;
+            }
+
+            value.append((char) c);
         }
+
+        return new StringBuffer(value.toString());
     }
 
     private String processAutoDoubleBraces(StringBuilder value) {
@@ -1231,39 +1234,31 @@ public class BibtexParser {
     }
 
     private StringBuffer parseBracketedTextExactly() throws IOException {
-        long start = PROFILE ? System.nanoTime() : 0L;
-        try {
-            consume('{');
-            StringBuilder value = new StringBuilder(256);
-            int brackets = 1;
+        consume('{');
 
-            while (brackets > 0) {
-                int j = read();
-                if ((j == -1) || (j == 65535)) {
-                    throw new RuntimeException("Error in line " + line + ": EOF in mid-string");
-                }
+        StringBuffer value = new StringBuffer(256);
+        int brackets = 1;
 
-                if (j == '{') {
-                    brackets++;
-                } else if (j == '}') {
-                    brackets--;
-                    if (brackets > 0) {
-                        value.append((char) j);
-                    }
-                    continue;
-                }
+        while (brackets > 0) {
+            int c = read();
 
-                if (brackets > 0) {
-                    value.append((char) j);
+            if ((c == -1) || (c == 65535)) {
+                throw new RuntimeException("Error in line " + line + ": EOF in mid-string");
+            }
+
+            if (c == '{') {
+                brackets++;
+            } else if (c == '}') {
+                brackets--;
+                if (brackets == 0) {
+                    break;
                 }
             }
 
-            return new StringBuffer(value.toString());
-        } finally {
-            if (PROFILE) {
-                _phaseTimes[PHASE_BRACKET_PARSING] += System.nanoTime() - start;
-            }
+            value.append((char) c);
         }
+
+        return value;
     }
 
     private StringBuffer parseQuotedFieldExactly() throws IOException {

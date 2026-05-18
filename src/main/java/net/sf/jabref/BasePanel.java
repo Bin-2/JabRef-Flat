@@ -125,6 +125,26 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
     private static final Logger logger = Logger.getLogger(BasePanel.class.getName());
 
+    // Performance diagnostics. Keep the threshold at 0 while profiling, then raise it or disable.
+    private static final boolean PERF_TIMERS = true;
+    private static final long PERF_LOG_THRESHOLD_MS = 500L;
+
+    private static long perfStart() {
+        return System.nanoTime();
+    }
+
+    private static void perfLog(String name, long startNanos) {
+        if (!PERF_TIMERS) {
+            return;
+        }
+        long elapsedNanos = System.nanoTime() - startNanos;
+        long elapsedMs = elapsedNanos / 1000000L;
+        if (elapsedMs >= PERF_LOG_THRESHOLD_MS) {
+            System.out.println("[BasePanel timer] " + name + " took " + elapsedMs + " ms (" + elapsedNanos + " ns)");
+        }
+    }
+
+
     public final static int SHOWING_NOTHING = 0, SHOWING_PREVIEW = 1, SHOWING_EDITOR = 2, WILL_SHOW_EDITOR = 3;
 
     /* 
@@ -229,6 +249,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     private AutoCompletersUpdater autoCompletersUpdater;
     private GlazedEntrySorter glazedEntrySorter;
     private boolean specialFieldDatabaseChangeListenerRegistered = false;
+    private boolean groupsHighlightCleared = true;
 
     /**
      * Create a new BasePanel with an empty database.
@@ -1684,51 +1705,56 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * @param _command The name of the command to run.
      */
     public void runCommand(String _command) {
+        long totalStart = perfStart();
         final String command = _command;
-        //(new Thread() {
-        //  public void run() {
-        if (actions.get(command) == null) {
+        Object o = actions.get(command);
+        if (o == null) {
             Util.pr("No action defined for '" + command + "'");
-        } else {
-            Object o = actions.get(command);
-            try {
-                if (o instanceof BaseAction) {
-                    ((BaseAction) o).action();
-                } else {
-                    // This part uses Spin's features:
-                    Worker wrk = ((AbstractWorker) o).getWorker();
-                    // The Worker returned by getWorker() has been wrapped
-                    // by Spin.off(), which makes its methods be run in
-                    // a different thread from the EDT.
-                    CallBack clb = ((AbstractWorker) o).getCallBack();
-
-                    ((AbstractWorker) o).init(); // This method runs in this same thread, the EDT.
-                    // Useful for initial GUI actions, like printing a message.
-
-                    // The CallBack returned by getCallBack() has been wrapped
-                    // by Spin.over(), which makes its methods be run on
-                    // the EDT.
-                    wrk.run(); // Runs the potentially time-consuming action
-                    // without freezing the GUI. The magic is that THIS line
-                    // of execution will not continue until run() is finished.
-                    clb.update(); // Runs the update() method on the EDT.
-                }
-            } catch (Throwable ex) {
-                // If the action has blocked the JabRefFrame before crashing, we need to unblock it.
-                // The call to unblock will simply hide the glasspane, so there is no harm in calling
-                // it even if the frame hasn't been blocked.
-                frame.unblock();
-                ex.printStackTrace();
-            }
+            perfLog("runCommand(" + command + ") missing action", totalStart);
+            return;
         }
-        //  }
-        //}).start();
+
+        try {
+            if (o instanceof BaseAction) {
+                long actionStart = perfStart();
+                ((BaseAction) o).action();
+                perfLog("runCommand(" + command + ") BaseAction.action", actionStart);
+            } else {
+                AbstractWorker workerAction = (AbstractWorker) o;
+                long workerSetupStart = perfStart();
+                Worker wrk = workerAction.getWorker();
+                CallBack clb = workerAction.getCallBack();
+                perfLog("runCommand(" + command + ") getWorker/getCallBack", workerSetupStart);
+
+                long initStart = perfStart();
+                workerAction.init(); // This method runs in this same thread, usually the EDT.
+                perfLog("runCommand(" + command + ") worker.init", initStart);
+
+                long runStart = perfStart();
+                wrk.run(); // Potentially time-consuming work.
+                perfLog("runCommand(" + command + ") worker.run", runStart);
+
+                long updateStart = perfStart();
+                clb.update(); // Runs the update() method on the EDT.
+                perfLog("runCommand(" + command + ") callback.update", updateStart);
+            }
+        } catch (Throwable ex) {
+            // If the action has blocked the JabRefFrame before crashing, we need to unblock it.
+            // The call to unblock will simply hide the glasspane, so there is no harm in calling
+            // it even if the frame hasn't been blocked.
+            frame.unblock();
+            ex.printStackTrace();
+        } finally {
+            perfLog("runCommand(" + command + ") total", totalStart);
+        }
     }
 
     private boolean saveDatabase(File file, boolean selectedOnly, String encoding, FileActions.DatabaseSaveType saveType) throws SaveException {
+        long totalStart = perfStart();
         SaveSession session;
         frame.block();
         try {
+            long saveStart = perfStart();
             if (!selectedOnly) {
                 session = FileActions.saveDatabase(database, metaData, file,
                         Globals.prefs, false, false, encoding, false);
@@ -1736,6 +1762,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 session = FileActions.savePartOfDatabase(database, metaData, file,
                         Globals.prefs, mainTable.getSelectedEntries(), encoding, saveType);
             }
+            perfLog("saveDatabase FileActions selectedOnly=" + selectedOnly, saveStart);
 
         } catch (UnsupportedCharsetException ex2) {
             JOptionPane.showMessageDialog(frame, Globals.lang("Could not save file. "
@@ -1796,12 +1823,15 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         }
 
         if (commit) {
+            long commitStart = perfStart();
             session.commit();
+            perfLog("saveDatabase session.commit", commitStart);
             this.encoding = encoding; // Make sure to remember which encoding we used.
         } else {
             session.cancel();
         }
 
+        perfLog("saveDatabase total selectedOnly=" + selectedOnly + ", commit=" + commit, totalStart);
         return commit;
     }
 
@@ -1905,7 +1935,9 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         @Override
         public void databaseChanged(DatabaseChangeEvent e) {
             if ((e.getType() == ChangeType.CHANGED_ENTRY) || (e.getType() == ChangeType.ADDED_ENTRY)) {
+                long totalStart = perfStart();
                 Util.updateCompletersForEntry(BasePanel.this.searchAutoCompleterHM, e.getEntry());
+                perfLog("SearchAutoCompleterUpdater.databaseChanged type=" + e.getType(), totalStart);
             }
         }
     }
@@ -1919,7 +1951,9 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         @Override
         public void databaseChanged(DatabaseChangeEvent e) {
             if ((e.getType() == ChangeType.CHANGED_ENTRY) || (e.getType() == ChangeType.ADDED_ENTRY)) {
+                long totalStart = perfStart();
                 Util.updateCompletersForEntry(BasePanel.this.getAutoCompleters(), e.getEntry());
+                perfLog("AutoCompletersUpdater.databaseChanged type=" + e.getType(), totalStart);
             }
         }
     }
@@ -1960,53 +1994,68 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     public void createMainTable() {
-        //Comparator comp = new FieldComparator("author");
+        long totalStart = perfStart();
 
         if (glazedEntrySorter != null) {
+            long removeListenerStart = perfStart();
             database.removeDatabaseChangeListener(glazedEntrySorter);
+            perfLog("createMainTable remove old glazedEntrySorter listener", removeListenerStart);
         }
 
+        long sorterStart = perfStart();
         glazedEntrySorter = new GlazedEntrySorter(database.getEntryMap());
-        // Must initialize sort columns somehow:
+        perfLog("createMainTable new GlazedEntrySorter entries=" + database.getEntryCount(), sorterStart);
 
+        long listenerStart = perfStart();
         database.addDatabaseChangeListener(glazedEntrySorter);
         if (!specialFieldDatabaseChangeListenerRegistered) {
             database.addDatabaseChangeListener(SpecialFieldDatabaseChangeListener.getInstance());
             specialFieldDatabaseChangeListenerRegistered = true;
         }
+        perfLog("createMainTable database listener registration", listenerStart);
+
+        long filterStart = perfStart();
         groupFilterList = new FilterList<>(glazedEntrySorter.getTheList(), NoSearchMatcher.INSTANCE);
         searchFilterList = new FilterList<>(groupFilterList, NoSearchMatcher.INSTANCE);
-        //final SortedList sortedList = new SortedList(searchFilterList, null);
+        perfLog("createMainTable FilterList creation", filterStart);
+
+        long formatStart = perfStart();
         tableFormat = new MainTableFormat(this);
         tableFormat.updateTableFormat();
-        //EventTableModel tableModel = new EventTableModel(sortedList, tableFormat);
-        mainTable = new MainTable(tableFormat, searchFilterList, frame, this);
+        perfLog("createMainTable MainTableFormat/updateTableFormat", formatStart);
 
+        long tableStart = perfStart();
+        mainTable = new MainTable(tableFormat, searchFilterList, frame, this);
+        perfLog("createMainTable new MainTable", tableStart);
+
+        long selectionStart = perfStart();
         selectionListener = new MainTableSelectionListener(this, mainTable);
         mainTable.updateFont();
         mainTable.addSelectionListener(selectionListener);
         mainTable.addMouseListener(selectionListener);
         mainTable.addKeyListener(selectionListener);
         mainTable.addFocusListener(selectionListener);
+        perfLog("createMainTable selection/focus listener setup", selectionStart);
 
-        // Add the listener that will take care of highlighting groups as the selection changes:
         groupsHighlightListener = new ListEventListener<BibtexEntry>() {
             @Override
             public void listChanged(ListEvent<BibtexEntry> listEvent) {
-                if (Globals.prefs.getBoolean("highlightGroupsMatchingAny")) {
-                    getGroupSelector().showMatchingGroups(
-                            mainTable.getSelectedEntries(), false);
-                } else if (Globals.prefs.getBoolean("highlightGroupsMatchingAll")) {
-                    getGroupSelector().showMatchingGroups(
-                            mainTable.getSelectedEntries(), true);
-                } else // no highlight
-                {
+                long highlightStart = perfStart();
+                boolean highlightAny = Globals.prefs.getBoolean("highlightGroupsMatchingAny");
+                boolean highlightAll = Globals.prefs.getBoolean("highlightGroupsMatchingAll");
+                if (highlightAny || highlightAll) {
+                    getGroupSelector().showMatchingGroups(mainTable.getSelectedEntries(), highlightAll);
+                    groupsHighlightCleared = false;
+                } else if (!groupsHighlightCleared) {
                     getGroupSelector().showMatchingGroups(null, true);
+                    groupsHighlightCleared = true;
                 }
+                perfLog("groupsHighlightListener.listChanged", highlightStart);
             }
         };
         mainTable.addSelectionListener(groupsHighlightListener);
 
+        long actionMapStart = perfStart();
         mainTable.getActionMap().put("cut", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -2037,19 +2086,19 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 }
             }
         });
+        perfLog("createMainTable action map setup", actionMapStart);
 
+        long keyListenerStart = perfStart();
         mainTable.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                long keyStart = perfStart();
                 final int keyCode = e.getKeyCode();
                 final TreePath path = frame.groupSelector.getSelectionPath();
                 final GroupTreeNode node = path == null ? null : (GroupTreeNode) path.getLastPathComponent();
 
                 if (e.isControlDown()) {
                     switch (keyCode) {
-                        // The up/down/left/rightkeystrokes are displayed in the
-                        // GroupSelector's popup menu, so if they are to be changed,
-                        // edit GroupSelector.java accordingly!
                         case KeyEvent.VK_UP:
                             e.consume();
                             if (node != null) {
@@ -2091,44 +2140,33 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         ex.printStackTrace();
                     }
                 }
+                perfLog("mainTable.keyPressed keyCode=" + keyCode, keyStart);
             }
         });
+        perfLog("createMainTable key listener setup", keyListenerStart);
+        perfLog("createMainTable total", totalStart);
     }
 
     public void setupMainPanel() {
-        //System.out.println("setupMainPanel");
-        //splitPane = new com.jgoodies.uif_lite.component.UIFSplitPane(JSplitPane.VERTICAL_SPLIT);
+        long totalStart = perfStart();
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setDividerSize(GUIGlobals.SPLIT_PANE_DIVIDER_SIZE);
-        // We replace the default FocusTraversalPolicy with a subclass
-        // that only allows FieldEditor components to gain keyboard focus,
-        // if there is an entry editor open.
-        /*splitPane.setFocusTraversalPolicy(new LayoutFocusTraversalPolicy() {
-                protected boolean accept(Component c) {
-                    Util.pr("jaa");
-                    if (showing == null)
-                        return super.accept(c);
-                    else
-                        return (super.accept(c) &&
-                                (c instanceof FieldEditor));
-                }
-                });*/
 
+        long tableStart = perfStart();
         createMainTable();
+        perfLog("setupMainPanel createMainTable", tableStart);
 
+        long validateStart = perfStart();
         for (EntryEditor ee : entryEditors.values()) {
             ee.validateAllFields();
         }
+        perfLog("setupMainPanel validateAllFields count=" + entryEditors.size(), validateStart);
 
+        long layoutStart = perfStart();
         splitPane.setTopComponent(mainTable.getPane());
-
-        // Remove borders
         splitPane.setBorder(BorderFactory.createEmptyBorder());
         setBorder(BorderFactory.createEmptyBorder());
 
-        //setupTable();
-        // If an entry is currently being shown, make sure it stays shown,
-        // otherwise set the bottom component to null.
         if (mode == SHOWING_PREVIEW) {
             mode = SHOWING_NOTHING;
             int row = mainTable.findEntry(currentPreview.entry);
@@ -2138,11 +2176,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
         } else if (mode == SHOWING_EDITOR) {
             mode = SHOWING_NOTHING;
-            /*int row = mainTable.findEntry(currentEditor.entry);
-            if (row >= 0)
-                mainTable.setRowSelectionInterval(row, row);
-             */
-            //showEntryEditor(currentEditor);
         } else {
             splitPane.setBottomComponent(null);
         }
@@ -2150,28 +2183,32 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         setLayout(new BorderLayout());
         removeAll();
         add(splitPane, BorderLayout.CENTER);
+        perfLog("setupMainPanel splitPane/layout", layoutStart);
 
-        // Set up name autocompleter for search:
-        //if (!Globals.prefs.getBoolean("searchAutoComplete")) {
+        long searchCompleterStart = perfStart();
         instantiateSearchAutoCompleter();
+        perfLog("setupMainPanel instantiateSearchAutoCompleter", searchCompleterStart);
         if (searchAutoCompleterUpdater == null) {
             searchAutoCompleterUpdater = new SearchAutoCompleterUpdater();
             this.getDatabase().addDatabaseChangeListener(searchAutoCompleterUpdater);
         }
 
-        // Set up AutoCompleters for this panel:
         if (Globals.prefs.getBoolean("autoComplete")) {
+            long autoCompleterStart = perfStart();
             instantiateAutoCompleters();
-            // ensure that the autocompleters are in sync with entries
+            perfLog("setupMainPanel instantiateAutoCompleters", autoCompleterStart);
             if (autoCompletersUpdater == null) {
                 autoCompletersUpdater = new AutoCompletersUpdater();
                 this.getDatabase().addDatabaseChangeListener(autoCompletersUpdater);
             }
         }
 
+        long repaintStart = perfStart();
         splitPane.revalidate();
         revalidate();
         repaint();
+        perfLog("setupMainPanel revalidate/repaint", repaintStart);
+        perfLog("setupMainPanel total", totalStart);
     }
 
     public void updateSearchManager() {
@@ -2187,29 +2224,42 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     private void instantiateSearchAutoCompleter() {
+        long totalStart = perfStart();
         searchCompleter = new NameFieldAutoCompleter(new String[]{"author", "editor"}, true);
         searchAutoCompleterHM.clear();
         searchAutoCompleterHM.put("x", searchCompleter);
+        int count = 0;
         for (BibtexEntry entry : database.getEntries()) {
             Util.updateCompletersForEntry(searchAutoCompleterHM, entry);
+            count++;
         }
         searchCompleteListener = new AutoCompleteListener(searchCompleter);
         searchCompleteListener.setConsumeEnterKey(false); // So you don't have to press Enter twice
+        perfLog("instantiateSearchAutoCompleter entries=" + count, totalStart);
     }
 
     private void instantiateAutoCompleters() {
+        long totalStart = perfStart();
         autoCompleters.clear();
         String[] completeFields = Globals.prefs.getStringArray("autoCompleteFields");
         for (String field : completeFields) {
             AbstractAutoCompleter autoCompleter = AutoCompleterFactory.getFor(field);
             autoCompleters.put(field, autoCompleter);
         }
+        int count = 0;
         for (BibtexEntry entry : database.getEntries()) {
             Util.updateCompletersForEntry(autoCompleters, entry);
+            count++;
         }
 
+        long journalStart = perfStart();
         addJournalListToAutoCompleter();
+        perfLog("instantiateAutoCompleters addJournalListToAutoCompleter", journalStart);
+
+        long selectorStart = perfStart();
         addContentSelectorValuesToAutoCompleters();
+        perfLog("instantiateAutoCompleters addContentSelectorValuesToAutoCompleters", selectorStart);
+        perfLog("instantiateAutoCompleters fields=" + completeFields.length + ", entries=" + count, totalStart);
     }
 
     /**
@@ -2217,17 +2267,19 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * selector values to the autocompleter list:
      */
     public void addContentSelectorValuesToAutoCompleters() {
+        long totalStart = perfStart();
+        int valueCount = 0;
         for (String field : autoCompleters.keySet()) {
             AbstractAutoCompleter ac = autoCompleters.get(field);
-            if (metaData.getData(Globals.SELECTOR_META_PREFIX + field) != null) {
-                List<String> items = metaData.getData(Globals.SELECTOR_META_PREFIX + field);
-                if (items != null) {
-                    for (String item : items) {
-                        ac.addWordToIndex(item);
-                    }
+            List<String> items = metaData.getData(Globals.SELECTOR_META_PREFIX + field);
+            if (items != null) {
+                for (String item : items) {
+                    ac.addWordToIndex(item);
+                    valueCount++;
                 }
             }
         }
+        perfLog("addContentSelectorValuesToAutoCompleters fields=" + autoCompleters.size() + ", values=" + valueCount, totalStart);
     }
 
     /**
@@ -2235,15 +2287,20 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * in the journal abbreviation list to this autocompleter.
      */
     public void addJournalListToAutoCompleter() {
+        long totalStart = perfStart();
+        int count = 0;
         if (autoCompleters.containsKey("journal")) {
             AbstractAutoCompleter ac = autoCompleters.get("journal");
             Set<String> journals = Globals.journalAbbrev.getJournals().keySet();
             for (String journal : journals) {
                 ac.addWordToIndex(journal);
+                count++;
             }
         }
+        perfLog("addJournalListToAutoCompleter journals=" + count, totalStart);
 
     }
+
 
 
     /*
@@ -2326,22 +2383,18 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     public void showEntry(final BibtexEntry be) {
+        long totalStart = perfStart();
 
         if (getShowing() == be) {
             if (splitPane.getBottomComponent() == null) {
-                // This is the special occasion when showing is set to an
-                // entry, but no entry editor is in fact shown. This happens
-                // after Preferences dialog is closed, and it means that we
-                // must make sure the same entry is shown again. We do this by
-                // setting showing to null, and recursively calling this method.
                 newEntryShowing(null);
                 showEntry(be);
             } else {
-                // The correct entry is already being shown. Make sure the editor
-                // is updated.
+                long updateStart = perfStart();
                 ((EntryEditor) splitPane.getBottomComponent()).updateAllFields();
-
+                perfLog("showEntry same entry updateAllFields", updateStart);
             }
+            perfLog("showEntry same entry total", totalStart);
             return;
 
         }
@@ -2353,43 +2406,45 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             if (isShowingEditor()) {
                 visName = ((EntryEditor) splitPane.getBottomComponent()).getVisiblePanelName();
             }
-        }
-        if (getShowing() != null) {
             divLoc = splitPane.getDividerLocation();
         }
 
-        if (entryEditors.containsKey(be.getType().getName())) {
-            // We already have an editor for this entry type.
-            form = entryEditors.get((be.getType().getName()));
+        String typeName = be.getType().getName();
+        if (entryEditors.containsKey(typeName)) {
+            long switchStart = perfStart();
+            form = entryEditors.get(typeName);
             form.switchTo(be);
             if (visName != null) {
                 form.setVisiblePanel(visName);
             }
-            splitPane.setBottomComponent(form);
-            //highlightEntry(be);
+            perfLog("showEntry cached EntryEditor.switchTo type=" + typeName, switchStart);
         } else {
-            // We must instantiate a new editor for this type.
+            long newEditorStart = perfStart();
             form = new EntryEditor(frame, BasePanel.this, be);
 
             if (visName != null) {
                 form.setVisiblePanel(visName);
             }
+            entryEditors.put(typeName, form);
+            perfLog("showEntry new EntryEditor type=" + typeName, newEditorStart);
+        }
+
+        long componentStart = perfStart();
+        if (splitPane.getBottomComponent() != form) {
             splitPane.setBottomComponent(form);
-
-            //highlightEntry(be);
-            entryEditors.put(be.getType().getName(), form);
-
         }
         if (divLoc > 0) {
             splitPane.setDividerLocation(divLoc);
         } else {
             splitPane.setDividerLocation(splitPane.getHeight() - Globals.prefs.getInt("entryEditorHeight"));
         }
-        //new FocusRequester(form);
-        //form.requestFocus();
+        perfLog("showEntry splitPane update", componentStart);
 
+        long stateStart = perfStart();
         newEntryShowing(be);
         setEntryEditorEnabled(true); // Make sure it is enabled.
+        perfLog("showEntry state update", stateStart);
+        perfLog("showEntry total", totalStart);
     }
 
     /**
@@ -2400,33 +2455,33 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * @return A suitable entry editor.
      */
     public EntryEditor getEntryEditor(BibtexEntry entry) {
+        long totalStart = perfStart();
         EntryEditor form;
-        if (entryEditors.containsKey(entry.getType().getName())) {
+        String typeName = entry.getType().getName();
+        if (entryEditors.containsKey(typeName)) {
             EntryEditor visibleNow = currentEditor;
+            form = entryEditors.get(typeName);
 
-            // We already have an editor for this entry type.
-            form = entryEditors.get((entry.getType().getName()));
-
-            // If the cached editor is not the same as the currently shown one,
-            // make sure the current one stores its current edit:
             if ((visibleNow != null) && (form != visibleNow)) {
+                long storeStart = perfStart();
                 visibleNow.storeCurrentEdit();
+                perfLog("getEntryEditor visibleNow.storeCurrentEdit", storeStart);
             }
 
+            long switchStart = perfStart();
             form.switchTo(entry);
-            //if (visName != null)
-            //    form.setVisiblePanel(visName);
+            perfLog("getEntryEditor cached switchTo type=" + typeName, switchStart);
         } else {
-            // We must instantiate a new editor for this type. First make sure the old one
-            // stores its last edit:
+            long storeStart = perfStart();
             storeCurrentEdit();
-            // Then start the new one:
-            form = new EntryEditor(frame, BasePanel.this, entry);
-            //if (visName != null)
-            //    form.setVisiblePanel(visName);
+            perfLog("getEntryEditor storeCurrentEdit before new editor", storeStart);
 
-            entryEditors.put(entry.getType().getName(), form);
+            long newStart = perfStart();
+            form = new EntryEditor(frame, BasePanel.this, entry);
+            entryEditors.put(typeName, form);
+            perfLog("getEntryEditor new EntryEditor type=" + typeName, newStart);
         }
+        perfLog("getEntryEditor total type=" + typeName, totalStart);
         return form;
     }
 
@@ -2442,6 +2497,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * @param editor The entry editor to add.
      */
     public void showEntryEditor(EntryEditor editor) {
+        long totalStart = perfStart();
 
         if (mode == SHOWING_EDITOR) {
             Globals.prefs.putInt("entryEditorHeight", splitPane.getHeight() - splitPane.getDividerLocation());
@@ -2450,11 +2506,14 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         }
         mode = SHOWING_EDITOR;
         currentEditor = editor;
-        splitPane.setBottomComponent(editor);
+        if (splitPane.getBottomComponent() != editor) {
+            splitPane.setBottomComponent(editor);
+        }
         if (editor.getEntry() != getShowing()) {
             newEntryShowing(editor.getEntry());
         }
         adjustSplitter();
+        perfLog("showEntryEditor total", totalStart);
 
     }
 
@@ -2465,17 +2524,25 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * @param preview The preview to show.
      */
     public void showPreview(PreviewPanel preview) {
+        long totalStart = perfStart();
         mode = SHOWING_PREVIEW;
         currentPreview = preview;
-        splitPane.setBottomComponent(preview);
+        if (splitPane.getBottomComponent() != preview) {
+            splitPane.setBottomComponent(preview);
+        }
+        perfLog("showPreview total", totalStart);
     }
 
     /**
      * Removes the bottom component.
      */
     public void hideBottomComponent() {
+        long totalStart = perfStart();
         mode = SHOWING_NOTHING;
-        splitPane.setBottomComponent(null);
+        if (splitPane.getBottomComponent() != null) {
+            splitPane.setBottomComponent(null);
+        }
+        perfLog("hideBottomComponent total", totalStart);
     }
 
     /**
@@ -2483,16 +2550,15 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * table. If an entryEditor is shown, it is given focus afterwards.
      */
     public void highlightEntry(final BibtexEntry be) {
-        //SwingUtilities.invokeLater(new Thread() {
-        //     public void run() {
+        long totalStart = perfStart();
         final int row = mainTable.findEntry(be);
         if (row >= 0) {
-            mainTable.setRowSelectionInterval(row, row);
-            //entryTable.setActiveRow(row);
+            if ((mainTable.getSelectedRowCount() != 1) || (mainTable.getSelectedRow() != row)) {
+                mainTable.setRowSelectionInterval(row, row);
+            }
             mainTable.ensureVisible(row);
         }
-        //     }
-        //});
+        perfLog("highlightEntry row=" + row, totalStart);
     }
 
     /**
@@ -2546,17 +2612,23 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     public void updateEntryEditorIfShowing() {
-        if (mode == SHOWING_EDITOR) {
+        long totalStart = perfStart();
+        if (mode == SHOWING_EDITOR && currentEditor != null) {
             if (currentEditor.getType() != currentEditor.getEntry().getType()) {
-                // The entry has changed type, so we must get a new editor.
                 newEntryShowing(null);
                 EntryEditor newEditor = getEntryEditor(currentEditor.getEntry());
                 showEntryEditor(newEditor);
             } else {
+                long updateFieldsStart = perfStart();
                 currentEditor.updateAllFields();
+                perfLog("updateEntryEditorIfShowing updateAllFields", updateFieldsStart);
+
+                long updateSourceStart = perfStart();
                 currentEditor.updateSource();
+                perfLog("updateEntryEditorIfShowing updateSource", updateSourceStart);
             }
         }
+        perfLog("updateEntryEditorIfShowing total", totalStart);
     }
 
     /**
@@ -2564,10 +2636,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
      * stores its changes, if any.
      */
     public void storeCurrentEdit() {
+        long totalStart = perfStart();
         if (isShowingEditor()) {
             EntryEditor editor = (EntryEditor) splitPane.getBottomComponent();
             editor.storeCurrentEdit();
         }
+        perfLog("storeCurrentEdit total", totalStart);
 
     }
 
@@ -2594,20 +2668,21 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     public void markBaseChanged() {
+        long totalStart = perfStart();
         baseChanged = true;
 
-        // Put an asterix behind the file name to indicate the
-        // database has changed.
+        // Put an asterisk behind the file name to indicate the database has changed.
         String oldTitle = frame.getTabTitle(this);
         if (!oldTitle.endsWith("*")) {
             frame.setTabTitle(this, oldTitle + "*", frame.getTabTooltip(this));
             frame.setWindowTitle();
         }
-        // If the status line states that the base has been saved, we
-        // remove this message, since it is no longer relevant. If a
-        // different message is shown, we leave it.
-        if (frame.statusLine.getText().startsWith(Globals.lang("Saved database")));
-        frame.output(" ");
+        // Only clear the status line if it currently contains the stale saved-database message.
+        // The old code had a stray semicolon after the if, so frame.output(" ") ran on every change.
+        if (frame.statusLine.getText().startsWith(Globals.lang("Saved database"))) {
+            frame.output(" ");
+        }
+        perfLog("markBaseChanged total", totalStart);
     }
 
     public void markNonUndoableBaseChanged() {
@@ -2678,23 +2753,31 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
       }
      */
     public void setSearchMatcher(SearchMatcher matcher) {
+        long totalStart = perfStart();
         searchFilterList.setMatcher(matcher);
         showingSearch = true;
+        perfLog("setSearchMatcher entries=" + database.getEntryCount(), totalStart);
     }
 
     public void setGroupMatcher(Matcher<BibtexEntry> matcher) {
+        long totalStart = perfStart();
         groupFilterList.setMatcher(matcher);
         showingGroup = true;
+        perfLog("setGroupMatcher entries=" + database.getEntryCount(), totalStart);
     }
 
     public void stopShowingSearchResults() {
+        long totalStart = perfStart();
         searchFilterList.setMatcher(NoSearchMatcher.INSTANCE);
         showingSearch = false;
+        perfLog("stopShowingSearchResults entries=" + database.getEntryCount(), totalStart);
     }
 
     public void stopShowingGroup() {
+        long totalStart = perfStart();
         groupFilterList.setMatcher(NoSearchMatcher.INSTANCE);
         showingGroup = false;
+        perfLog("stopShowingGroup entries=" + database.getEntryCount(), totalStart);
     }
 
     /**

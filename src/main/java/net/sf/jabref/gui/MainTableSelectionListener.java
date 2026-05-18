@@ -17,19 +17,22 @@ package net.sf.jabref.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
 
+import java.awt.Desktop;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
+import javax.swing.AbstractAction;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
+import javax.swing.SwingWorker;
 
 import net.sf.jabref.BasePanel;
 import net.sf.jabref.BibtexEntry;
@@ -66,6 +69,8 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     EventList<BibtexEntry> tableRows;
     private boolean previewActive = Globals.prefs.getBoolean("previewEnabled");
     private volatile boolean workingOnPreview = false;
+    private SwingWorker<Void, Void> previewWorker = null;
+    private int previewRequestId = 0;
 
     private boolean enabled = true;
 
@@ -181,29 +186,44 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
     private void updatePreview(final BibtexEntry toShow, final boolean changedPreview, int repeats) {
 
         final PreviewPanel previewToUpdate = this.preview;
+        final int requestId = ++previewRequestId;
 
-        if (workingOnPreview) {
-            if (repeats > 0) {
-                return; // We've already waited once. Give up on this selection.
-            }
-            Timer t = new Timer(50, new ActionListener() {
-                public void actionPerformed(ActionEvent actionEvent) {
-                    updatePreview(toShow, changedPreview, 1);
-                }
-            });
-            t.setRepeats(false);
-            t.start();
-            return;
+        if ((previewWorker != null) && !previewWorker.isDone()) {
+            previewWorker.cancel(true);
         }
+
         EventList<BibtexEntry> list = table.getSelected();
         // Check if the entry to preview is still selected:
         if ((list.size() != 1) || (list.get(0) != toShow)) {
+            workingOnPreview = false;
             return;
         }
+
         final int mode = panel.getMode();
         workingOnPreview = true;
-        final Runnable update = new Runnable() {
-            public void run() {
+
+        previewWorker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                if (!isCancelled()) {
+                    previewToUpdate.setEntry(toShow);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                if (isCancelled() || (requestId != previewRequestId)) {
+                    workingOnPreview = false;
+                    return;
+                }
+
+                EventList<BibtexEntry> selected = table.getSelected();
+                if ((selected.size() != 1) || (selected.get(0) != toShow)) {
+                    workingOnPreview = false;
+                    return;
+                }
+
                 if (changedPreview || (mode == BasePanel.SHOWING_NOTHING)) {
                     panel.showPreview(previewToUpdate);
                     panel.adjustSplitter();
@@ -211,14 +231,7 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
                 workingOnPreview = false;
             }
         };
-
-        final Runnable worker = new Runnable() {
-            public void run() {
-                previewToUpdate.setEntry(toShow);
-                SwingUtilities.invokeLater(update);
-            }
-        };
-        (new Thread(worker)).start();
+        previewWorker.execute();
     }
 
     public void editSignalled() {
@@ -358,43 +371,31 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
 
                             FileListEntry flEntry = null;
                             // If there are one or more links of the correct type,
-                            // open the first one:
+                            // open the first one. Unregistered types, such as MP4,
+                            // have a null FileListEntry type, so match them by extension.
                             if (listOfFileTypes.size() > 0) {
                                 for (int i = 0; i < fileList.getRowCount(); i++) {
-                                    flEntry = fileList.getEntry(i);
-                                    boolean correctType = false;
-                                    for (String listOfFileType : listOfFileTypes) {
-                                        if (flEntry.getType().toString().equals(listOfFileType)) {
-                                            correctType = true;
-                                        }
-                                    }
-                                    if (correctType) {
+                                    FileListEntry candidate = fileList.getEntry(i);
+                                    if (matchesRequestedFileType(candidate, listOfFileTypes)) {
+                                        flEntry = candidate;
                                         break;
                                     }
-                                    flEntry = null;
                                 }
                             } //If there are no file types specified, consider all files.
-                            else if (fileList.getRowCount() > 0) {
-                                flEntry = fileList.getEntry(0);
-                            }
-                            if (flEntry != null) {
-//                            if (fileList.getRowCount() > 0) {
-//                                FileListEntry flEntry = fileList.getEntry(0);
-
-                                ExternalFileMenuItem item = new ExternalFileMenuItem(panel.frame(), entry, "",
-                                        flEntry.getLink(), flEntry.getType().getIcon(),
-                                        panel.metaData(), flEntry.getType());
-                                boolean success = item.openLink();
-                                if (!success) {
-                                    panel.output(Globals.lang("Unable to open link."));
+                            else {
+                                for (int i = 0; i < fileList.getRowCount(); i++) {
+                                    FileListEntry candidate = fileList.getEntry(i);
+                                    if (isUsableFileListEntry(candidate)) {
+                                        flEntry = candidate;
+                                        break;
+                                    }
                                 }
                             }
-                        } else {
-                            try {
-                                Util.openExternalViewer(panel.metaData(), (String) link, fieldName);
-                            } catch (IOException ex) {
-                                panel.output(Globals.lang("Unable to open link."));
+                            if (flEntry != null) {
+                                openFileListEntry(entry, flEntry, "");
                             }
+                        } else {
+                            openNonFileExternalLink(link, fieldName);
 
                             /*ExternalFileType type = Globals.prefs.getExternalFileTypeByMimeType("text/html");
                             ExternalFileMenuItem item = new ExternalFileMenuItem
@@ -460,30 +461,31 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
             Object o = entry.getField(iconType[0]);
             FileListTableModel fileList = new FileListTableModel();
             fileList.setContent((String) o);
-            // If there are one or more links, open the first one:
+            // If there are one or more links, show one menu item per link:
             for (int i = 0; i < fileList.getRowCount(); i++) {
                 FileListEntry flEntry = fileList.getEntry(i);
+                if (!isUsableFileListEntry(flEntry)) {
+                    continue;
+                }
 
-                //If file types are specified, ignore files of other types.
-                if (iconType.length > 1) {
-                    boolean correctType = false;
-                    for (int j = 1; j < iconType.length; j++) {
-                        if (flEntry.getType().toString().equals(iconType[j])) {
-                            correctType = true;
-                        }
-                    }
-                    if (!correctType) {
-                        continue;
-                    }
+                // If file types are specified, ignore files of other types.
+                // Unregistered types have null getType(), so match them by extension.
+                if ((iconType.length > 1) && !matchesRequestedFileType(flEntry, iconType, 1)) {
+                    continue;
                 }
 
                 String description = flEntry.getDescription();
                 if ((description == null) || (description.trim().length() == 0)) {
                     description = flEntry.getLink();
                 }
-                menu.add(new ExternalFileMenuItem(panel.frame(), entry, description,
-                        flEntry.getLink(), flEntry.getType().getIcon(), panel.metaData(),
-                        flEntry.getType()));
+
+                if (flEntry.getType() != null) {
+                    menu.add(new ExternalFileMenuItem(panel.frame(), entry, description,
+                            flEntry.getLink(), flEntry.getType().getIcon(), panel.metaData(),
+                            flEntry.getType()));
+                } else {
+                    menu.add(createDefaultOpenMenuAction(entry, description, flEntry));
+                }
                 showDefaultPopup = false;
             }
         } else {
@@ -511,6 +513,229 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         } else {
             menu.show(table, e.getX(), e.getY());
         }
+    }
+
+    private void openNonFileExternalLink(Object link, String fieldName) {
+        if (!(link instanceof String) || (((String) link).trim().length() == 0)) {
+            panel.output(Globals.lang("Unable to open link."));
+            return;
+        }
+
+        try {
+            Util.openExternalViewer(panel.metaData(), ((String) link).trim(), fieldName);
+        } catch (Throwable ex) {
+            panel.output(Globals.lang("Unable to open link."));
+            ex.printStackTrace();
+        }
+    }
+
+    private boolean isUsableFileListEntry(FileListEntry flEntry) {
+        return (flEntry != null)
+                && (flEntry.getLink() != null)
+                && (flEntry.getLink().trim().length() > 0);
+    }
+
+    private boolean matchesRequestedFileType(FileListEntry flEntry, List<String> requestedTypes) {
+        if ((requestedTypes == null) || requestedTypes.isEmpty()) {
+            return true;
+        }
+        if (!isUsableFileListEntry(flEntry)) {
+            return false;
+        }
+
+        String configuredType = flEntry.getType() == null ? null : flEntry.getType().toString();
+        String extension = getUpperCaseExtension(flEntry.getLink());
+
+        for (String requestedType : requestedTypes) {
+            if (requestedType == null) {
+                continue;
+            }
+            if ((configuredType != null) && configuredType.equalsIgnoreCase(requestedType)) {
+                return true;
+            }
+            if ((extension != null) && extension.equalsIgnoreCase(requestedType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesRequestedFileType(FileListEntry flEntry, String[] requestedTypes, int startIndex) {
+        if ((requestedTypes == null) || (requestedTypes.length <= startIndex)) {
+            return true;
+        }
+        if (!isUsableFileListEntry(flEntry)) {
+            return false;
+        }
+
+        String configuredType = flEntry.getType() == null ? null : flEntry.getType().toString();
+        String extension = getUpperCaseExtension(flEntry.getLink());
+
+        for (int i = startIndex; i < requestedTypes.length; i++) {
+            String requestedType = requestedTypes[i];
+            if (requestedType == null) {
+                continue;
+            }
+            if ((configuredType != null) && configuredType.equalsIgnoreCase(requestedType)) {
+                return true;
+            }
+            if ((extension != null) && extension.equalsIgnoreCase(requestedType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getUpperCaseExtension(String link) {
+        if (link == null) {
+            return null;
+        }
+
+        String clean = link.trim();
+        int queryIndex = clean.indexOf('?');
+        if (queryIndex >= 0) {
+            clean = clean.substring(0, queryIndex);
+        }
+        int fragmentIndex = clean.indexOf('#');
+        if (fragmentIndex >= 0) {
+            clean = clean.substring(0, fragmentIndex);
+        }
+
+        int slashIndex = Math.max(clean.lastIndexOf('/'), clean.lastIndexOf('\\'));
+        int dotIndex = clean.lastIndexOf('.');
+        if ((dotIndex < 0) || (dotIndex <= slashIndex) || (dotIndex == clean.length() - 1)) {
+            return null;
+        }
+        return clean.substring(dotIndex + 1).toUpperCase();
+    }
+
+    private AbstractAction createDefaultOpenMenuAction(final BibtexEntry entry,
+            final String description, final FileListEntry flEntry) {
+        return new AbstractAction(description) {
+            public void actionPerformed(ActionEvent event) {
+                new Thread() {
+                    public void run() {
+                        openFileListEntry(entry, flEntry, description);
+                    }
+                }.start();
+            }
+        };
+    }
+
+    private void openFileListEntry(BibtexEntry entry, FileListEntry flEntry, String description) {
+        if (!isUsableFileListEntry(flEntry)) {
+            panel.output(Globals.lang("Unable to open link."));
+            return;
+        }
+
+        if (flEntry.getType() != null) {
+            ExternalFileMenuItem item = new ExternalFileMenuItem(panel.frame(), entry,
+                    description == null ? "" : description,
+                    flEntry.getLink(), flEntry.getType().getIcon(),
+                    panel.metaData(), flEntry.getType());
+            boolean success = item.openLink();
+            if (!success) {
+                panel.output(Globals.lang("Unable to open link."));
+            }
+            return;
+        }
+
+        openWithDefaultSystemApplication(flEntry.getLink());
+    }
+
+    private void openWithDefaultSystemApplication(String link) {
+        try {
+            if ((link == null) || (link.trim().length() == 0)) {
+                panel.output(Globals.lang("Unable to open link."));
+                return;
+            }
+
+            String trimmedLink = link.trim();
+            Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+
+            if (looksLikeWebUri(trimmedLink) || looksLikeWebUriWithBrokenSlashes(trimmedLink)) {
+                String webLink = normalizeWebUriSlashes(trimmedLink);
+                if ((desktop != null) && desktop.isSupported(Desktop.Action.BROWSE)) {
+                    desktop.browse(new URI(webLink));
+                    panel.output(Globals.lang("External viewer called") + ".");
+                    return;
+                }
+                Util.openExternalViewer(panel.metaData(), webLink, "url");
+                panel.output(Globals.lang("External viewer called") + ".");
+                return;
+            }
+
+            File file = resolveLinkedFile(trimmedLink);
+            if ((desktop != null) && desktop.isSupported(Desktop.Action.OPEN)) {
+                desktop.open(file);
+                panel.output(Globals.lang("External viewer called") + ".");
+            } else {
+                panel.output(Globals.lang("Unable to open link."));
+            }
+        } catch (Throwable ex) {
+            panel.output(Globals.lang("Unable to open link.") + " " + link);
+            ex.printStackTrace();
+        }
+    }
+
+    private boolean looksLikeWebUri(String link) {
+        return (link != null) && link.matches("(?i)^(https?|ftp)://.*");
+    }
+
+    private boolean looksLikeWebUriWithBrokenSlashes(String link) {
+        return (link != null) && link.matches("(?i)^(https?|ftp):\\\\.*");
+    }
+
+    private String normalizeWebUriSlashes(String link) {
+        int colonIndex = link.indexOf(':');
+        if (colonIndex <= 0) {
+            return link;
+        }
+
+        String scheme = link.substring(0, colonIndex).toLowerCase();
+        if (!("http".equals(scheme) || "https".equals(scheme) || "ftp".equals(scheme))) {
+            return link;
+        }
+
+        String rest = link.substring(colonIndex + 1).replace('\\', '/');
+        while (rest.startsWith("///")) {
+            rest = rest.substring(1);
+        }
+        if (rest.startsWith("//")) {
+            return scheme + ":" + rest;
+        }
+        while (rest.startsWith("/")) {
+            rest = rest.substring(1);
+        }
+        return scheme + "://" + rest;
+    }
+
+    private File resolveLinkedFile(String link) {
+        File expanded = Util.expandFilename(panel.metaData(), link);
+        if (expanded != null) {
+            return expanded;
+        }
+
+        File file = new File(link);
+        if (file.isAbsolute()) {
+            return file;
+        }
+
+        String[] directories = panel.metaData().getFileDirectory(GUIGlobals.FILE_FIELD);
+        if (directories != null) {
+            for (String directory : directories) {
+                if ((directory == null) || (directory.trim().length() == 0)) {
+                    continue;
+                }
+
+                File candidate = new File(directory, link);
+                if (candidate.exists()) {
+                    return candidate;
+                }
+            }
+        }
+
+        return file;
     }
 
     public void entryEditorClosing(EntryEditor editor) {
