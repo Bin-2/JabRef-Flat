@@ -3121,7 +3121,7 @@ public class Util {
             final MetaData metaData,
             final ActionListener callback,
             final JDialog diag) {
-        long startTime = System.nanoTime();
+        final long startTime = System.nanoTime();
         final ExternalFileType[] types = Globals.prefs.getExternalFileTypeSelection();
         if (diag != null) {
             final JProgressBar prog = new JProgressBar(JProgressBar.HORIZONTAL, 0, types.length - 1);
@@ -3138,120 +3138,206 @@ public class Util {
 
         Runnable r = new Runnable() {
             public void run() {
-                // determine directories to search in
-                String[] dirsS = metaData.getFileDirectory(GUIGlobals.FILE_FIELD);
-                ArrayList<File> dirs = new ArrayList<File>(dirsS.length);
-                for (String dirPath : dirsS) {
-                    dirs.add(new File(dirPath));
-                }
-
-                // determine extensions - use HashSet for faster lookups
-                Set<String> extensions = new HashSet<String>();
-                for (final ExternalFileType type : types) {
-                    extensions.add(type.getExtension());
-                }
-
-                // Run the search operation:
-                Map<BibtexEntry, java.util.List<File>> result;
-                if (Globals.prefs.getBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY)) {
-                    String regExp = Globals.prefs.get(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY);
-                    result = RegExpFileSearch.findFilesForSet(entries, extensions, dirs, regExp);
-                } else {
-                    result = findAssociatedFiles(entries, extensions, dirs);
-                }
-
                 boolean foundAny = false;
+                int resultEntryCount = 0;
+                int resultFileCount = 0;
+                int resultEmptyEntryCount = 0;
+                int existingFileCount = 0;
+                int newFileEntryCount = 0;
 
-                // Precompute file type mapping for faster lookups
-                Map<String, ExternalFileType> extensionToTypeMap = new HashMap<>();
-                for (ExternalFileType type : types) {
-                    extensionToTypeMap.put(type.getExtension().toLowerCase(), type);
-                }
+                final long workerStartTime = System.nanoTime();
+                long directoryPreparationTime = 0;
+                long extensionPreparationTime = 0;
+                long searchTime = 0;
+                long fileTypePreparationTime = 0;
+                long resultApplicationTime = 0;
+                long callbackSchedulingTime = 0;
 
-                // Iterate over the entries:
-                for (Map.Entry<BibtexEntry, List<File>> entryResult : result.entrySet()) {
-                    BibtexEntry anEntry = entryResult.getKey();
-                    List<File> files = entryResult.getValue();
+                String searchMode = "unknown";
+                boolean useRegExpSearch = false;
+                boolean autolinkExactKeyOnly = false;
+                String regExp = null;
 
-                    if (files.isEmpty()) {
-                        continue;
+                try {
+                    long stepStartTime = System.nanoTime();
+
+                    // determine directories to search in
+                    String[] dirsS = metaData.getFileDirectory(GUIGlobals.FILE_FIELD);
+                    ArrayList<File> dirs = new ArrayList<File>(dirsS.length);
+                    for (String dirPath : dirsS) {
+                        dirs.add(new File(dirPath));
                     }
+                    directoryPreparationTime = System.nanoTime() - stepStartTime;
 
-                    FileListTableModel tableModel;
-                    String oldVal = anEntry.getField(GUIGlobals.FILE_FIELD);
-                    if (singleTableModel == null) {
-                        tableModel = new FileListTableModel();
-                        if (oldVal != null) {
-                            tableModel.setContent(oldVal);
-                        }
+                    stepStartTime = System.nanoTime();
+
+                    // determine extensions - use HashSet for faster lookups
+                    Set<String> extensions = new HashSet<String>();
+                    for (final ExternalFileType type : types) {
+                        extensions.add(type.getExtension());
+                    }
+                    extensionPreparationTime = System.nanoTime() - stepStartTime;
+
+                    useRegExpSearch = Globals.prefs.getBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY);
+                    autolinkExactKeyOnly = Globals.prefs.getBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY);
+
+                    audit("autoLink.audit preferences: useRegExpSearch=" + useRegExpSearch
+                            + " stored=" + Globals.prefs.hasKey(JabRefPreferences.USE_REG_EXP_SEARCH_KEY)
+                            + ", autolinkExactKeyOnly=" + autolinkExactKeyOnly
+                            + " stored=" + Globals.prefs.hasKey(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY));
+                    audit("autoLink.audit input: entries=" + entries.size()
+                            + ", dirs=" + dirs.size()
+                            + ", externalTypes=" + types.length
+                            + ", extensions=" + extensions.size()
+                            + ", singleTableModel=" + (singleTableModel != null)
+                            + ", diag=" + (diag != null));
+                    auditDirectorySummary(dirs);
+
+                    stepStartTime = System.nanoTime();
+
+                    // Run the search operation:
+                    Map<BibtexEntry, java.util.List<File>> result;
+                    if (useRegExpSearch) {
+                        regExp = Globals.prefs.get(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY);
+                        searchMode = "regex";
+                        audit("autoLink.audit branch: RegExpFileSearch.findFilesForSet");
+                        audit("autoLink.audit regex: " + regExp);
+                        result = RegExpFileSearch.findFilesForSet(entries, extensions, dirs, regExp);
+                    } else if (autolinkExactKeyOnly) {
+                        searchMode = "exact-key";
+                        audit("autoLink.audit branch: findAssociatedFiles, exact-key preference is true");
+                        result = findAssociatedFiles(entries, extensions, dirs);
                     } else {
-                        assert (entries.size() == 1);
-                        tableModel = singleTableModel;
+                        searchMode = "non-regex-loose";
+                        audit("autoLink.audit branch: findAssociatedFiles, exact-key preference is false");
+                        result = findAssociatedFiles(entries, extensions, dirs);
                     }
+                    searchTime = System.nanoTime() - stepStartTime;
 
-                    // Build set of existing files for O(1) lookups
-                    Set<File> existingFiles = new HashSet<>();
-                    for (int j = 0; j < tableModel.getRowCount(); j++) {
-                        FileListEntry existingEntry = tableModel.getEntry(j);
-                        existingFiles.add(new File(existingEntry.getLink()));
+                    resultEntryCount = result.size();
+                    resultFileCount = countResultFiles(result);
+                    resultEmptyEntryCount = countEmptyResultEntries(result);
+                    audit("autoLink.audit search-result: mode=" + searchMode
+                            + ", resultEntries=" + resultEntryCount
+                            + ", resultFiles=" + resultFileCount
+                            + ", emptyResultEntries=" + resultEmptyEntryCount);
+
+                    stepStartTime = System.nanoTime();
+
+                    // Precompute file type mapping for faster lookups
+                    Map<String, ExternalFileType> extensionToTypeMap = new HashMap<>();
+                    for (ExternalFileType type : types) {
+                        extensionToTypeMap.put(type.getExtension().toLowerCase(), type);
                     }
+                    fileTypePreparationTime = System.nanoTime() - stepStartTime;
 
-                    // Collect all new files to add
-                    List<FileListEntry> newEntries = new ArrayList<>();
-                    for (File file : files) {
-                        if (!existingFiles.contains(file)) {
-                            File shortenedFile = Util.shortenFileName(file, dirsS);
-                            ExternalFileType type = determineFileType(shortenedFile, extensionToTypeMap);
-                            FileListEntry flEntry = new FileListEntry(shortenedFile.getName(),
-                                    shortenedFile.getPath(), type);
-                            newEntries.add(flEntry);
-                        }
-                    }
+                    stepStartTime = System.nanoTime();
 
-                    // Add all new entries at once and update representation once
-                    if (!newEntries.isEmpty()) {
-                        foundAny = true;
+                    // Iterate over the entries:
+                    for (Map.Entry<BibtexEntry, List<File>> entryResult : result.entrySet()) {
+                        BibtexEntry anEntry = entryResult.getKey();
+                        List<File> files = entryResult.getValue();
 
-                        // Add all new entries to table model
-                        for (FileListEntry newEntry : newEntries) {
-                            tableModel.addEntry(tableModel.getRowCount(), newEntry);
+                        if (files.isEmpty()) {
+                            continue;
                         }
 
-                        // Update entry field only once
-                        String newVal = tableModel.getStringRepresentation();
-                        if (newVal.isEmpty()) {
-                            newVal = null;
-                        }
-
-                        if (ce != null) {
-                            UndoableFieldChange change = new UndoableFieldChange(anEntry,
-                                    GUIGlobals.FILE_FIELD, oldVal, newVal);
-                            ce.addEdit(change);
-                        }
-
-                        // hack: if table model is given, do NOT modify entry
+                        FileListTableModel tableModel;
+                        String oldVal = anEntry.getField(GUIGlobals.FILE_FIELD);
                         if (singleTableModel == null) {
-                            anEntry.setField(GUIGlobals.FILE_FIELD, newVal);
+                            tableModel = new FileListTableModel();
+                            if (oldVal != null) {
+                                tableModel.setContent(oldVal);
+                            }
+                        } else {
+                            assert (entries.size() == 1);
+                            tableModel = singleTableModel;
                         }
 
-                        if (changedEntries != null) {
-                            changedEntries.add(anEntry);
+                        // Build set of existing files for O(1) lookups
+                        Set<File> existingFiles = new HashSet<>();
+                        for (int j = 0; j < tableModel.getRowCount(); j++) {
+                            FileListEntry existingEntry = tableModel.getEntry(j);
+                            existingFiles.add(new File(existingEntry.getLink()));
+                        }
+                        existingFileCount += existingFiles.size();
+
+                        // Collect all new files to add
+                        List<FileListEntry> newEntries = new ArrayList<>();
+                        for (File file : files) {
+                            if (!existingFiles.contains(file)) {
+                                File shortenedFile = Util.shortenFileName(file, dirsS);
+                                ExternalFileType type = determineFileType(shortenedFile, extensionToTypeMap);
+                                FileListEntry flEntry = new FileListEntry(shortenedFile.getName(),
+                                        shortenedFile.getPath(), type);
+                                newEntries.add(flEntry);
+                            }
+                        }
+
+                        // Add all new entries at once and update representation once
+                        if (!newEntries.isEmpty()) {
+                            foundAny = true;
+                            newFileEntryCount += newEntries.size();
+
+                            // Add all new entries to table model
+                            for (FileListEntry newEntry : newEntries) {
+                                tableModel.addEntry(tableModel.getRowCount(), newEntry);
+                            }
+
+                            // Update entry field only once
+                            String newVal = tableModel.getStringRepresentation();
+                            if (newVal.isEmpty()) {
+                                newVal = null;
+                            }
+
+                            if (ce != null) {
+                                UndoableFieldChange change = new UndoableFieldChange(anEntry,
+                                        GUIGlobals.FILE_FIELD, oldVal, newVal);
+                                ce.addEdit(change);
+                            }
+
+                            // hack: if table model is given, do NOT modify entry
+                            if (singleTableModel == null) {
+                                anEntry.setField(GUIGlobals.FILE_FIELD, newVal);
+                            }
+
+                            if (changedEntries != null) {
+                                changedEntries.add(anEntry);
+                            }
                         }
                     }
+                    resultApplicationTime = System.nanoTime() - stepStartTime;
+                } finally {
+                    long stepStartTime = System.nanoTime();
+
+                    // handle callbacks and dialog
+                    final int id = foundAny ? 1 : 0;
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            if (diag != null) {
+                                diag.dispose();
+                            }
+                            if (callback != null) {
+                                callback.actionPerformed(new ActionEvent(this, id, ""));
+                            }
+                        }
+                    });
+                    callbackSchedulingTime = System.nanoTime() - stepStartTime;
+
+                    long workerEndTime = System.nanoTime();
+                    audit("autoLink.audit apply-result: existingFiles=" + existingFileCount
+                            + ", newFileEntries=" + newFileEntryCount
+                            + ", foundAny=" + foundAny);
+                    audit("autoLink.audit timings-ms: dirs=" + formatMillis(directoryPreparationTime)
+                            + ", extensions=" + formatMillis(extensionPreparationTime)
+                            + ", search=" + formatMillis(searchTime)
+                            + ", typeMap=" + formatMillis(fileTypePreparationTime)
+                            + ", apply=" + formatMillis(resultApplicationTime)
+                            + ", callbackSchedule=" + formatMillis(callbackSchedulingTime)
+                            + ", workerTotal=" + formatMillis(workerEndTime - workerStartTime));
+                    audit("autoLink took worker: " + formatSeconds(workerEndTime - workerStartTime)
+                            + " seconds");
                 }
-
-                // handle callbacks and dialog
-                final int id = foundAny ? 1 : 0;
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        if (diag != null) {
-                            diag.dispose();
-                        }
-                        if (callback != null) {
-                            callback.actionPerformed(new ActionEvent(this, id, ""));
-                        }
-                    }
-                });
             }
 
             // Helper method to efficiently determine file type
@@ -3267,6 +3353,56 @@ public class Util {
                 }
                 return new UnknownExternalFileType("");
             }
+
+            // Audit helper. Keep all audit lines easy to grep while profiling file linking.
+            private void audit(String message) {
+                System.out.println(message);
+            }
+
+            // Audit helper. Directory details matter because slow paths are often network,
+            // cloud-synced, invalid, or recursively large file roots.
+            private void auditDirectorySummary(List<File> dirs) {
+                for (int i = 0; i < dirs.size(); i++) {
+                    File dir = dirs.get(i);
+                    audit("autoLink.audit dir[" + i + "]: path=" + dir.getPath()
+                            + ", exists=" + dir.exists()
+                            + ", isDirectory=" + dir.isDirectory());
+                }
+            }
+
+            // Audit helper. Counts files returned by the search implementation without
+            // exposing each path in the log.
+            private int countResultFiles(Map<BibtexEntry, List<File>> result) {
+                int count = 0;
+                for (List<File> files : result.values()) {
+                    if (files != null) {
+                        count += files.size();
+                    }
+                }
+                return count;
+            }
+
+            // Audit helper. Empty result entries indicate whether the search implementation
+            // returns every input entry or only entries with matches.
+            private int countEmptyResultEntries(Map<BibtexEntry, List<File>> result) {
+                int count = 0;
+                for (List<File> files : result.values()) {
+                    if ((files == null) || files.isEmpty()) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+
+            // Audit helper. Keep millisecond formatting local to this profiling patch.
+            private String formatMillis(long nanos) {
+                return String.format("%.3f", nanos / 1000000.0);
+            }
+
+            // Audit helper. Keep second formatting local to this profiling patch.
+            private String formatSeconds(long nanos) {
+                return String.format("%.3f", nanos / 1000000000.0);
+            }
         };
 
         Thread t = new Thread(r);
@@ -3276,7 +3412,7 @@ public class Util {
         }
         long endTime = System.nanoTime();
         double seconds = (endTime - startTime) / 1_000_000_000.0;
-        System.out.printf("autoLink took: %.3f seconds%n", seconds);
+        System.out.printf("autoLink took caller/modal: %.3f seconds%n", seconds);
         return t;
     }
 
