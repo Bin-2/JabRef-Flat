@@ -123,8 +123,7 @@ public class OAI2Fetcher implements EntryFetcher {
 
     /**
      * Remove "arxiv:" (case-insensitive), strip trailing version "v\\d+", then
-     * apply legacy fixKey.
-     * New normalizer 09:46 2026-04-16
+     * apply legacy fixKey. New normalizer 09:46 2026-04-16
      */
     private static String normalizeArxivKey(String raw) {
         if (raw == null) {
@@ -280,8 +279,14 @@ public class OAI2Fetcher implements EntryFetcher {
             }
 
             try (InputStream inputStream = conn.getInputStream()) {
-                // Create BibTeX entry and seed the identifier
-                BibtexEntry be = new BibtexEntry(Util.createNeutralId(), BibtexEntryType.ARTICLE);
+                // Use the currently active Article definition, including BibLaTeX
+                // or user-customized definitions.
+                BibtexEntryType articleType = BibtexEntryType.getType("article");
+                if (articleType == null) {
+                    articleType = BibtexEntryType.ARTICLE;
+                }
+
+                BibtexEntry be = new BibtexEntry(Util.createNeutralId(), articleType);
                 be.setField(OAI2_IDENTIFIER_FIELD, key);
 
                 DefaultHandler handlerBase = new OAI2Handler(be); // your existing handler
