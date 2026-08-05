@@ -401,6 +401,9 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     private final Map<String, Icon> toolbarIconOnlyCache = new HashMap<>();
     private final Map<String, Icon> menuIconOnlyCache = new HashMap<>();
 
+    private static final String MENU_ICON_NAME_PROPERTY = "JabRef.menuIconName";
+    private static final String MENU_FALLBACK_ICON_PROPERTY = "JabRef.menuFallbackIcon";
+
     private SearchManager2 searchManager;
 
     public GroupSelector groupSelector;
@@ -1562,26 +1565,73 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     /**
      * Create menu action with consistent SVG icon handling (16x16 for menus)
      */
-    private Action createMenuAction(final Action originalAction, String iconName) {
+    private Action createMenuAction(final Action originalAction,
+            String iconName) {
+
         Action menuAction = new AbstractAction() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                originalAction.actionPerformed(e);
+            public void actionPerformed(ActionEvent event) {
+                originalAction.actionPerformed(event);
             }
         };
 
         copyActionProperties(originalAction, menuAction, true);
+
+        Icon fallbackIcon
+                = (Icon) originalAction.getValue(Action.SMALL_ICON);
+
+        menuAction.putValue(MENU_ICON_NAME_PROPERTY, iconName);
+        menuAction.putValue(MENU_FALLBACK_ICON_PROPERTY, fallbackIcon);
+
         Icon menuIcon = getCachedMenuIcon(iconName);
-        if (menuIcon != null) {
-            menuAction.putValue(Action.SMALL_ICON, menuIcon);
-        } else {
-            Icon originalIcon = (Icon) originalAction.getValue(Action.SMALL_ICON);
-            if (originalIcon != null) {
-                menuAction.putValue(Action.SMALL_ICON, originalIcon);
+        menuAction.putValue(
+                Action.SMALL_ICON,
+                menuIcon != null ? menuIcon : fallbackIcon);
+
+        return menuAction;
+    }
+
+    private void clearMenuIconCaches() {
+        menuIconCache.clear();
+        menuIconOnlyCache.clear();
+    }
+
+    private void refreshMenuIcons() {
+        clearMenuIconCaches();
+        refreshMenuIcons(mb);
+
+        mb.revalidate();
+        mb.repaint();
+    }
+
+    private void refreshMenuIcons(MenuElement element) {
+        Component component = element.getComponent();
+
+        if (component instanceof JMenuItem) {
+            JMenuItem menuItem = (JMenuItem) component;
+            Action action = menuItem.getAction();
+
+            if (action != null) {
+                Object iconNameValue
+                        = action.getValue(MENU_ICON_NAME_PROPERTY);
+
+                if (iconNameValue instanceof String) {
+                    String iconName = (String) iconNameValue;
+                    Icon icon = getCachedMenuIcon(iconName);
+
+                    if (icon == null) {
+                        icon = (Icon) action.getValue(
+                                MENU_FALLBACK_ICON_PROPERTY);
+                    }
+
+                    action.putValue(Action.SMALL_ICON, icon);
+                }
             }
         }
 
-        return menuAction;
+        for (MenuElement child : element.getSubElements()) {
+            refreshMenuIcons(child);
+        }
     }
 
     private void copyActionProperties(final Action source, final Action target, final boolean includeAccelerator) {
@@ -1793,15 +1843,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     .getName();
         }
 
-            // Remove all toolbar components
+        // Remove all toolbar components
         tlb.removeAll();
 
-            // Recreate the push external button entirely
+        // Recreate the push external button entirely
         pushExternalButton = new PushToApplicationButton(
                 this,
                 PushToApplicationButton.applications);
 
-            // Restore previous selection if it exists
+        // Restore previous selection if it exists
         if (currentApp != null) {
             for (int i = 0; i < pushExternalButton.pushActions.size(); i++) {
                 if (pushExternalButton.pushActions.get(i)
@@ -1813,7 +1863,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             }
         }
 
-            // Recreate the entire toolbar
+        // Recreate the entire toolbar
         createToolBar();
 
         SwingUtilities.updateComponentTreeUI(tlb);
@@ -3216,9 +3266,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             refreshToolbarIcons();
         }
 
-        // Update menu bar
+        // Update menu icons first because menuIconOnlyCache can also be used
+        // as a toolbar icon fallback.
         if (mb != null) {
             SwingUtilities.updateComponentTreeUI(mb);
+            refreshMenuIcons();
         }
 
         // Update side pane
