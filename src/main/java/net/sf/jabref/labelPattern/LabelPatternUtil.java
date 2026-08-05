@@ -802,8 +802,8 @@ public class LabelPatternUtil {
         mainl: while ((piv < ss.length()) && (words < number)) {
             current = new StringBuffer();
             // Get the next word:
-            while ((piv<ss.length()) && !Character.isWhitespace(ss.charAt(piv))
-                    && (ss.charAt(piv) != '-')) {
+            while ((piv < ss.length())
+                && !Character.isWhitespace(ss.charAt(piv))) {
                 current.append(ss.charAt(piv));
                 piv++;
                 //System.out.println(".. "+piv+" '"+current.toString()+"'");
@@ -826,7 +826,7 @@ public class LabelPatternUtil {
             words++;
         }
 
-        return keepLettersAndDigitsOnly(_sbvalue.toString());
+        return keepLettersDigitsAndInternalHyphens(_sbvalue.toString());
     }
 
     static String keepLettersAndDigitsOnly(String in) {
@@ -836,6 +836,44 @@ public class LabelPatternUtil {
                 sb.append(in.charAt(i));
         }
         return sb.toString();
+    }
+
+    static String keepKeyWordCharacters(String value) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < value.length(); i++) {
+            char character = value.charAt(i);
+
+            if (Character.isLetterOrDigit(character)) {
+                result.append(character);
+            } else if ((character == '-')
+                    && (result.length() > 0)
+                    && (i + 1 < value.length())
+                    && Character.isLetterOrDigit(value.charAt(i + 1))) {
+                result.append(character);
+            }
+        }
+
+        return result.toString();
+    }
+    static String keepLettersDigitsAndInternalHyphens(String value) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < value.length(); i++) {
+            char character = value.charAt(i);
+
+            if (Character.isLetterOrDigit(character)) {
+                result.append(character);
+            } else if ((character == '-')
+                    && (i > 0)
+                    && (i + 1 < value.length())
+                    && Character.isLetterOrDigit(value.charAt(i - 1))
+                    && Character.isLetterOrDigit(value.charAt(i + 1))) {
+                result.append(character);
+            }
+        }
+
+        return result.toString();
     }
 
     /**
