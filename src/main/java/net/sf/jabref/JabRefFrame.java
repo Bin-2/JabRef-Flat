@@ -1778,37 +1778,45 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             // Save preference
             Globals.prefs.putInt("toolbarIconSize", newSize);
 
-            clearToolbarIconCaches();
             refreshToolbarIcons();
         }
     }
 
     private void refreshToolbarIcons() {
-        // Store current selection before refresh
+        clearToolbarIconCaches();
+
         String currentApp = null;
-        if (pushExternalButton != null && !pushExternalButton.pushActions.isEmpty()) {
-            currentApp = pushExternalButton.pushActions.get(pushExternalButton.selected).getName();
+        if (pushExternalButton != null
+                && !pushExternalButton.pushActions.isEmpty()) {
+            currentApp = pushExternalButton.pushActions
+                    .get(pushExternalButton.selected)
+                    .getName();
         }
 
-        // Remove all toolbar components
+            // Remove all toolbar components
         tlb.removeAll();
 
-        // Recreate the push external button entirely
-        pushExternalButton = new PushToApplicationButton(this, PushToApplicationButton.applications);
+            // Recreate the push external button entirely
+        pushExternalButton = new PushToApplicationButton(
+                this,
+                PushToApplicationButton.applications);
 
-        // Restore previous selection if it exists
+            // Restore previous selection if it exists
         if (currentApp != null) {
             for (int i = 0; i < pushExternalButton.pushActions.size(); i++) {
-                if (pushExternalButton.pushActions.get(i).getName().equals(currentApp)) {
+                if (pushExternalButton.pushActions.get(i)
+                        .getName()
+                        .equals(currentApp)) {
                     pushExternalButton.setSelected(i);
                     break;
                 }
             }
         }
 
-        // Recreate the entire toolbar
+            // Recreate the entire toolbar
         createToolBar();
 
+        SwingUtilities.updateComponentTreeUI(tlb);
         tlb.revalidate();
         tlb.repaint();
     }
