@@ -77,39 +77,34 @@ public class SaveDatabaseAction extends AbstractWorker {
 
                     cancelled = true;
 
-                    (new Thread(new Runnable() {
-                        public void run() {
-
-                            if (!Util.waitForFileLock(panel.getFile(), 10)) {
-                                // TODO: GUI handling of the situation when the externally modified file keeps being locked.
-                                System.err.println("File locked, this will be trouble.");
-                            }
-
-                            ChangeScanner scanner = new ChangeScanner(panel.frame(), panel);
-                            scanner.changeScan(panel.getFile());
-                            try {
-                                scanner.join();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            if (scanner.changesFound()) {
-                                scanner.displayResult(new ChangeScanner.DisplayResultCallback() {
-                                    public void scanResultsResolved(boolean resolved) {
-                                        if (!resolved) {
-                                            cancelled = true;
-                                        } else {
-                                            panel.setUpdatedExternally(false);
-                                            SwingUtilities.invokeLater(new Runnable() {
-                                                public void run() {
-                                                    panel.getSidePaneManager().hide("fileUpdate");
-                                                }
-                                            });
-                                        }
-                                    }
-                                });
-                            }
+                    new Thread(() -> {
+                        if (!Util.waitForFileLock(panel.getFile(), 10)) {
+                            System.err.println("File locked, this will be trouble.");
                         }
-                    })).start();
+
+                        ChangeScanner scanner = new ChangeScanner(panel.frame(), panel);
+                        scanner.changeScan(panel.getFile());
+
+                        try {
+                            scanner.join();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+
+                        if (scanner.changesFound()) {
+                            scanner.displayResult(resolved -> {
+                                if (!resolved) {
+                                    cancelled = true;
+                                    return;
+                                }
+
+                                panel.setUpdatedExternally(false);
+                                SwingUtilities.invokeLater(() ->
+                                        panel.getSidePaneManager().hide("fileUpdate"));
+                            });
+                        }
+                    }, "ExternalChangeScanner").start();
 
                     return;
                 } else { // User indicated to store anyway.
@@ -132,18 +127,25 @@ public class SaveDatabaseAction extends AbstractWorker {
         }
     }
 
+    @Override
     public void update() {
+        panel.setSaving(false);
+
         if (success) {
-            // Reset title of tab
-            frame.setTabTitle(panel, panel.getFile().getName(),
-                    panel.getFile().getAbsolutePath());
+            panel.undoManager.markUnchanged();
+            panel.setNonUndoableChange(false);
+            panel.setBaseChanged(false);
+            panel.setUpdatedExternally(false);
+
+            frame.updateTabTitleAfterSave(panel);
+            frame.setWindowTitle();
+
             frame.output(Globals.lang("Saved database") + " '"
                     + panel.getFile().getPath() + "'.");
-            frame.setWindowTitle();
         } else if (!cancelled) {
             if (fileLockedError) {
-                // TODO: user should have the option to override the lock file.
-                frame.output(Globals.lang("Could not save, file locked by another JabRef instance."));
+                frame.output(Globals.lang(
+                        "Could not save, file locked by another JabRef instance."));
             } else {
                 frame.output(Globals.lang("Save failed"));
             }
@@ -156,54 +158,38 @@ public class SaveDatabaseAction extends AbstractWorker {
         }
 
         try {
-
-            // Make sure the current edit is stored:
             panel.storeCurrentEdit();
-
-            // If the option is set, autogenerate keys for all entries that are
-            // lacking keys, before saving:
             panel.autoGenerateKeysBeforeSaving();
 
             if (!Util.waitForFileLock(panel.getFile(), 10)) {
                 success = false;
                 fileLockedError = true;
-            } else {
-                // Now save the database:
-                success = saveDatabase(panel.getFile(), false, panel.getEncoding());
-
-                //Util.pr("Testing resolve string... BasePanel line 237");
-                //Util.pr("Resolve aq: "+database.resolveString("aq"));
-                //Util.pr("Resolve text: "+database.resolveForStrings("A text which refers to the string #aq# and #billball#, hurra."));
-                try {
-                    Globals.fileUpdateMonitor.updateTimeStamp(panel.getFileMonitorHandle());
-                } catch (IllegalArgumentException ex) {
-                    // This means the file has not yet been registered, which is the case
-                    // when doing a "Save as". Maybe we should change the monitor so no
-                    // exception is cast.
-                }
+                return;
             }
-            panel.setSaving(false);
-            if (success) {
-                panel.undoManager.markUnchanged();
 
-                if (!AutoSaveManager.deleteAutoSaveFile(panel)) {
-                    //System.out.println("Deletion of autosave file failed");
-                }/* else
-                    System.out.println("Deleted autosave file (if it existed)");*/
-                // (Only) after a successful save the following
-                // statement marks that the base is unchanged
-                // since last save:
-                panel.setNonUndoableChange(false);
-                panel.setBaseChanged(false);
-                panel.setUpdatedExternally(false);
+            success = saveDatabase(panel.getFile(), false, panel.getEncoding());
+
+            if (!success) {
+                return;
             }
-        } catch (SaveException ex2) {
-            if (ex2 == SaveException.FILE_LOCKED) {
-                success = false;
+
+            try {
+                Globals.fileUpdateMonitor.updateTimeStamp(
+                        panel.getFileMonitorHandle());
+            } catch (IllegalArgumentException ex) {
+                // The file may not yet be registered when performing Save As.
+            }
+
+            AutoSaveManager.deleteAutoSaveFile(panel);
+        } catch (SaveException ex) {
+            success = false;
+
+            if (ex == SaveException.FILE_LOCKED) {
                 fileLockedError = true;
                 return;
             }
-            ex2.printStackTrace();
+
+            ex.printStackTrace();
         }
     }
 
