@@ -199,11 +199,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             saveSelectedAs = new GeneralAction("saveSelectedAs",
                     "Save selected as ...",
                     Globals.lang("Save selected as ..."),
-                    GUIGlobals.getIconUrl("saveAs")),
+                    GUIGlobals.getIconUrl("saveSelectedAsClean")),
             saveSelectedAsPlain = new GeneralAction("saveSelectedAsPlain",
                     "Save selected as plain BibTeX ...",
                     Globals.lang("Save selected as plain BibTeX ..."),
-                    GUIGlobals.getIconUrl("saveAs")),
+                    GUIGlobals.getIconUrl("saveSelectedAsPlainClean")),
             exportAll = ExportFormats.getExportAction(this, false),
             exportSelected = ExportFormats.getExportAction(this, true),
             importCurrent = ImportFormats.getImportAction(this, false),
@@ -376,6 +376,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             resolveDuplicateKeys = new GeneralAction("resolveDuplicateKeys", "Resolve duplicate BibTeX keys",
                     Globals.lang("Find and remove duplicate BibTeX keys"),
                     prefs.getKey("Resolve duplicate BibTeX keys"));
+
+    private Action saveMenuAction;
+    private Action saveAllMenuAction;
+    private Action saveToolbarAction;
+    private Action saveAllToolbarAction;
 
     MassSetFieldAction massSetField = new MassSetFieldAction(this);
     ManageKeywordsAction manageKeywords = new ManageKeywordsAction(this);
@@ -673,6 +678,24 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 }
             }
         }
+    }
+
+    private String getSaveIconName() {
+        BasePanel panel = basePanel();
+
+        return panel != null && panel.isBaseChanged()
+                ? "saveDirty"
+                : "saveClean";
+    }
+
+    private String getSaveAllIconName() {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (baseAt(i).isBaseChanged()) {
+                return "saveAllDirty";
+            }
+        }
+
+        return "saveAllClean";
     }
 
     private void initSidePane() {
@@ -1363,11 +1386,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         file.add(createMenuAction(newDatabaseAction, "new"));
         file.add(createMenuAction(open, "open"));
         file.add(createMenuAction(mergeDatabaseAction, "append"));
-        file.add(createMenuAction(save, "save"));
-        file.add(createMenuAction(saveAs, "saveAs"));
-        file.add(createMenuAction(saveAll, "saveAll"));
-        file.add(createMenuAction(saveSelectedAs, "saveAs"));
-        file.add(createMenuAction(saveSelectedAsPlain, "saveAs"));
+
+        saveMenuAction = createMenuAction(save, getSaveIconName());
+        saveAllMenuAction = createMenuAction(saveAll, getSaveAllIconName());
+
+        file.add(saveMenuAction);
+        file.add(createMenuAction(saveAs, "saveAsClean"));
+        file.add(saveAllMenuAction);
+        file.add(createMenuAction(saveSelectedAs, "saveSelectedAsClean"));
+        file.add(createMenuAction(saveSelectedAsPlain, "saveSelectedAsPlainClean"));
 
         file.addSeparator();
         file.add(createMenuAction(importNew, "importNew"));
@@ -1871,6 +1898,56 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.repaint();
     }
 
+    public void updateSaveIconState() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    updateSaveIconState();
+                }
+            });
+            return;
+        }
+
+        String saveIconName = getSaveIconName();
+        String saveAllIconName = getSaveAllIconName();
+
+        updateMenuActionIcon(saveMenuAction, saveIconName);
+        updateMenuActionIcon(saveAllMenuAction, saveAllIconName);
+
+        updateToolbarActionIcon(saveToolbarAction, saveIconName);
+        updateToolbarActionIcon(saveAllToolbarAction, saveAllIconName);
+    }
+
+    private void updateMenuActionIcon(Action action, String iconName) {
+        if (action == null) {
+            return;
+        }
+
+        action.putValue(MENU_ICON_NAME_PROPERTY, iconName);
+
+        Icon icon = getCachedMenuIcon(iconName);
+        if (icon != null) {
+            action.putValue(Action.SMALL_ICON, icon);
+        }
+    }
+
+    private void updateToolbarActionIcon(Action action, String iconName) {
+        if (action == null) {
+            return;
+        }
+
+        Icon icon = getCachedToolbarIconOnly(iconName);
+
+        if (icon == null) {
+            icon = getCachedMenuIconOnly(iconName);
+        }
+
+        if (icon != null) {
+            action.putValue(Action.SMALL_ICON, icon);
+        }
+    }
+
     private void createToolBar() {
         tlb.putClientProperty(Options.HEADER_STYLE_KEY, HeaderStyle.BOTH);
         tlb.setBorder(null);
@@ -1882,8 +1959,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         // tlb.setForeground(GUIGlobals.lightGray);
         tlb.addAction(createToolbarAction(newDatabaseAction, "new"));
         tlb.addAction(createToolbarAction(open, "open"));
-        tlb.addAction(createToolbarAction(save, "save"));
-        tlb.addAction(createToolbarAction(saveAll, "saveAll"));
+
+        saveToolbarAction = createToolbarAction(save, getSaveIconName());
+        saveAllToolbarAction = createToolbarAction(saveAll, getSaveAllIconName());
+
+        tlb.addAction(saveToolbarAction);
+        tlb.addAction(saveAllToolbarAction);
 
         tlb.addSeparator();
         tlb.addAction(createToolbarAction(cut, "cut"));
@@ -2420,6 +2501,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 markActiveBasePanel();
             }
             setWindowTitle();
+            updateSaveIconState();
 
             updateEnabledState(); // Man, this is what I call a bug that this is not called.
             output(Globals.lang("Closed database") + ".");
@@ -2845,7 +2927,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             extends MnemonicAwareAction {
 
         public SaveSessionAction() {
-            super(GUIGlobals.getImage("save"));
+            super(GUIGlobals.getImage("saveClean"));
             putValue(NAME, "Save session");
             putValue(ACCELERATOR_KEY, prefs.getKey("Save session"));
         }

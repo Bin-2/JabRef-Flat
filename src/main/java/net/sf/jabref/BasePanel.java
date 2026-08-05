@@ -144,7 +144,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         }
     }
 
-
     public final static int SHOWING_NOTHING = 0, SHOWING_PREVIEW = 1, SHOWING_EDITOR = 2, WILL_SHOW_EDITOR = 3;
 
     /* 
@@ -2301,8 +2300,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
     }
 
-
-
     /*
     public void refreshTable() {
         //System.out.println("hiding="+hidingNonHits+"\tlastHits="+lastSearchHits);
@@ -2669,7 +2666,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
     public void markBaseChanged() {
         long totalStart = perfStart();
-        baseChanged = true;
+        setBaseChanged(true);
 
         // Put an asterisk behind the file name to indicate the database has changed.
         String oldTitle = frame.getTabTitle(this);
@@ -2696,7 +2693,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 markBaseChanged();
             }
         } else if (baseChanged && !nonUndoableChange) {
-            baseChanged = false;
+            setBaseChanged(false);
             if (getFile() != null) {
                 frame.setTabTitle(BasePanel.this, getFile().getName(),
                         getFile().getAbsolutePath());
@@ -3165,7 +3162,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     public void setBaseChanged(boolean baseChanged) {
+        if (this.baseChanged == baseChanged) {
+            return;
+        }
+
         this.baseChanged = baseChanged;
+        frame.updateSaveIconState();
     }
 
     public void setSaving(boolean saving) {

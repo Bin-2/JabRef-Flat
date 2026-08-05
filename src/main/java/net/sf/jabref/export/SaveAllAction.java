@@ -31,7 +31,7 @@ public class SaveAllAction extends MnemonicAwareAction implements Worker {
     
     /** Creates a new instance of SaveAllAction */
     public SaveAllAction(JabRefFrame frame) {
-        super(GUIGlobals.getImage("saveAll"));
+        super(GUIGlobals.getImage("saveAllClean"));
         this.frame = frame;
         putValue(ACCELERATOR_KEY, Globals.prefs.getKey("Save all"));
         putValue(SHORT_DESCRIPTION, Globals.lang("Save all open databases"));

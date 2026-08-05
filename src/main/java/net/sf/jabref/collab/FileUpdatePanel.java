@@ -46,7 +46,7 @@ public class FileUpdatePanel extends SidePaneComponent implements ActionListener
 
 	public FileUpdatePanel(JabRefFrame frame, BasePanel panel, SidePaneManager manager, File file,
 		ChangeScanner scanner) {
-		super(manager, GUIGlobals.getIconUrl("save"), Globals.lang("File changed"));
+		super(manager, GUIGlobals.getIconUrl("saveDirty"), Globals.lang("File changed"));
         close.setEnabled(false);
         this.panel = panel;
 		this.frame = frame;
