@@ -110,6 +110,8 @@ public final class JabRefPreferences {
 
     public String WRAPPED_USERNAME, MARKING_WITH_NUMBER_PATTERN;
 
+    public static final String ALTERNATE_PDF_VIEWER = "alternatePdfViewer";
+
     Preferences prefs;
     public HashMap<String, Object> defaults = new HashMap<>();
     public HashMap<String, String> keyBinds = new HashMap<>(),
@@ -308,6 +310,8 @@ public final class JabRefPreferences {
         defaults.put(EXPORT_SECONDARY_SORT_DESCENDING, Boolean.TRUE);
         defaults.put(EXPORT_TERTIARY_SORT_FIELD, "");
         defaults.put(EXPORT_TERTIARY_SORT_DESCENDING, Boolean.TRUE);
+
+        defaults.put(ALTERNATE_PDF_VIEWER, "");
 
         defaults.put(NEWLINE, System.getProperty("line.separator"));
 

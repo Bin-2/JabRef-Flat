@@ -314,6 +314,10 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             openPdf = new GeneralAction("openFile", "Open PDF or PS",
                     Globals.lang("Open PDF or PS"),
                     prefs.getKey("Open PDF or PS")),
+            openPdfAlternate = new GeneralAction(
+                    "openFileAlternate",
+                    "Open PDF with alternate viewer",
+                    Globals.lang("Open PDF with alternate viewer")),
             openUrl = new GeneralAction("openUrl", "Open URL or DOI",
                     Globals.lang("Open URL or DOI"),
                     prefs.getKey("Open URL or DOI")),
@@ -2065,7 +2069,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         tlb.addAction(createToolbarAction(openFolder, "openFolder"));
         tlb.addAction(createToolbarAction(openFile, "openFile"));
-
+        tlb.addAction(createToolbarAction(openPdfAlternate, "openFileAlternate"));
         //tlb.addAction(openPdf);
         //tlb.addAction(openUrl);
         tlb.addSeparator();
@@ -2297,15 +2301,34 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      */
     protected void updateEnabledState() {
         int tabCount = tabbedPane.getTabCount();
+
         if (tabCount != previousTabCount) {
             previousTabCount = tabCount;
             setEnabled(openDatabaseOnlyActions, tabCount > 0);
             setEnabled(severalDatabasesOnlyActions, tabCount > 1);
         }
+
         if (tabCount == 0) {
             back.setEnabled(false);
             forward.setEnabled(false);
         }
+
+        updateAlternatePdfViewerAction();
+    }
+
+    void updateAlternatePdfViewerAction() {
+        String path = prefs.get(
+                JabRefPreferences.ALTERNATE_PDF_VIEWER);
+
+        boolean viewerConfigured
+                = path != null
+                && !path.trim().isEmpty()
+                && new File(path.trim()).isFile();
+
+        openPdfAlternate.setEnabled(
+                Globals.ON_WIN
+                && tabbedPane.getTabCount() > 0
+                && viewerConfigured);
     }
 
     /**

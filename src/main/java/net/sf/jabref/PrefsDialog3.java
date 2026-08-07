@@ -263,6 +263,9 @@ public class PrefsDialog3 extends JDialog {
                     frame.setupAllTables();
                     frame.groupSelector.revalidateGroups(); // icons may have
                     // changed
+
+                    frame.updateAlternatePdfViewerAction();
+
                     frame.output(Globals.lang("Preferences recorded."));
                 }
             };

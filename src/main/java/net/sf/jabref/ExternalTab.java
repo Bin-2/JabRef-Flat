@@ -40,7 +40,7 @@ public class ExternalTab extends JPanel implements PrefsTab {
 
     JabRefFrame _frame;
 
-    JTextField pdfDir, regExpTextField, fileDir, psDir, emailSubject;
+    JTextField pdfDir, regExpTextField, fileDir, psDir, emailSubject, alternatePdfViewer;
 
     JCheckBox bibLocationAsFileDir, bibLocAsPrimaryDir, runAutoFileSearch,
             allowFileAutoOpenBrowse, openFoldersOfAttachedFiles;
@@ -207,6 +207,26 @@ public class ExternalTab extends JPanel implements PrefsTab {
         pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         add(pan, BorderLayout.CENTER);
 
+        builder.nextLine();
+        alternatePdfViewer = new JTextField(25);
+        alternatePdfViewer.setEnabled(Globals.ON_WIN);
+        JLabel alternateViewerLabel
+                = new JLabel(Globals.lang("Alternate PDF viewer") + ":");
+
+        builder.append(new JPanel());
+        builder.append(alternateViewerLabel);
+        builder.append(alternatePdfViewer);
+
+        BrowseAction alternateViewerBrowse
+                = new BrowseAction(_frame, alternatePdfViewer, false);
+
+        JButton alternateViewerBrowseButton
+                = new JButton(alternateViewerBrowse);
+
+        alternateViewerBrowseButton.setEnabled(Globals.ON_WIN);
+
+        builder.append(alternateViewerBrowseButton);
+        builder.nextLine();
     }
 
     private void addSettingsButton(final PushToApplication pt, JPanel p) {
@@ -242,6 +262,8 @@ public class ExternalTab extends JPanel implements PrefsTab {
         regExpTextField.setText(_prefs.get(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY));
         allowFileAutoOpenBrowse.setSelected(_prefs.getBoolean("allowFileAutoOpenBrowse"));
 
+        alternatePdfViewer.setText(_prefs.get(JabRefPreferences.ALTERNATE_PDF_VIEWER));
+
         emailSubject.setText(_prefs.get(JabRefPreferences.EMAIL_SUBJECT));
         openFoldersOfAttachedFiles.setSelected(_prefs.getBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES));
 
@@ -260,6 +282,12 @@ public class ExternalTab extends JPanel implements PrefsTab {
         _prefs.putBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY, useRegExpComboBox.isSelected());
         if (useRegExpComboBox.isSelected()) {
             _prefs.put(JabRefPreferences.REG_EXP_SEARCH_EXPRESSION_KEY, regExpTextField.getText());
+        }
+
+        if (Globals.ON_WIN) {
+            _prefs.put(
+                    JabRefPreferences.ALTERNATE_PDF_VIEWER,
+                    alternatePdfViewer.getText().trim());
         }
 
         // We should maybe do some checking on the validity of the contents?

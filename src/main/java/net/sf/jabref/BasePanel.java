@@ -1266,6 +1266,72 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             }
         });
 
+        actions.put("openFileAlternate", new BaseAction() {
+            @Override
+            public void action() {
+                BibtexEntry[] entries = mainTable.getSelectedEntries();
+
+                if ((entries == null) || (entries.length != 1)) {
+                    output(Globals.lang(
+                            "No entries or multiple entries selected."));
+                    return;
+                }
+
+                if (!Globals.ON_WIN) {
+                    output(Globals.lang(
+                            "Alternate PDF viewer is only supported on Windows."));
+                    return;
+                }
+
+                final BibtexEntry entry = entries[0];
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String application = Globals.prefs.get(
+                                JabRefPreferences.ALTERNATE_PDF_VIEWER);
+
+                        if ((application == null)
+                                || application.trim().isEmpty()) {
+                            output(Globals.lang(
+                                    "No alternate PDF viewer is configured."));
+                            return;
+                        }
+
+                        File executable = new File(application.trim());
+
+                        if (!executable.isFile()) {
+                            output(Globals.lang(
+                                    "Alternate PDF viewer executable does not exist."));
+                            return;
+                        }
+
+                        File pdfFile = findPdfFile(entry);
+
+                        if (pdfFile == null) {
+                            output(Globals.lang(
+                                    "No PDF file defined for this entry."));
+                            return;
+                        }
+
+                        try {
+                            Util.openFileWithApplicationOnWindows(
+                                    pdfFile.getAbsolutePath(),
+                                    executable.getAbsolutePath());
+
+                            output(Globals.lang(
+                                    "External viewer called") + ".");
+                        } catch (IOException ex) {
+                            output(Globals.lang(
+                                    "Could not open PDF with alternate viewer")
+                                    + ": " + ex.getMessage());
+                            ex.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
+
         actions.put("addFileLink", new AttachFileAction(this));
 
         actions.put("openExternalFile", new BaseAction() {
@@ -1694,6 +1760,40 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         actions.put("moveToGroup", new GroupAddRemoveDialog(this, true, true));
 
         //actions.put("downloadFullText", new FindFullTextAction(this));
+    }
+
+    // helper method for alternative PDF reader
+    private File findPdfFile(BibtexEntry entry) {
+        FileListTableModel tableModel = new FileListTableModel();
+        tableModel.setContent(entry.getField(GUIGlobals.FILE_FIELD));
+
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            FileListEntry fileEntry = tableModel.getEntry(i);
+
+            if ("pdf".equalsIgnoreCase(fileEntry.getType().getName())) {
+                File file = Util.expandFilename(
+                        metaData,
+                        fileEntry.getLink());
+
+                if (file != null && file.isFile()) {
+                    return file;
+                }
+            }
+        }
+
+        Object pdfField = entry.getField("pdf");
+
+        if (pdfField != null) {
+            File file = Util.expandFilename(
+                    metaData,
+                    pdfField.toString());
+
+            if (file != null && file.isFile()) {
+                return file;
+            }
+        }
+
+        return null;
     }
 
     /**
