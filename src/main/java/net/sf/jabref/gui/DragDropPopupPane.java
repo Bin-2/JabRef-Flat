@@ -22,6 +22,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
@@ -38,57 +39,106 @@ public class DragDropPopupPane extends DragDropPane {
 
     private JPopupMenu popupMenu = null;
 
-    public DragDropPopupPane(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
+//    public DragDropPopupPane(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
+//        super();
+//
+//        addMouseListener(new java.awt.event.MouseAdapter() {
+//            public void mouseClicked(MouseEvent e) {
+//                tabClicked(e);
+//            }
+//        });
+//
+//        initPopupMenu(manageSelectorsAction, databasePropertiesAction, bibtexKeyPatternAction);
+//    }
+    public DragDropPopupPane(AbstractAction manageSelectorsAction,
+            AbstractAction databasePropertiesAction,
+            AbstractAction bibtexKeyPatternAction,
+            Action closeDatabaseAction) {
+
         super();
 
         addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 tabClicked(e);
             }
         });
 
-        initPopupMenu(manageSelectorsAction, databasePropertiesAction, bibtexKeyPatternAction);
+        initPopupMenu(
+                manageSelectorsAction,
+                databasePropertiesAction,
+                bibtexKeyPatternAction,
+                closeDatabaseAction);
     }
 
-    private void initPopupMenu(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
+//    private void initPopupMenu(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
+//        popupMenu = new JPopupMenu();
+//
+//        JMenuItem databasePropertiesBtn = new JMenuItem(Globals.lang("Database properties"));
+//        databasePropertiesBtn.addActionListener(databasePropertiesAction);
+//        popupMenu.add(databasePropertiesBtn);
+//
+//        JMenuItem bibtexKeyPatternBtn = new JMenuItem(Globals.lang("Bibtex key patterns"));
+//        bibtexKeyPatternBtn.addActionListener(bibtexKeyPatternAction);
+//        popupMenu.add(bibtexKeyPatternBtn);
+//
+//        JMenuItem manageSelectorsBtn = new JMenuItem(Globals.lang("Manage content selectors"));
+//        manageSelectorsBtn.addActionListener(manageSelectorsAction);
+//        popupMenu.add(manageSelectorsBtn);
+//
+//        JMenuItem closeBtn = new JMenuItem(Globals.lang("Close"), GUIGlobals.getImage("close"));
+//        closeBtn.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                SwingUtilities.invokeLater(new Runnable() {
+//                    public void run() {
+//                        closeSelectedTab();
+//                    }
+//                });
+//            }
+//        });
+//        popupMenu.add(closeBtn);
+//    }
+    private void initPopupMenu(AbstractAction manageSelectorsAction,
+            AbstractAction databasePropertiesAction,
+            AbstractAction bibtexKeyPatternAction,
+            Action closeDatabaseAction) {
+
         popupMenu = new JPopupMenu();
 
-        JMenuItem databasePropertiesBtn = new JMenuItem(Globals.lang("Database properties"));
+        JMenuItem databasePropertiesBtn
+                = new JMenuItem(Globals.lang("Database properties"));
         databasePropertiesBtn.addActionListener(databasePropertiesAction);
         popupMenu.add(databasePropertiesBtn);
 
-        JMenuItem bibtexKeyPatternBtn = new JMenuItem(Globals.lang("Bibtex key patterns"));
+        JMenuItem bibtexKeyPatternBtn
+                = new JMenuItem(Globals.lang("Bibtex key patterns"));
         bibtexKeyPatternBtn.addActionListener(bibtexKeyPatternAction);
         popupMenu.add(bibtexKeyPatternBtn);
 
-        JMenuItem manageSelectorsBtn = new JMenuItem(Globals.lang("Manage content selectors"));
+        JMenuItem manageSelectorsBtn
+                = new JMenuItem(Globals.lang("Manage content selectors"));
         manageSelectorsBtn.addActionListener(manageSelectorsAction);
         popupMenu.add(manageSelectorsBtn);
 
-        JMenuItem closeBtn = new JMenuItem(Globals.lang("Close"), GUIGlobals.getImage("close"));
-        closeBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        closeSelectedTab();
-                    }
-                });
-            }
-        });
+        JMenuItem closeBtn
+                = new JMenuItem(Globals.lang("Close"), GUIGlobals.getImage("close"));
+        closeBtn.addActionListener(closeDatabaseAction);
         popupMenu.add(closeBtn);
     }
 
     private void tabClicked(MouseEvent e) {
-        if (e.getButton() != MouseEvent.BUTTON1 && e.getClickCount() == 1) {   // if is right-click
+        if (e.getButton() != MouseEvent.BUTTON1 && e.getClickCount() == 1) {
+            int clickedTab = indexAtLocation(e.getX(), e.getY());
 
-            // display popup near location of mouse click
-            popupMenu.show(e.getComponent(), e.getX(), e.getY() - 10);
+            if (clickedTab >= 0) {
+                setSelectedIndex(clickedTab);
+                popupMenu.show(e.getComponent(), e.getX(), e.getY() - 10);
+            }
         }
     }
 
-    private void closeSelectedTab() {
-        // remove selected tab
-        remove(getSelectedIndex());
-    }
-
+//    private void closeSelectedTab() {
+//        // remove selected tab
+//        remove(getSelectedIndex());
+//    }
 }

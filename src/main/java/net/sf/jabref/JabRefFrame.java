@@ -454,7 +454,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     }
 
     private void init() {
-        tabbedPane = new DragDropPopupPane(manageSelectors, databaseProperties, bibtexKeyPattern);
+        tabbedPane = new DragDropPopupPane(
+                manageSelectors,
+                databaseProperties,
+                bibtexKeyPattern,
+                closeDatabaseAction);
 
         // Load saved toolbar size preference
         int savedSize;
@@ -614,6 +618,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     bp.setBackAndForwardEnabledState();
                     new FocusRequester(bp.mainTable);
                 }
+
+                updateSaveIconState();
             }
         });
 
