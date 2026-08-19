@@ -38,6 +38,7 @@ import net.sf.jabref.Globals;
 public class DragDropPopupPane extends DragDropPane {
 
     private JPopupMenu popupMenu = null;
+    private final Action copyFullPathAction;
 
 //    public DragDropPopupPane(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
 //        super();
@@ -50,12 +51,15 @@ public class DragDropPopupPane extends DragDropPane {
 //
 //        initPopupMenu(manageSelectorsAction, databasePropertiesAction, bibtexKeyPatternAction);
 //    }
-    public DragDropPopupPane(AbstractAction manageSelectorsAction,
+    public DragDropPopupPane(
+            AbstractAction manageSelectorsAction,
             AbstractAction databasePropertiesAction,
             AbstractAction bibtexKeyPatternAction,
-            Action closeDatabaseAction) {
+            Action closeDatabaseAction,
+            Action copyFullPathAction) {
 
         super();
+        this.copyFullPathAction = copyFullPathAction;
 
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -68,7 +72,8 @@ public class DragDropPopupPane extends DragDropPane {
                 manageSelectorsAction,
                 databasePropertiesAction,
                 bibtexKeyPatternAction,
-                closeDatabaseAction);
+                closeDatabaseAction,
+                copyFullPathAction);
     }
 
 //    private void initPopupMenu(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
@@ -98,10 +103,12 @@ public class DragDropPopupPane extends DragDropPane {
 //        });
 //        popupMenu.add(closeBtn);
 //    }
-    private void initPopupMenu(AbstractAction manageSelectorsAction,
+    private void initPopupMenu(
+            AbstractAction manageSelectorsAction,
             AbstractAction databasePropertiesAction,
             AbstractAction bibtexKeyPatternAction,
-            Action closeDatabaseAction) {
+            Action closeDatabaseAction,
+            Action copyFullPathAction) {
 
         popupMenu = new JPopupMenu();
 
@@ -120,6 +127,13 @@ public class DragDropPopupPane extends DragDropPane {
         manageSelectorsBtn.addActionListener(manageSelectorsAction);
         popupMenu.add(manageSelectorsBtn);
 
+        popupMenu.addSeparator();
+
+        JMenuItem copyFullPathBtn = new JMenuItem(copyFullPathAction);
+        popupMenu.add(copyFullPathBtn);
+
+        popupMenu.addSeparator();
+
         JMenuItem closeBtn
                 = new JMenuItem(Globals.lang("Close"), GUIGlobals.getImage("close"));
         closeBtn.addActionListener(closeDatabaseAction);
@@ -132,7 +146,14 @@ public class DragDropPopupPane extends DragDropPane {
 
             if (clickedTab >= 0) {
                 setSelectedIndex(clickedTab);
-                popupMenu.show(e.getComponent(), e.getX(), e.getY() - 10);
+
+                copyFullPathAction.setEnabled(
+                        getToolTipTextAt(clickedTab) != null);
+
+                popupMenu.show(
+                        e.getComponent(),
+                        e.getX(),
+                        e.getY() - 10);
             }
         }
     }

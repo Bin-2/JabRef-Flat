@@ -381,6 +381,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     Globals.lang("Find and remove duplicate BibTeX keys"),
                     prefs.getKey("Resolve duplicate BibTeX keys"));
 
+    AbstractAction copyFullPathAction = new CopyFullPathAction();
+
     private Action saveMenuAction;
     private Action saveAllMenuAction;
     private Action saveToolbarAction;
@@ -458,7 +460,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 manageSelectors,
                 databaseProperties,
                 bibtexKeyPattern,
-                closeDatabaseAction);
+                closeDatabaseAction,
+                copyFullPathAction);
 
         // Load saved toolbar size preference
         int savedSize;
@@ -2440,6 +2443,29 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                         Globals.lang("Key bindings changed"),
                         JOptionPane.INFORMATION_MESSAGE);
             }
+        }
+    }
+
+    // copy full path
+    class CopyFullPathAction extends AbstractAction {
+
+        public CopyFullPathAction() {
+            putValue(NAME, Globals.lang("Copy full path"));
+            putValue(SHORT_DESCRIPTION,
+                    Globals.lang("Copy the full path of the current database"));
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            BasePanel bp = basePanel();
+
+            if ((bp == null) || (bp.getFile() == null)) {
+                return;
+            }
+
+            String path = bp.getFile().getAbsolutePath();
+            ClipBoardManager.clipBoard.setClipboardContents(path);
+            output(Globals.lang("Copied") + ": " + path);
         }
     }
 
