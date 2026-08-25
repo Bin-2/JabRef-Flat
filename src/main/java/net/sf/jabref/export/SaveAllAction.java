@@ -47,7 +47,15 @@ public class SaveAllAction extends MnemonicAwareAction {
     public void actionPerformed(ActionEvent e) {
         List<BasePanel> panels = new ArrayList<>();
         for (int i = 0; i < frame.getTabbedPane().getTabCount(); i++) {
-            panels.add(frame.baseAt(i));
+            BasePanel panel = frame.baseAt(i);
+            if (panel.isBaseChanged()) {
+                panels.add(panel);
+            }
+        }
+
+        if (panels.isEmpty()) {
+            frame.output(Globals.lang("Save all finished."));
+            return;
         }
 
         frame.output(Globals.lang("Saving all databases..."));
