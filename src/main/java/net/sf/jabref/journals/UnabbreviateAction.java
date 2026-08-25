@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.journals;
 
 import net.sf.jabref.BibtexEntry;
@@ -22,20 +22,17 @@ import net.sf.jabref.AbstractWorker;
 import net.sf.jabref.undo.NamedCompound;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: Sep 17, 2005
- * Time: 12:48:23 AM
- * To browseOld this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: Sep 17, 2005 Time: 12:48:23 AM To
+ * browseOld this template use File | Settings | File Templates.
  */
 public class UnabbreviateAction extends AbstractWorker {
+
     BasePanel panel;
     String message = "";
 
     public UnabbreviateAction(BasePanel panel) {
         this.panel = panel;
     }
-
 
     public void init() {
         //  new FieldWeightDialog(frame).setVisible(true);
@@ -45,17 +42,19 @@ public class UnabbreviateAction extends AbstractWorker {
     public void run() {
         //net.sf.jabref.journals.JournalList.downloadJournalList(frame);
 
-
         BibtexEntry[] entries = panel.getSelectedEntries();
-        if (entries == null)
+        if (entries == null) {
             return;
+        }
         NamedCompound ce = new NamedCompound("Unabbreviate journal names");
         int count = 0;
         for (BibtexEntry entry : entries) {
-            if (Globals.journalAbbrev.unabbreviate(panel.database(), entry, "journal", ce))
+            if (Globals.journalAbbrev.unabbreviate(panel.database(), entry, "journal", ce)) {
                 count++;
-            if (Globals.journalAbbrev.unabbreviate(panel.database(), entry, "journaltitle", ce))
+            }
+            if (Globals.journalAbbrev.unabbreviate(panel.database(), entry, "journaltitle", ce)) {
                 count++;
+            }
         }
         if (count > 0) {
             ce.end();

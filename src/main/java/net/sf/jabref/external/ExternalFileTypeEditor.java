@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.awt.BorderLayout;
@@ -48,11 +48,11 @@ public class ExternalFileTypeEditor extends JDialog {
     private ExternalFileTypeEntryEditor entryEditor = null;
     private FileTypeTableModel tableModel;
     private JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
     private JButton add = new JButton(GUIGlobals.getImage("add")),
-        remove = new JButton(GUIGlobals.getImage("remove")),
-        edit = new JButton(GUIGlobals.getImage("edit")),
-        toDefaults = new JButton(Globals.lang("Default"));
+            remove = new JButton(GUIGlobals.getImage("remove")),
+            edit = new JButton(GUIGlobals.getImage("edit")),
+            toDefaults = new JButton(Globals.lang("Default"));
     private EditListener editListener = new EditListener();
 
     public ExternalFileTypeEditor(JFrame frame) {
@@ -109,24 +109,22 @@ public class ExternalFileTypeEditor extends JDialog {
                         Globals.lang("Reset file type definitons"), JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE);*/
                 //if (reply == JOptionPane.YES_OPTION) {
-                    java.util.List<ExternalFileType> list = Globals.prefs.getDefaultExternalFileTypes();
-                    fileTypes.clear();
-                    fileTypes.addAll(list);
-                    Collections.sort(fileTypes);
-                    //Globals.prefs.resetExternalFileTypesToDefault();
-                    //setValues();
-                    tableModel.fireTableDataChanged();
+                java.util.List<ExternalFileType> list = Globals.prefs.getDefaultExternalFileTypes();
+                fileTypes.clear();
+                fileTypes.addAll(list);
+                Collections.sort(fileTypes);
+                //Globals.prefs.resetExternalFileTypesToDefault();
+                //setValues();
+                tableModel.fireTableDataChanged();
                 //}
             }
         });
-
 
         add.addActionListener(new AddListener());
         remove.addActionListener(new RemoveListener());
         edit.addActionListener(editListener);
         fileTypes = new ArrayList<ExternalFileType>();
         setValues();
-        
 
         tableModel = new FileTypeTableModel();
         table = new JTable(tableModel);
@@ -139,12 +137,12 @@ public class ExternalFileTypeEditor extends JDialog {
         table.getColumnModel().getColumn(2).setMinWidth(60);
         table.getColumnModel().getColumn(3).setMinWidth(100);
         table.getColumnModel().getColumn(0).setResizable(false);
-        
+
         JScrollPane sp = new JScrollPane(table);
 
         JPanel upper = new JPanel();
         upper.setLayout(new BorderLayout());
-        upper.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        upper.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         upper.add(sp, BorderLayout.CENTER);
         getContentPane().add(upper, BorderLayout.CENTER);
 
@@ -161,7 +159,7 @@ public class ExternalFileTypeEditor extends JDialog {
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);
         pack();
 
@@ -175,22 +173,25 @@ public class ExternalFileTypeEditor extends JDialog {
         im.put(Globals.prefs.getKey("Close dialog"), "close");
         am.put("close", cancelAction);
 
-        if (frame != null)
+        if (frame != null) {
             setLocationRelativeTo(frame);
-        else
+        } else {
             setLocationRelativeTo(dialog);
+        }
     }
 
     private ExternalFileTypeEntryEditor getEditor(ExternalFileType type) {
-        if (entryEditor == null)
-            entryEditor = new ExternalFileTypeEntryEditor(ExternalFileTypeEditor.this,  type);
-        else
+        if (entryEditor == null) {
+            entryEditor = new ExternalFileTypeEntryEditor(ExternalFileTypeEditor.this, type);
+        } else {
             entryEditor.setEntry(type);
+        }
         return entryEditor;
     }
 
     /**
      * Get an AbstractAction for opening the external file types editor.
+     *
      * @param frame The JFrame used as parent window for the dialog.
      * @return An Action for opening the editor.
      */
@@ -200,6 +201,7 @@ public class ExternalFileTypeEditor extends JDialog {
 
     /**
      * Get an AbstractAction for opening the external file types editor.
+     *
      * @param dialog The JDialog used as parent window for the dialog.
      * @return An Action for opening the editor.
      */
@@ -208,6 +210,7 @@ public class ExternalFileTypeEditor extends JDialog {
     }
 
     class AddListener implements ActionListener {
+
         public void actionPerformed(ActionEvent e) {
             // Generate a new file type:
             ExternalFileType type = new ExternalFileType("", "", "", "", "new");
@@ -225,14 +228,15 @@ public class ExternalFileTypeEditor extends JDialog {
 
         public void actionPerformed(ActionEvent e) {
             int[] rows = table.getSelectedRows();
-            if (rows.length == 0)
+            if (rows.length == 0) {
                 return;
-            for (int i=rows.length-1; i>=0; i--) {
+            }
+            for (int i = rows.length - 1; i >= 0; i--) {
                 fileTypes.remove(rows[i]);
             }
             tableModel.fireTableDataChanged();
             if (fileTypes.size() > 0) {
-                int row = Math.min(rows[0], fileTypes.size()-1);
+                int row = Math.min(rows[0], fileTypes.size() - 1);
                 table.setRowSelectionInterval(row, row);
             }
         }
@@ -242,20 +246,23 @@ public class ExternalFileTypeEditor extends JDialog {
 
         public void actionPerformed(ActionEvent e) {
             int[] rows = table.getSelectedRows();
-            if (rows.length != 1)
+            if (rows.length != 1) {
                 return;
+            }
             getEditor(fileTypes.get(rows[0])).setVisible(true);
-            if (entryEditor.okPressed())
+            if (entryEditor.okPressed()) {
                 tableModel.fireTableDataChanged();
+            }
         }
     }
 
     class IconRenderer implements TableCellRenderer {
+
         JLabel lab = new JLabel();
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             lab.setText(null);
-            lab.setIcon((ImageIcon)value);
+            lab.setIcon((ImageIcon) value);
             return lab;
         }
     }
@@ -288,9 +295,11 @@ public class ExternalFileTypeEditor extends JDialog {
         }
 
         public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex == 0)
+            if (columnIndex == 0) {
                 return ImageIcon.class;
-            else return String.class;
+            } else {
+                return String.class;
+            }
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
@@ -334,6 +343,7 @@ public class ExternalFileTypeEditor extends JDialog {
     }
 
     public static class EditExternalFileTypesAction extends MnemonicAwareAction {
+
         private JabRefFrame frame = null;
         private JDialog dialog = null;
         ExternalFileTypeEditor editor = null;
@@ -352,16 +362,18 @@ public class ExternalFileTypeEditor extends JDialog {
 
         public void actionPerformed(ActionEvent e) {
             if (editor == null) {
-                if (frame != null)
+                if (frame != null) {
                     editor = new ExternalFileTypeEditor(frame);
-                else
+                } else {
                     editor = new ExternalFileTypeEditor(dialog);
+                }
             }
             editor.setValues();
             editor.setVisible(true);
             if (frame != null) {
-                if (frame.basePanel() != null)
+                if (frame.basePanel() != null) {
                     frame.basePanel().mainTable.repaint();
+                }
             }
         }
     }

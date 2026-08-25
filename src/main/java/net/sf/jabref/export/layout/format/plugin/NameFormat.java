@@ -81,6 +81,7 @@ import net.sf.jabref.export.layout.LayoutFormatter;
  * you would use
  *
  * 1@*@{ll}, {f}.@@2@1@{ll}, {f}.@2@ and {ll}, {f}.@@*@1..-3@{ll}, {f}.,
+ *
  * @-2@{ll}, {f}.@-1@ and {ll}, {f}.
  *
  * Yeah this is trouble-some to write, but should work.

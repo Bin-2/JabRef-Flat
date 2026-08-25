@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.awt.BorderLayout;
@@ -42,16 +42,16 @@ public class ExternalFileTypeEntryEditor {
     JDialog dParent = null;
     JDialog diag;
     JTextField extension = new JTextField(),
-        name = new JTextField(),
-        mimeType = new JTextField(),
-        application = new JTextField();
+            name = new JTextField(),
+            mimeType = new JTextField(),
+            application = new JTextField();
     String selectedIcon = null;
     JButton icon = new JButton(GUIGlobals.getImage("picture"));
     JButton ok = new JButton(Globals.lang("Ok")),
             cancel = new JButton(Globals.lang("Cancel"));
     JRadioButton useDefault = new JRadioButton(Globals.lang("Default")),
-        other = new JRadioButton("");
-    final String emptyMessage = "<"+Globals.lang("Use default viewer")+">";
+            other = new JRadioButton("");
+    final String emptyMessage = "<" + Globals.lang("Use default viewer") + ">";
     boolean applicationFieldEmpty = false;
 
     private ExternalFileType entry;
@@ -75,8 +75,7 @@ public class ExternalFileTypeEntryEditor {
         bg.add(useDefault);
         bg.add(other);
 
-        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout
-                ("left:pref, 4dlu, fill:150dlu, 4dlu, fill:pref", ""));
+        DefaultFormBuilder builder = new DefaultFormBuilder(new FormLayout("left:pref, 4dlu, fill:150dlu, 4dlu, fill:pref", ""));
         builder.append(Globals.lang("Icon"));
         builder.append(icon);
         builder.nextLine();
@@ -88,7 +87,7 @@ public class ExternalFileTypeEntryEditor {
         builder.nextLine();
         builder.append(Globals.lang("MIME type"));
         builder.append(mimeType);
-        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         builder.nextLine();
         builder.append(Globals.lang("Application"));
         JButton browseBut = new JButton(Globals.lang("Browse"));
@@ -121,7 +120,7 @@ public class ExternalFileTypeEntryEditor {
                 okPressed = true;
                 storeSettings(ExternalFileTypeEntryEditor.this.entry);
                 diag.dispose();
-                                
+
             }
         });
         cancel.addActionListener(new ActionListener() {
@@ -133,8 +132,9 @@ public class ExternalFileTypeEntryEditor {
         icon.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 String initSel = ExternalFileTypeEntryEditor.this.entry.getIconName();
-                if (selectedIcon != null)
+                if (selectedIcon != null) {
                     initSel = selectedIcon;
+                }
                 IconSelection ic = new IconSelection(diag, initSel);
                 ic.setVisible(true);
                 if (ic.isOkPressed()) {
@@ -154,6 +154,7 @@ public class ExternalFileTypeEntryEditor {
                         other.setSelected(true);
                     }
                 }
+
                 public void insertUpdate(DocumentEvent e) {
                     handle(e);
                 }
@@ -168,10 +169,11 @@ public class ExternalFileTypeEntryEditor {
             });
         }
 
-        if (dParent != null)
+        if (dParent != null) {
             diag = new JDialog(dParent, Globals.lang("Edit file type"), true);
-        else
+        } else {
             diag = new JDialog(fParent, Globals.lang("Edit file type"), true);
+        }
         diag.getContentPane().add(builder.getPanel(), BorderLayout.CENTER);
         diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);
         diag.pack();
@@ -179,10 +181,11 @@ public class ExternalFileTypeEntryEditor {
         BrowseListener browse = new BrowseListener(diag, application);
         browseBut.addActionListener(browse);
 
-        if (dParent != null)
+        if (dParent != null) {
             diag.setLocationRelativeTo(dParent);
-        else
+        } else {
             diag.setLocationRelativeTo(fParent);
+        }
         //Util.placeDialog(diag, parent);
 
         setValues(entry);
@@ -194,8 +197,9 @@ public class ExternalFileTypeEntryEditor {
     }
 
     public void setVisible(boolean visible) {
-        if (visible)
+        if (visible) {
             okPressed = false;
+        }
         diag.setVisible(visible);
     }
 
@@ -205,10 +209,11 @@ public class ExternalFileTypeEntryEditor {
         mimeType.setText(entry.getMimeType());
         application.setText(entry.getOpenWith());
         icon.setIcon(entry.getIcon());
-        if ((application.getText().length() == 0))
+        if ((application.getText().length() == 0)) {
             useDefault.setSelected(true);
-        else
+        } else {
             other.setSelected(true);
+        }
         selectedIcon = null;
     }
 
@@ -217,22 +222,25 @@ public class ExternalFileTypeEntryEditor {
         entry.setMimeType(mimeType.getText().trim());
         // Set extension, but remove initial dot if user has added that:
         String ext = extension.getText().trim();
-        if ((ext.length() > 0) && (ext.charAt(0) == '.'))
+        if ((ext.length() > 0) && (ext.charAt(0) == '.')) {
             entry.setExtension(ext.substring(1));
-        else
+        } else {
             entry.setExtension(ext);
-        
-        if (selectedIcon != null)
+        }
+
+        if (selectedIcon != null) {
             entry.setIconName(selectedIcon);
+        }
         if (!Globals.ON_WIN) {
             entry.setOpenWith(application.getText().trim());
         } else {
             // On Windows, store application as empty if the "Default" option is selected,
             // or if the application name is empty:
-            if (useDefault.isSelected() || (application.getText().trim().length() == 0))
+            if (useDefault.isSelected() || (application.getText().trim().length() == 0)) {
                 entry.setOpenWith("");
-            else
+            } else {
                 entry.setOpenWith(application.getText().trim());
+            }
         }
     }
 
@@ -241,6 +249,7 @@ public class ExternalFileTypeEntryEditor {
     }
 
     class BrowseListener implements ActionListener {
+
         private JTextField comp;
 
         public BrowseListener(JDialog parent, JTextField comp) {
@@ -254,7 +263,7 @@ public class ExternalFileTypeEntryEditor {
                 initial = new File(Globals.prefs.get("fileWorkingDirectory"));
             }
             String chosen = FileDialogs.getNewFile(/*parent*/null, initial, Globals.NONE,
-                JFileChooser.OPEN_DIALOG, false);
+                    JFileChooser.OPEN_DIALOG, false);
             if (chosen != null) {
                 File newFile = new File(chosen);
                 // Store the directory for next time:

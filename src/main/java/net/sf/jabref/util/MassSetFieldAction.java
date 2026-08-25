@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.util;
 
 import java.awt.BorderLayout;
@@ -35,12 +35,11 @@ import com.jgoodies.forms.layout.FormLayout;
 /**
  * An Action for launching mass field.
  *
- * Functionality:
- * * Defaults to selected entries, or all entries if none are selected.
- * * Input field name
- * * Either set field, or clear field.
+ * Functionality: * Defaults to selected entries, or all entries if none are
+ * selected. * Input field name * Either set field, or clear field.
  */
 public class MassSetFieldAction extends MnemonicAwareAction {
+
     private JabRefFrame frame;
     private JDialog diag;
     private JRadioButton all, selected, clear, set, rename;
@@ -120,40 +119,39 @@ public class MassSetFieldAction extends MnemonicAwareAction {
         builder.nextLine();
         builder.append(overwrite, 3);
 
-
         ButtonBarBuilder bb = new ButtonBarBuilder();
         bb.addGlue();
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         diag.getContentPane().add(builder.getPanel(), BorderLayout.CENTER);
         diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);
         diag.pack();
 
         ok.addActionListener(new ActionListener() {
-           public void actionPerformed(ActionEvent e) {
-               // Check if the user tries to rename multiple fields:
-               if (rename.isSelected()) {
+            public void actionPerformed(ActionEvent e) {
+                // Check if the user tries to rename multiple fields:
+                if (rename.isSelected()) {
                     String[] fields = getFieldNames(field.getText());
-                   if (fields.length > 1) {
-                       JOptionPane.showMessageDialog(diag, Globals.lang("You can only rename one field at a time"),
-                               "", JOptionPane.ERROR_MESSAGE);
-                       return; // Do not close the dialog.
-                   }
-               }
+                    if (fields.length > 1) {
+                        JOptionPane.showMessageDialog(diag, Globals.lang("You can only rename one field at a time"),
+                                "", JOptionPane.ERROR_MESSAGE);
+                        return; // Do not close the dialog.
+                    }
+                }
                 cancelled = false;
                 diag.dispose();
             }
         });
 
         AbstractAction cancelAction = new AbstractAction() {
-                public void actionPerformed(ActionEvent e) {
-                    cancelled = true;
-                    diag.dispose();
-                }
-            };
+            public void actionPerformed(ActionEvent e) {
+                cancelled = true;
+                diag.dispose();
+            }
+        };
         cancel.addActionListener(cancelAction);
 
         // Key bindings:
@@ -165,46 +163,52 @@ public class MassSetFieldAction extends MnemonicAwareAction {
 
     private void prepareDialog(boolean selection) {
         selected.setEnabled(selection);
-        if (selection)
+        if (selection) {
             selected.setSelected(true);
-        else
+        } else {
             all.setSelected(true);
+        }
         // Make sure one of the following ones is selected:
-        if (!set.isSelected() && !clear.isSelected() && !rename.isSelected())
+        if (!set.isSelected() && !clear.isSelected() && !rename.isSelected()) {
             set.setSelected(true);
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
         BasePanel bp = frame.basePanel();
-        if (bp == null)
+        if (bp == null) {
             return;
+        }
         BibtexEntry[] entries = bp.getSelectedEntries();
         // Lazy creation of the dialog:
-        if (diag == null)
+        if (diag == null) {
             createDialog();
+        }
         cancelled = true;
         prepareDialog(entries.length > 0);
         Util.placeDialog(diag, frame);
         diag.setVisible(true);
-        if (cancelled)
+        if (cancelled) {
             return;
+        }
 
         Collection<BibtexEntry> entryList;
         // If all entries should be treated, change the entries array:
-        if (all.isSelected())
+        if (all.isSelected()) {
             entryList = bp.database().getEntries();
-        else
+        } else {
             entryList = Arrays.asList(entries);
+        }
         String toSet = text.getText();
-        if (toSet.length() == 0)
+        if (toSet.length() == 0) {
             toSet = null;
+        }
         String[] fields = getFieldNames(field.getText().trim().toLowerCase());
         NamedCompound ce = new NamedCompound(Globals.lang("Set field"));
         if (rename.isSelected()) {
             if (fields.length > 1) {
                 // TODO: message: can only rename a single field
-            }
-            else {
+            } else {
                 ce.addEdit(Util.massRenameField(entryList, fields[0], renameTo.getText(),
                         overwrite.isSelected()));
             }

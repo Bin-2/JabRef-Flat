@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Filename: $RCSfile$
 //  Purpose:  Atom representation.
@@ -34,11 +34,9 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
 ///////////////////////////////////////////////////////////////////////////////
-
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
-
 
 /**
  * Remove brackets formatter.
@@ -46,29 +44,24 @@ import net.sf.jabref.export.layout.LayoutFormatter;
  * @author $author$
  * @version $Revision$
  */
-public class RemoveBracketsAddComma implements LayoutFormatter
-{
+public class RemoveBracketsAddComma implements LayoutFormatter {
     //~ Methods ////////////////////////////////////////////////////////////////
 
-    public String format(String fieldText)
-    {
+    public String format(String fieldText) {
         String fieldEntry = fieldText;
         StringBuffer sb = new StringBuffer(fieldEntry.length());
 
-        for (int i = 0; i < fieldEntry.length(); i++)
-	    {
-		//System.out.print(fieldEntry.charAt(i));
-		if ((fieldEntry.charAt(i) != '{') && (fieldEntry.charAt(i) != '}'))
-		    {
-			//System.out.print(fieldEntry.charAt(i));
-			sb.append(fieldEntry.charAt(i));
-		    }
-		if (fieldEntry.charAt(i) == '}')
-		    {
-			sb.append(",");
-		    }
-	    }
-	
+        for (int i = 0; i < fieldEntry.length(); i++) {
+            //System.out.print(fieldEntry.charAt(i));
+            if ((fieldEntry.charAt(i) != '{') && (fieldEntry.charAt(i) != '}')) {
+                //System.out.print(fieldEntry.charAt(i));
+                sb.append(fieldEntry.charAt(i));
+            }
+            if (fieldEntry.charAt(i) == '}') {
+                sb.append(",");
+            }
+        }
+
         fieldEntry = sb.toString();
         return fieldEntry;
     }

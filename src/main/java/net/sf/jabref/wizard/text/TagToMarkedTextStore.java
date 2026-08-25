@@ -24,80 +24,82 @@
  http://www.gnu.org/copyleft/gpl.ja.html
 
  */
-
 // created by : r.nagel 06.10.2004
 //
 // function : save the textposition for tags in a recent TextInputDialog context
 //
 // modified :
-
-package net.sf.jabref.wizard.text ;
+package net.sf.jabref.wizard.text;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 
 import javax.swing.text.StyledDocument;
 
+public class TagToMarkedTextStore {
 
-public class TagToMarkedTextStore
-{
-  private class TMarkedStoreItem
-  {
-    int start ;
-    int end ;
-  }
+    private class TMarkedStoreItem {
 
-  private HashMap<String, LinkedList<TMarkedStoreItem>> tagMap ;
+        int start;
+        int end;
+    }
 
-  public TagToMarkedTextStore()
-  {
-    tagMap = new HashMap<String, LinkedList<TMarkedStoreItem>>(10) ;
-  }
+    private HashMap<String, LinkedList<TMarkedStoreItem>> tagMap;
 
-  /** appends a selection property for tag */
-	public void appendPosition(String tag, int start, int end) {
-		LinkedList<TMarkedStoreItem> ll = tagMap.get(tag);
-		if (ll == null) {
-			ll = new LinkedList<TMarkedStoreItem>();
-			tagMap.put(tag, ll);
-		}
+    public TagToMarkedTextStore() {
+        tagMap = new HashMap<String, LinkedList<TMarkedStoreItem>>(10);
+    }
 
-		TMarkedStoreItem item = new TMarkedStoreItem();
-		ll.add(item);
-		item.end = end;
-		item.start = start;
-	}
+    /**
+     * appends a selection property for tag
+     */
+    public void appendPosition(String tag, int start, int end) {
+        LinkedList<TMarkedStoreItem> ll = tagMap.get(tag);
+        if (ll == null) {
+            ll = new LinkedList<TMarkedStoreItem>();
+            tagMap.put(tag, ll);
+        }
 
-  /** insert selection propertie for tag, old entries were deleted */
-	public void insertPosition(String tag, int start, int end) {
-		LinkedList<TMarkedStoreItem> ll = tagMap.get(tag);
+        TMarkedStoreItem item = new TMarkedStoreItem();
+        ll.add(item);
+        item.end = end;
+        item.start = start;
+    }
 
-		if (ll == null) {
-			ll = new LinkedList<TMarkedStoreItem>();
-			tagMap.put(tag, ll);
-		} else {
-			ll.clear();
-		}
+    /**
+     * insert selection propertie for tag, old entries were deleted
+     */
+    public void insertPosition(String tag, int start, int end) {
+        LinkedList<TMarkedStoreItem> ll = tagMap.get(tag);
 
-		TMarkedStoreItem item = new TMarkedStoreItem();
-		ll.add(item);
-		item.end = end;
-		item.start = start;
-	}
+        if (ll == null) {
+            ll = new LinkedList<TMarkedStoreItem>();
+            tagMap.put(tag, ll);
+        } else {
+            ll.clear();
+        }
 
-  /** set the Style for the tag if an entry is available */
-	public void setStyleForTag(String tag, String style, StyledDocument doc) {
-		LinkedList<TMarkedStoreItem> ll = tagMap.get(tag);
+        TMarkedStoreItem item = new TMarkedStoreItem();
+        ll.add(item);
+        item.end = end;
+        item.start = start;
+    }
 
-		if (ll != null) {
-			// iterate over all saved selections
+    /**
+     * set the Style for the tag if an entry is available
+     */
+    public void setStyleForTag(String tag, String style, StyledDocument doc) {
+        LinkedList<TMarkedStoreItem> ll = tagMap.get(tag);
+
+        if (ll != null) {
+            // iterate over all saved selections
             for (TMarkedStoreItem item : ll) {
                 if (item != null) {
                     doc.setCharacterAttributes(item.start, item.end
                             - item.start, doc.getStyle(style), true);
                 }
             }
-		}
-	}
+        }
+    }
 
 }

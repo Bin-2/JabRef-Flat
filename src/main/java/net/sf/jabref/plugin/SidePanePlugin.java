@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.plugin;
 
 import net.sf.jabref.JabRefFrame;
@@ -22,16 +22,13 @@ import net.sf.jabref.SidePaneManager;
 import javax.swing.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: Nov 26, 2007
- * Time: 5:44:16 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: Nov 26, 2007 Time: 5:44:16 PM To
+ * change this template use File | Settings | File Templates.
  */
 public interface SidePanePlugin {
 
     public void init(JabRefFrame frame, SidePaneManager manager);
-    
+
     public SidePaneComponent getSidePaneComponent();
 
     public JMenuItem getMenuItem();

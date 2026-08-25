@@ -91,9 +91,9 @@ public class IntegrityCheck {
     }
 
     /**
-     * fills the class List (of IntegrityMessage Objects) which did inform
-     * about failures, hints.... The Authors or Editors field could be invalid
-     * -> try to detect it! Knuth, Donald E. and Kurt Cobain and A. Einstein =
+     * fills the class List (of IntegrityMessage Objects) which did inform about
+     * failures, hints.... The Authors or Editors field could be invalid -> try
+     * to detect it! Knuth, Donald E. and Kurt Cobain and A. Einstein =
      * N,NNaNNaNN
      */
     private void authorNameCheck(String names, String fieldName, BibtexEntry entry) {

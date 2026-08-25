@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import java.util.List;
@@ -22,17 +22,19 @@ import net.sf.jabref.export.layout.*;
 
 public class RisKeywords implements LayoutFormatter {
 
-	public String format(String s) {
-		if (s == null)
-			return "";
-		StringBuilder sb = new StringBuilder();
-		List<String> keywords = Util.getSeparatedKeywords(s);
-		for (int i=0; i<keywords.size(); i++) {
-			sb.append("KW  - ");
-			sb.append(keywords.get(i));
-			if (i < keywords.size()-1)
-				sb.append(Globals.NEWLINE);
-		}
-		return sb.toString();
-	}
+    public String format(String s) {
+        if (s == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        List<String> keywords = Util.getSeparatedKeywords(s);
+        for (int i = 0; i < keywords.size(); i++) {
+            sb.append("KW  - ");
+            sb.append(keywords.get(i));
+            if (i < keywords.size() - 1) {
+                sb.append(Globals.NEWLINE);
+            }
+        }
+        return sb.toString();
+    }
 }

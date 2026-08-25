@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
@@ -30,11 +30,11 @@ import ca.odell.glazedlists.EventList;
 
 public class GlazedEntrySorter implements DatabaseChangeListener {
 
-	EventList<BibtexEntry> list;
+    EventList<BibtexEntry> list;
 
     String[] idArray;
     BibtexEntry[] entryArray;
-    
+
     public GlazedEntrySorter(Map<String, BibtexEntry> entries) {
         list = new BasicEventList<BibtexEntry>();
         list.getReadWriteLock().writeLock().lock();
@@ -46,7 +46,7 @@ public class GlazedEntrySorter implements DatabaseChangeListener {
         // Sort the list so it is ordered according to creation (or read) order
         // when the table is unsorted.
         Collections.sort(list, new IdComparator());
-        
+
         list.getReadWriteLock().writeLock().unlock();
 
     }
@@ -64,15 +64,14 @@ public class GlazedEntrySorter implements DatabaseChangeListener {
         } else if (e.getType() == DatabaseChangeEvent.ChangeType.CHANGED_ENTRY) {
             int index = list.indexOf(e.getEntry());
             if (index != -1) {
-            	// SpecialFieldUtils.syncSpecialFieldsFromKeywords update an entry during
-            	// DatabaseChangeEvent.ADDED_ENTRY
-            	// thus, 
-            	list.set(index, e.getEntry());
+                // SpecialFieldUtils.syncSpecialFieldsFromKeywords update an entry during
+                // DatabaseChangeEvent.ADDED_ENTRY
+                // thus, 
+                list.set(index, e.getEntry());
             }
         }
         list.getReadWriteLock().writeLock().unlock();
 
     }
-
 
 }

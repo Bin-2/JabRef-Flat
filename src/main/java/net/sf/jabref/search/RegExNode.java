@@ -12,21 +12,24 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.search;
 
 import antlr.CommonAST;
 import java.util.regex.Pattern;
 
 public class RegExNode extends CommonAST {
-	private Pattern pattern = null;
-	public RegExNode(int tokenType, String text, boolean caseSensitive, boolean regex) {
-		initialize(tokenType,text);
-		pattern = Pattern.compile(
-			regex ? text : "\\Q" + text + "\\E", // quote if !regex
-			caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
-	}
-	public Pattern getPattern() {
-		return pattern;
-	}
+
+    private Pattern pattern = null;
+
+    public RegExNode(int tokenType, String text, boolean caseSensitive, boolean regex) {
+        initialize(tokenType, text);
+        pattern = Pattern.compile(
+                regex ? text : "\\Q" + text + "\\E", // quote if !regex
+                caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
+    }
+
+    public Pattern getPattern() {
+        return pattern;
+    }
 }

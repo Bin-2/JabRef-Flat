@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.io.InputStream;
@@ -38,7 +38,7 @@ public class JstorImporter extends ImportFormat {
      * Return the name of this import format.
      */
     public String getFormatName() {
-    return "JStor (tab delimited)";
+        return "JStor (tab delimited)";
     }
 
     /*
@@ -46,14 +46,14 @@ public class JstorImporter extends ImportFormat {
      * @see net.sf.jabref.imports.ImportFormat#getCLIId()
      */
     public String getCLIId() {
-      return "jstor";
+        return "jstor";
     }
-    
+
     /**
      * Check whether the source is in the correct format for this importer.
      */
     public boolean isRecognizedFormat(InputStream in) throws IOException {
-    return true;
+        return true;
     }
 
     /**
@@ -61,20 +61,27 @@ public class JstorImporter extends ImportFormat {
      * objects.
      */
     public List<BibtexEntry> importEntries(InputStream stream, OutputPrinter status) throws IOException {
-    ArrayList<BibtexEntry> bibitems = new ArrayList<BibtexEntry>();
-    String s = "";
-    BufferedReader in = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
-    while ((s != null) && !s.startsWith("Item Type"))
-        s = in.readLine();
+        ArrayList<BibtexEntry> bibitems = new ArrayList<BibtexEntry>();
+        String s = "";
+        BufferedReader in = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
+        while ((s != null) && !s.startsWith("Item Type")) {
+            s = in.readLine();
+        }
 
         while ((s = in.readLine()) != null) {
-            if (s.equals("")) continue;
-            if (s.startsWith("-----------------------------")) break;
+            if (s.equals("")) {
+                continue;
+            }
+            if (s.startsWith("-----------------------------")) {
+                break;
+            }
             String[] fields = s.split("\t");
             BibtexEntry be = new BibtexEntry(Util.createNeutralId());
             try {
-                if (fields[0].equals("FLA")) be.setType(BibtexEntryType
-                        .getType("article"));
+                if (fields[0].equals("FLA")) {
+                    be.setType(BibtexEntryType
+                            .getType("article"));
+                }
                 ImportFormatReader.setIfNecessary(be, "title", fields[2]);
                 ImportFormatReader.setIfNecessary(be, "author", AuthorList.fixAuthor_lastNameFirst(fields[4].replaceAll("; ", " and ")));
                 ImportFormatReader.setIfNecessary(be, "journal", fields[7]);
@@ -83,8 +90,9 @@ public class JstorImporter extends ImportFormat {
                 String[] datefield = fields[12].split(" ");
                 ImportFormatReader.setIfNecessary(be, "year", datefield[datefield.length - 1]);
                 if (datefield.length > 1) {
-                    if (datefield[0].endsWith(","))
+                    if (datefield[0].endsWith(",")) {
                         datefield[0] = datefield[0].substring(0, datefield[0].length() - 1);
+                    }
                     ImportFormatReader.setIfNecessary(be, "month", datefield[0]);
                 }
                 //for (int i=0; i<fields.length; i++)
@@ -100,7 +108,7 @@ public class JstorImporter extends ImportFormat {
             bibitems.add(be);
         }
 
-    return bibitems;
+        return bibitems;
 
     }
 }

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.io.IOException;
@@ -26,40 +26,40 @@ import net.sf.jabref.util.XMPUtil;
 
 /**
  * Wraps the XMPUtility function to be used as an ImportFormat.
- * 
+ *
  * @author $Author$
  * @version $Revision$ ($Date$)
- * 
+ *
  */
 public class PdfXmpImporter extends ImportFormat {
 
-	public String getFormatName() {
-		return Globals.lang("XMP-annotated PDF");
-	}
+    public String getFormatName() {
+        return Globals.lang("XMP-annotated PDF");
+    }
 
-	/**
-	 * Returns a list of all BibtexEntries found in the inputstream.
-	 */
-	public List<BibtexEntry> importEntries(InputStream in, OutputPrinter status) throws IOException {
-		return XMPUtil.readXMP(in);
-	}
+    /**
+     * Returns a list of all BibtexEntries found in the inputstream.
+     */
+    public List<BibtexEntry> importEntries(InputStream in, OutputPrinter status) throws IOException {
+        return XMPUtil.readXMP(in);
+    }
 
-	/**
-	 * Returns whether the given stream contains data that is a.) a pdf and b.)
-	 * contains at least one BibtexEntry.
-	 */
+    /**
+     * Returns whether the given stream contains data that is a.) a pdf and b.)
+     * contains at least one BibtexEntry.
+     */
     @Override
-	public boolean isRecognizedFormat(InputStream in) throws IOException {
-		return XMPUtil.hasMetadata(in);
-	}
+    public boolean isRecognizedFormat(InputStream in) throws IOException {
+        return XMPUtil.hasMetadata(in);
+    }
 
-	/**
-	 * String used to identify this import filter on the command line.
-	 * 
-	 * @return "xmp"
-	 */
-	public String getCLIid() {
-		return "xmp";
-	}
+    /**
+     * String used to identify this import filter on the command line.
+     *
+     * @return "xmp"
+     */
+    public String getCLIid() {
+        return "xmp";
+    }
 
 }

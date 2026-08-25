@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.AbstractParamLayoutFormatter;
@@ -23,29 +23,30 @@ import net.sf.jabref.export.layout.AbstractParamLayoutFormatter;
  * empty string is output (the prefix and postfix are not output in this case).
  *
  * The formatter requires an argument containing the prefix and postix separated
- * by a comma. To include a the comma character in either, use an escape sequence
- * (\,).
+ * by a comma. To include a the comma character in either, use an escape
+ * sequence (\,).
  */
 public class WrapContent extends AbstractParamLayoutFormatter {
 
-    
     private String before = null, after = null;
 
-
     public void setArgument(String arg) {
-	String[] parts = parseArgument(arg);
-        if (parts.length < 2)
-	   return;
+        String[] parts = parseArgument(arg);
+        if (parts.length < 2) {
+            return;
+        }
         before = parts[0];
         after = parts[1];
     }
 
     public String format(String fieldText) {
-	if (before == null)
-	    return "";
-    	if (fieldText.length() == 0)
-	    return "";
-	else
-	    return before + fieldText + after;
+        if (before == null) {
+            return "";
+        }
+        if (fieldText.length() == 0) {
+            return "";
+        } else {
+            return before + fieldText + after;
+        }
     }
 }

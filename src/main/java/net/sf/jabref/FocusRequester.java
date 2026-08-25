@@ -12,29 +12,32 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import javax.swing.SwingUtilities;
 import java.awt.Component;
 
 public class FocusRequester implements Runnable {
+
     private Component comp;
 
     public FocusRequester(Component comp) {
-       if (comp == null)
-               Thread.dumpStack();
+        if (comp == null) {
+            Thread.dumpStack();
+        }
 
         //System.out.println("FocusRequester: "+comp.toString());
-	this.comp = comp;
-	try {
-	    SwingUtilities.invokeLater(this);
-	} catch(Exception e) {
-	    e.printStackTrace();
-	}
+        this.comp = comp;
+        try {
+            SwingUtilities.invokeLater(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
+
     public void run() {
 
-    comp.requestFocus();
+        comp.requestFocus();
     }
 }

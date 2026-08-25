@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 import net.sf.jabref.BibtexEntry;
@@ -28,9 +28,9 @@ import java.util.Comparator;
 public class AlphanumericComparator implements Comparator<BibtexEntry> {
 
     FieldComparator authComp = new FieldComparator("author"),
-        editorComp = new FieldComparator("editor"),
-        yearComp = new FieldComparator("year"),
-        titleComp = new FieldComparator("title");
+            editorComp = new FieldComparator("editor"),
+            yearComp = new FieldComparator("year"),
+            titleComp = new FieldComparator("title");
 
     public AlphanumericComparator() {
 
@@ -39,35 +39,40 @@ public class AlphanumericComparator implements Comparator<BibtexEntry> {
     public int compare(BibtexEntry o1, BibtexEntry o2) {
         // Author as first criterion:
         int comp = authComp.compare(o1, o2);
-        if (comp != 0)
+        if (comp != 0) {
             return comp;
+        }
         // Editor as second criterion:
         comp = editorComp.compare(o1, o2);
-        if (comp != 0)
+        if (comp != 0) {
             return comp;
+        }
         // Year as next criterion:
         comp = yearComp.compare(o1, o2);
-        if (comp != 0)
+        if (comp != 0) {
             return comp;
+        }
         // Title as next criterion:
         comp = titleComp.compare(o1, o2);
-        if (comp != 0)
+        if (comp != 0) {
             return comp;
+        }
         // Bibtex key as next criterion:
         return compare(o1.getCiteKey(), o2.getCiteKey());
-
 
     }
 
     private int compare(String k1, String k2) {
         if (k1 != null) {
-            if (k2 != null)
+            if (k2 != null) {
                 return k1.compareTo(k2);
-            else
+            } else {
                 return 1;
-        }
-        else if (k2 != null)
+            }
+        } else if (k2 != null) {
             return -1;
-        else return 0;
+        } else {
+            return 0;
+        }
     }
 }

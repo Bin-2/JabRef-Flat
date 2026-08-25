@@ -22,7 +22,7 @@
 
  Further information about the GNU GPL is available at:
  http://www.gnu.org/copyleft/gpl.ja.html
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import java.util.Date;
@@ -30,30 +30,30 @@ import java.text.SimpleDateFormat;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
 
-
 /**
  * Inserts the current date (the time a database is being exported).
- * 
- * <p>If a fieldText is given, it must be a valid {@link SimpleDateFormat} pattern.
- * If none is given, the format pattern will be <code>yyyy.MM.dd hh:mm:ss z</code></p>
+ *
+ * <p>
+ * If a fieldText is given, it must be a valid {@link SimpleDateFormat} pattern.
+ * If none is given, the format pattern will be
+ * <code>yyyy.MM.dd hh:mm:ss z</code></p>
  *
  * @author andreas_sf at rudert-home dot de
  * @version $Revision$
  */
-public class CurrentDate implements LayoutFormatter
-{
+public class CurrentDate implements LayoutFormatter {
+
     private static final String defaultFormat = "yyyy.MM.dd hh:mm:ss z";
-    
+
     /*
      *  (non-Javadoc)
      * @see net.sf.jabref.export.layout.LayoutFormatter#format(java.lang.String)
-     */ 
-    public String format(String fieldText)
-    {
-      String format = defaultFormat;
-      if (fieldText != null && !"".equals(fieldText.trim())) {
-        format = fieldText;
-      }
-      return new SimpleDateFormat(format).format(new Date());
+     */
+    public String format(String fieldText) {
+        String format = defaultFormat;
+        if (fieldText != null && !"".equals(fieldText.trim())) {
+            format = fieldText;
+        }
+        return new SimpleDateFormat(format).format(new Date());
     }
 }

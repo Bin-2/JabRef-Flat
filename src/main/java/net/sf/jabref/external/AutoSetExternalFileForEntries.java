@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.awt.BorderLayout;
@@ -33,9 +33,9 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * This action goes through all selected entries in the BasePanel, and attempts to autoset the
- * given external file (pdf, ps, ...) based on the same algorithm used for the "Auto" button in
- * EntryEditor.
+ * This action goes through all selected entries in the BasePanel, and attempts
+ * to autoset the given external file (pdf, ps, ...) based on the same algorithm
+ * used for the "Auto" button in EntryEditor.
  */
 public class AutoSetExternalFileForEntries extends AbstractWorker {
 
@@ -44,14 +44,13 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
     private BibtexEntry[] sel = null;
     private OptionsDialog optDiag = null;
 
-    Object[] brokenLinkOptions =
-            {Globals.lang("Ignore"), Globals.lang("Assign new file"), Globals.lang("Clear field"),
-                    Globals.lang("Quit synchronization")};
+    Object[] brokenLinkOptions
+            = {Globals.lang("Ignore"), Globals.lang("Assign new file"), Globals.lang("Clear field"),
+                Globals.lang("Quit synchronization")};
 
     private boolean goOn = true, autoSet = true, overWriteAllowed = true, checkExisting = true;
 
     private int entriesChanged = 0, brokenLinks = 0;
-
 
     public AutoSetExternalFileForEntries(BasePanel panel, String fieldName) {
         this.fieldName = fieldName;
@@ -60,12 +59,13 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
 
     public void init() {
 
-    	Collection<BibtexEntry> col = panel.database().getEntries();
+        Collection<BibtexEntry> col = panel.database().getEntries();
         sel = col.toArray(new BibtexEntry[col.size()]);
 
         // Ask about rules for the operation:
-        if (optDiag == null)
+        if (optDiag == null) {
             optDiag = new OptionsDialog(panel.frame(), fieldName);
+        }
         Util.placeDialog(optDiag, panel.frame());
         optDiag.setVisible(true);
         if (optDiag.canceled()) {
@@ -111,18 +111,19 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
 
                 final String old = aSel.getField(fieldName);
                 // Check if a extension is already set, and if so, if we are allowed to overwrite it:
-                if ((old != null) && !old.equals("") && !overWriteAllowed)
+                if ((old != null) && !old.equals("") && !overWriteAllowed) {
                     continue;
+                }
                 extPan.setEntry(aSel, panel.getDatabase());
                 editor.setText((old != null) ? old : "");
                 Thread t = extPan.autoSetFile(fieldName, editor);
                 // Wait for the autoset process to finish:
                 if (t != null)
                     try {
-                        t.join();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    t.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 // If something was found, entriesChanged it:
                 if (!editor.getText().equals("") && !editor.getText().equals(old)) {
                     // Store an undo edit:
@@ -147,8 +148,8 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
 
                     if ((file == null) || !file.exists()) {
 
-                        int answer =
-                                JOptionPane.showOptionDialog(panel.frame(),
+                        int answer
+                                = JOptionPane.showOptionDialog(panel.frame(),
                                         Globals.lang("<HTML>Could not find file '%0'<BR>linked from entry '%1'</HTML>",
                                                 new String[]{old, aSel.getCiteKey()}),
                                         Globals.lang("Broken link"),
@@ -192,10 +193,10 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
         }
     }
 
-
     public void update() {
-        if (!goOn)
+        if (!goOn) {
             return;
+        }
 
         panel.output(Globals.lang("Finished synchronizing %0 links. Entries changed%c %1.",
                 new String[]{fieldName.toUpperCase(), String.valueOf(entriesChanged)}));
@@ -206,6 +207,7 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
     }
 
     class OptionsDialog extends JDialog {
+
         JRadioButton autoSetUnset, autoSetAll, autoSetNone;
         JCheckBox checkLinks;
         JButton ok = new JButton(Globals.lang("Ok")),
@@ -231,7 +233,6 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
                 }
             };
 
-
             cancel.addActionListener(closeAction);
 
             InputMap im = cancel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
@@ -250,10 +251,10 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
             bg.add(autoSetAll);
             FormLayout layout = new FormLayout("fill:pref", "");
             DefaultFormBuilder builder = new DefaultFormBuilder(layout);
-            description = new JLabel("<HTML>" +
-                    Globals.lang(//"This function helps you keep your external %0 links up-to-date." +
+            description = new JLabel("<HTML>"
+                    + Globals.lang(//"This function helps you keep your external %0 links up-to-date." +
                             "Attempt to autoset %0 links for your entries. Autoset works if "
-                                    + "a %0 file in your %0 directory or a subdirectory<BR>is named identically to an entry's BibTeX key, plus extension.", fn)
+                            + "a %0 file in your %0 directory or a subdirectory<BR>is named identically to an entry's BibTeX key, plus extension.", fn)
                     + "</HTML>");
             //            name.setVerticalAlignment(JLabel.TOP);
             builder.appendSeparator(Globals.lang("Autoset"));
@@ -267,15 +268,14 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
             builder.nextLine();
             builder.appendSeparator(Globals.lang("Check links"));
 
-            description = new JLabel("<HTML>" +
-                    Globals.lang("This makes JabRef look up each %0 link and check if the file exists. If not, you will be given options<BR>to resolve the problem.", fn)
+            description = new JLabel("<HTML>"
+                    + Globals.lang("This makes JabRef look up each %0 link and check if the file exists. If not, you will be given options<BR>to resolve the problem.", fn)
                     + "</HTML>");
             builder.append(description);
             builder.nextLine();
             builder.append(checkLinks);
             builder.nextLine();
             builder.appendSeparator();
-
 
             JPanel main = builder.getPanel();
             main.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -292,8 +292,9 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
         }
 
         public void setVisible(boolean visible) {
-            if (visible)
+            if (visible) {
                 canceled = true;
+            }
 
             String[] dirs = panel.metaData().getFileDirectory(fieldName);
 

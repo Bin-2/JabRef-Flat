@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.undo;
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -24,9 +24,9 @@ import net.sf.jabref.Util;
 
 /**
  * This class represents the removal of an entry. The constructor needs
- * references to the database, the entry, and the map of open entry editors.
- * The latter to be able to close the entry's editor if it is opened before
- * the insert is undone.
+ * references to the database, the entry, and the map of open entry editors. The
+ * latter to be able to close the entry's editor if it is opened before the
+ * insert is undone.
  */
 public class UndoableInsertEntry extends AbstractUndoableEdit {
 
@@ -35,18 +35,18 @@ public class UndoableInsertEntry extends AbstractUndoableEdit {
     private BasePanel panel;
 
     public UndoableInsertEntry(BibtexDatabase base, BibtexEntry entry,
-			       BasePanel panel) {
+            BasePanel panel) {
         this.base = base;
         this.entry = entry;
         this.panel = panel;
     }
 
     public String getUndoPresentationName() {
-	    return "Undo: insert entry";
+        return "Undo: insert entry";
     }
 
     public String getRedoPresentationName() {
-	    return "Redo: insert entry";
+        return "Redo: insert entry";
     }
 
     public void undo() {
@@ -58,7 +58,7 @@ public class UndoableInsertEntry extends AbstractUndoableEdit {
             // If the entry has an editor currently open, we must close it.
             panel.ensureNotShowing(entry);
         } catch (Throwable ex) {
-              ex.printStackTrace();
+            ex.printStackTrace();
         }
     }
 
@@ -67,14 +67,12 @@ public class UndoableInsertEntry extends AbstractUndoableEdit {
 
         // Redo the change.
         try {
-              String id = Util.createNeutralId();
+            String id = Util.createNeutralId();
             entry.setId(id);
             base.insertEntry(entry);
         } catch (Throwable ex) {
-              ex.printStackTrace();
+            ex.printStackTrace();
         }
     }
-
-
 
 }

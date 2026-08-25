@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.util.ArrayList;
@@ -36,16 +36,17 @@ import ca.odell.glazedlists.BasicEventList;
 import ca.odell.glazedlists.SortedList;
 
 /**
- * @author Morten O. Alver.
- * Based on net.sf.jabref.MODSDatabase by Michael Wrighton
+ * @author Morten O. Alver. Based on net.sf.jabref.MODSDatabase by Michael
+ * Wrighton
  *
  */
 public class OpenDocumentRepresentation {
+
     protected Collection<BibtexEntry> entries;
     private BibtexDatabase database;
 
     @SuppressWarnings("unchecked")
-	public OpenDocumentRepresentation(BibtexDatabase database, Set<String> keySet) {
+    public OpenDocumentRepresentation(BibtexDatabase database, Set<String> keySet) {
         this.database = database;
         // Make a list of comparators for sorting the entries:
         List<FieldComparator> comparators = new ArrayList<FieldComparator>();
@@ -57,15 +58,17 @@ public class OpenDocumentRepresentation {
 
         // Set up a list of all entries, if keySet==null, or the entries whose
         // ids are in keySet, otherwise:
-        if (keySet == null)
+        if (keySet == null) {
             entryList.addAll(database.getEntries());
-        else {
-            for (String key : keySet)
+        } else {
+            for (String key : keySet) {
                 entryList.add(database.getEntryById(key));
+            }
         }
 
         entries = new SortedList(entryList, new FieldComparatorStack(comparators));
     }
+
     public Document getDOMrepresentation() {
         Document result = null;
         try {
@@ -153,7 +156,7 @@ public class OpenDocumentRepresentation {
             addTableCell(result, row, "ISBN");
             table.appendChild(row);
 
-            for(BibtexEntry e : entries){
+            for (BibtexEntry e : entries) {
                 row = result.createElement("table:table-row");
                 addTableCell(result, row, getField(e, BibtexFields.KEY_FIELD));
                 addTableCell(result, row, new GetOpenOfficeType().format(e.getType().getName()));
@@ -217,8 +220,8 @@ public class OpenDocumentRepresentation {
     protected void addTableCell(Document doc, Element parent, String content) {
         Element cell = doc.createElement("table:table-cell"),
                 text = doc.createElement("text:p");
-    Text textNode = doc.createTextNode(content);
-    text.appendChild(textNode);
+        Text textNode = doc.createTextNode(content);
+        text.appendChild(textNode);
         //text.setTextContent(content);
         cell.appendChild(text);
         parent.appendChild(cell);

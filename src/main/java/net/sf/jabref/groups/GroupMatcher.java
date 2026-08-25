@@ -12,15 +12,15 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import ca.odell.glazedlists.matchers.Matcher;
 import net.sf.jabref.BibtexEntry;
 
 /**
- * Matcher for filtering or sorting the table according to whether entries
- * are tagged as group matches.
+ * Matcher for filtering or sorting the table according to whether entries are
+ * tagged as group matches.
  */
 public class GroupMatcher implements Matcher<BibtexEntry> {
 

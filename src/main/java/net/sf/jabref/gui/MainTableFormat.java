@@ -86,8 +86,8 @@ public class MainTableFormat implements TableFormat<BibtexEntry>, ThemeAwareComp
     private boolean[][] nameColumnLookup = null;
     private final HashMap<Icon, JLabel> multipleLinkIconCache = new HashMap<>();
     private static final int FILE_FIELD_CACHE_SIZE = 2048;
-    private final LinkedHashMap<String, FileFieldInfo> fileFieldInfoCache =
-            new LinkedHashMap<String, FileFieldInfo>(256, 0.75f, true) {
+    private final LinkedHashMap<String, FileFieldInfo> fileFieldInfoCache
+            = new LinkedHashMap<String, FileFieldInfo>(256, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, FileFieldInfo> eldest) {
             return size() > FILE_FIELD_CACHE_SIZE;

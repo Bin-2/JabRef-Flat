@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
@@ -20,20 +20,20 @@ import net.sf.jabref.AuthorList;
 
 /**
  * Duplicate of AuthorLastFirstAbbreviator.
- * 
+ *
  * @see AuthorLastFirstAbbreviator
- * 
+ *
  * @author Carlos Silla
  */
 public class AuthorAbbreviator implements LayoutFormatter {
 
-	/*
+    /*
 	 * (non-Javadoc)
 	 * 
 	 * @see net.sf.jabref.export.layout.LayoutFormatter#format(java.lang.String)
-	 */
-	public String format(String fieldText) {
+     */
+    public String format(String fieldText) {
         AuthorList list = AuthorList.getAuthorList(fieldText);
         return list.getAuthorsLastFirstAnds(true);
-	}
+    }
 }

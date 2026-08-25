@@ -71,7 +71,6 @@ public class JabRefCLI {
         return cl.getOptionValue("prdef");
     }
 
-
     public boolean isFileExport() {
         return cl.hasOption("output");
     }

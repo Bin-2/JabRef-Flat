@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.io.IOException;
@@ -25,11 +25,11 @@ import com.jgoodies.forms.layout.FormLayout;
 
 public class PushToWinEdt implements PushToApplication {
 
-    private boolean couldNotCall=false;
-    private boolean notDefined=false;
+    private boolean couldNotCall = false;
+    private boolean notDefined = false;
     private JPanel settings = null;
     private JTextField winEdtPath = new JTextField(30),
-        citeCommand = new JTextField(30);
+            citeCommand = new JTextField(30);
 
     public String getName() {
         return Globals.lang("Insert selected citations into WinEdt");
@@ -63,29 +63,25 @@ public class PushToWinEdt implements PushToApplication {
         }
 
         try {
-            Runtime.getRuntime().exec(new String[] {winEdt, "\"[InsText('" + Globals.prefs.get("citeCommandWinEdt") + "{" + keyString.replaceAll("'", "''") + "}');]\""});
+            Runtime.getRuntime().exec(new String[]{winEdt, "\"[InsText('" + Globals.prefs.get("citeCommandWinEdt") + "{" + keyString.replaceAll("'", "''") + "}');]\""});
 
-        }
-
-        catch (IOException excep) {
+        } catch (IOException excep) {
             couldNotCall = true;
             excep.printStackTrace();
         }
-
 
     }
 
     public void operationCompleted(BasePanel panel) {
         if (notDefined) {
-            panel.output(Globals.lang("Error") + ": "+
-                    Globals.lang("Path to %0 not defined", getApplicationName())+".");
-        }
-        else if (couldNotCall) {
+            panel.output(Globals.lang("Error") + ": "
+                    + Globals.lang("Path to %0 not defined", getApplicationName()) + ".");
+        } else if (couldNotCall) {
             panel.output(Globals.lang("Error") + ": " + Globals.lang("Could not call executable") + " '"
-                    +Globals.prefs.get("winEdtPath") + "'.");
-        }
-        else
+                    + Globals.prefs.get("winEdtPath") + "'.");
+        } else {
             Globals.lang("Pushed citations to WinEdt");
+        }
     }
 
     public boolean requiresBibtexKeys() {
@@ -93,8 +89,9 @@ public class PushToWinEdt implements PushToApplication {
     }
 
     public JPanel getSettingsPanel() {
-        if (settings == null)
+        if (settings == null) {
             initSettingsPanel();
+        }
         winEdtPath.setText(Globals.prefs.get("winEdtPath"));
         citeCommand.setText(Globals.prefs.get("citeCommandWinEdt"));
         return settings;

@@ -12,43 +12,43 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.autocompleter;
 
 import net.sf.jabref.BibtexEntry;
 
 /**
  * Stores the full original value of one field of the given BibtexEntries.
- * 
+ *
  * @author kahlert, cordes
- * 
+ *
  */
 public class EntireFieldAutoCompleter extends AbstractAutoCompleter {
 
-	public String _fieldName;
+    public String _fieldName;
 
-	/**
-	 * @see AutoCompleterFactory
-	 */
-	protected EntireFieldAutoCompleter(String fieldName) {
-		_fieldName = fieldName;
-	}
+    /**
+     * @see AutoCompleterFactory
+     */
+    protected EntireFieldAutoCompleter(String fieldName) {
+        _fieldName = fieldName;
+    }
 
-	public boolean isSingleUnitField() {
-		return true;
-	}
+    public boolean isSingleUnitField() {
+        return true;
+    }
 
-	public String[] complete(String s) {
-		return super.complete(s);
-	}
+    public String[] complete(String s) {
+        return super.complete(s);
+    }
 
-	@Override
-	public void addBibtexEntry(BibtexEntry entry) {
-		if (entry != null) {
-			String fieldValue = entry.getField(_fieldName);
-			if (fieldValue != null) {
-				addWordToIndex(fieldValue.trim());
-			}
-		}
-	}
+    @Override
+    public void addBibtexEntry(BibtexEntry entry) {
+        if (entry != null) {
+            String fieldValue = entry.getField(_fieldName);
+            if (fieldValue != null) {
+                addWordToIndex(fieldValue.trim());
+            }
+        }
+    }
 }

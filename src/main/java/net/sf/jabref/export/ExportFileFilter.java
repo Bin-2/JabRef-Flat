@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import javax.swing.filechooser.FileFilter;
@@ -23,29 +23,31 @@ import java.io.File;
  * export to. Contains a reference to the ExportFormat in question.
  */
 public class ExportFileFilter extends FileFilter implements Comparable<ExportFileFilter> {
+
     private IExportFormat format;
     private String extension, name;
 
     public ExportFileFilter(IExportFormat format, String extension) {
-		this.format = format;
-		this.extension = extension;
-		this.name = format.getDisplayName() + " (*" + extension
-				+ ")";
-	}
+        this.format = format;
+        this.extension = extension;
+        this.name = format.getDisplayName() + " (*" + extension
+                + ")";
+    }
 
     public IExportFormat getExportFormat() {
         return format;
     }
-    
-    public String getExtension(){
-    	return extension;
+
+    public String getExtension() {
+        return extension;
     }
 
     public boolean accept(File file) {
-        if (file.isDirectory())
+        if (file.isDirectory()) {
             return true;
-        else
+        } else {
             return file.getPath().toLowerCase().endsWith(extension);
+        }
     }
 
     public String getDescription() {

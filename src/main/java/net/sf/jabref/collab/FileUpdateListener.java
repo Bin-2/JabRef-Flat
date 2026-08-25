@@ -12,19 +12,20 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.collab;
 
 public interface FileUpdateListener {
 
-  /**
-   * The file has been updated. A new call will not result until the file has been modified again.
-   */
-  public void fileUpdated();
+    /**
+     * The file has been updated. A new call will not result until the file has
+     * been modified again.
+     */
+    public void fileUpdated();
 
-  /**
-   * The file does no longer exist.
-   */
-  public void fileRemoved();
+    /**
+     * The file does no longer exist.
+     */
+    public void fileRemoved();
 
 }

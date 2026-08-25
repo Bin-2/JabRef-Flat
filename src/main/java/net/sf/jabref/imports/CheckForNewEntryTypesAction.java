@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.util.Arrays;
@@ -34,8 +34,9 @@ public class CheckForNewEntryTypesAction implements PostOpenAction {
         // See if any custom entry types were imported, but disregard those we already know:
         for (Iterator<String> i = pr.getEntryTypes().keySet().iterator(); i.hasNext();) {
             String typeName = (i.next()).toLowerCase();
-            if (BibtexEntryType.ALL_TYPES.get(typeName) != null)
+            if (BibtexEntryType.ALL_TYPES.get(typeName) != null) {
                 i.remove();
+            }
         }
         return pr.getEntryTypes().size() > 0;
     }
@@ -51,14 +52,14 @@ public class CheckForNewEntryTypesAction implements PostOpenAction {
         String s = sb.toString();
         int answer = JOptionPane.showConfirmDialog(panel.frame(),
                 s.substring(0, s.length() - 2) + ".\n"
-                        + Globals.lang("Remember these entry types?"),
+                + Globals.lang("Remember these entry types?"),
                 Globals.lang("Custom entry types"),
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
-        
+
         if (answer == JOptionPane.YES_OPTION) {
             // Import
-            for (BibtexEntryType typ : pr.getEntryTypes().values()){
+            for (BibtexEntryType typ : pr.getEntryTypes().values()) {
                 BibtexEntryType.ALL_TYPES.put(typ.getName().toLowerCase(), typ);
             }
 

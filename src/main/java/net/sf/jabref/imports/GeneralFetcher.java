@@ -239,7 +239,6 @@ public class GeneralFetcher extends SidePaneComponent implements ActionListener 
 //            return GUIGlobals.getImageIcon("helpSmall");
 //        }
 //    }
-
     public void setHelpResourceOwner(Class c) {
         help.setResourceOwner(c);
     }

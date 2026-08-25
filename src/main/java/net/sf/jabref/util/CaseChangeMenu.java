@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.util;
 
 /* Mp3dings - manage mp3 meta-information
@@ -33,7 +33,6 @@ package net.sf.jabref.util;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 import net.sf.jabref.Globals;
 
 import javax.swing.JMenu;
@@ -42,17 +41,17 @@ import javax.swing.text.JTextComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-
 public class CaseChangeMenu extends JMenu {
+
     private JTextComponent parent;
 
-    public CaseChangeMenu(JTextComponent opener){
+    public CaseChangeMenu(JTextComponent opener) {
         /* case */
         super(Globals.lang("Change case"));
         parent = opener;
 
         // create menu items, one for each case changer
-        for(final CaseChangers.CaseChanger caseChanger : CaseChangers.ALL) {
+        for (final CaseChangers.CaseChanger caseChanger : CaseChangers.ALL) {
             JMenuItem menuItem = new JMenuItem(Globals.lang(caseChanger.getName()));
             menuItem.addActionListener(new ActionListener() {
                 @Override

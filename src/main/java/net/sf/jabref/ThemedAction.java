@@ -27,8 +27,8 @@ public abstract class ThemedAction extends AbstractAction {
     }
 
     /**
-     * Called automatically when the theme changes.
-     * Subclasses can override this to add more custom logic.
+     * Called automatically when the theme changes. Subclasses can override this
+     * to add more custom logic.
      */
     public void onThemeChanged() {
         // System.out.println("onThemeChanged");

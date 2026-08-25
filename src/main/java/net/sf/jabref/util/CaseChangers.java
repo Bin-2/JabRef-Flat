@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.util;
 
 /* Mp3dings - manage mp3 meta-information
@@ -33,7 +33,6 @@ package net.sf.jabref.util;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 import net.sf.jabref.Util;
 
 import java.util.*;
@@ -52,12 +51,14 @@ public class CaseChangers {
     public static final String SPACE_SEPARATOR = " ";
 
     public static interface CaseChanger {
+
         String getName();
 
         String changeCase(String input);
     }
 
     public static class LowerCaseChanger implements CaseChanger {
+
         public String getName() {
             return "lower";
         }
@@ -68,6 +69,7 @@ public class CaseChangers {
     }
 
     public static class UpperCaseChanger implements CaseChanger {
+
         public String getName() {
             return "UPPER";
         }
@@ -78,6 +80,7 @@ public class CaseChangers {
     }
 
     public static class UpperFirstCaseChanger implements CaseChanger {
+
         private final static Pattern UF_PATTERN = Pattern.compile("\\b\\w");
 
         public String getName() {
@@ -144,12 +147,13 @@ public class CaseChangers {
                 // first word is Always capitalized
                 boolean alwaysCapitalizeFirstWord = i == 0;
                 boolean alwaysCapitalizeLastWord = i == words.length - 1;
-                if (alwaysCapitalizeFirstWord || alwaysCapitalizeLastWord)
+                if (alwaysCapitalizeFirstWord || alwaysCapitalizeLastWord) {
                     result[i] = Util.nCase(word);
-                else if (notToCapitalize.contains(word))
+                } else if (notToCapitalize.contains(word)) {
                     result[i] = word;
-                else
+                } else {
                     result[i] = Util.nCase(word);
+                }
             }
 
             return Util.join(result, SPACE_SEPARATOR);

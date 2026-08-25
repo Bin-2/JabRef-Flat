@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.util.Set;
@@ -23,8 +23,8 @@ import net.sf.jabref.MetaData;
 import net.sf.jabref.sql.DBExporterAndImporterFactory;
 
 /**
- * MySQLExport contributed by Lee Patton.
- * PostgreSQLExport contributed by Fred Stevens.
+ * MySQLExport contributed by Lee Patton. PostgreSQLExport contributed by Fred
+ * Stevens.
  */
 public class PostgreSQLExport extends ExportFormat {
 
@@ -34,26 +34,20 @@ public class PostgreSQLExport extends ExportFormat {
 
     /**
      * First method called when user starts the export.
-     * 
-     * @param database
-     *            The bibtex database from which to export.
-     * @param file
-     *            The filename to which the export should be writtten.
-     * @param encoding
-     *            The encoding to use.
-     * @param keySet
-     *            The set of IDs of the entries to export.
-     * @throws java.lang.Exception
-     *             If something goes wrong, feel free to throw an exception. The
-     *             error message is shown to the user.
+     *
+     * @param database The bibtex database from which to export.
+     * @param file The filename to which the export should be writtten.
+     * @param encoding The encoding to use.
+     * @param keySet The set of IDs of the entries to export.
+     * @throws java.lang.Exception If something goes wrong, feel free to throw
+     * an exception. The error message is shown to the user.
      */
     public void performExport(final BibtexDatabase database,
-        final MetaData metaData, final String file, final String encoding,
-        Set<String> keySet) throws Exception {
+            final MetaData metaData, final String file, final String encoding,
+            Set<String> keySet) throws Exception {
 
-    	new DBExporterAndImporterFactory().getExporter("POSTGRESQL").exportDatabaseAsFile(database, metaData, keySet, file);
+        new DBExporterAndImporterFactory().getExporter("POSTGRESQL").exportDatabaseAsFile(database, metaData, keySet, file);
 
     }
-
 
 }

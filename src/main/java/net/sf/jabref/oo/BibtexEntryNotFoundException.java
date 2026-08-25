@@ -12,17 +12,15 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: 16-Dec-2007
- * Time: 10:37:23
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: 16-Dec-2007 Time: 10:37:23 To
+ * change this template use File | Settings | File Templates.
  */
 public class BibtexEntryNotFoundException extends Exception {
+
     private String bibtexKey;
 
     public BibtexEntryNotFoundException(String bibtexKey, String message) {

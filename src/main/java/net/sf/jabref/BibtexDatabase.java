@@ -572,8 +572,9 @@ public class BibtexDatabase {
 
     /**
      * Returns the number of occurences of the given key in this database.
+     *
      * @param key
-     * @return 
+     * @return
      */
     public int getNumberOfKeyOccurences(String key) {
         Object o = allKeys.get(key);

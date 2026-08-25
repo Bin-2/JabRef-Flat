@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import net.sf.jabref.*;
@@ -29,14 +29,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class CiteSeerXFetcher implements EntryFetcher {
 
     protected static int MAX_PAGES_TO_LOAD = 8;
     final static String QUERY_MARKER = "___QUERY___";
     final static String URL_START = "http://citeseer.ist.psu.edu";
-    final static String SEARCH_URL = URL_START+"/search?q="+QUERY_MARKER
-            +"&submit=Search&sort=rlv&t=doc";
+    final static String SEARCH_URL = URL_START + "/search?q=" + QUERY_MARKER
+            + "&submit=Search&sort=rlv&t=doc";
     final static Pattern CITE_LINK_PATTERN = Pattern.compile("<a class=\"remove doc_details\" href=\"(.*)\">");
 
     protected boolean stopFetching = false;
@@ -46,14 +45,16 @@ public class CiteSeerXFetcher implements EntryFetcher {
         try {
             List<String> citations = getCitations(query);
             for (String citation : citations) {
-                if (stopFetching)
+                if (stopFetching) {
                     break;
+                }
                 BibtexEntry entry = getSingleCitation(citation);
                 //BibtexEntry entry = BibsonomyScraper.getEntry(citation);
 
                 //dialog.setProgress(++i, citations.size());
-                if (entry != null)
+                if (entry != null) {
                     inspector.addEntry(entry);
+                }
             }
 
             return true;
@@ -87,10 +88,9 @@ public class CiteSeerXFetcher implements EntryFetcher {
         stopFetching = true;
     }
 
-        /**
+    /**
      *
-     * @param query
-     *            The search term to query JStor for.
+     * @param query The search term to query JStor for.
      * @return a list of IDs
      * @throws java.io.IOException
      */
@@ -105,8 +105,9 @@ public class CiteSeerXFetcher implements EntryFetcher {
                     && (count < MAX_PAGES_TO_LOAD)) {
                 urlQuery = nextPage;
                 count++;
-                if (stopFetching)
+                if (stopFetching) {
                     break;
+                }
             }
             return ids;
         } catch (UnsupportedEncodingException e) {
@@ -120,13 +121,13 @@ public class CiteSeerXFetcher implements EntryFetcher {
         //System.out.println(cont);
         Matcher m = CITE_LINK_PATTERN.matcher(cont);
         while (m.find()) {
-            ids.add(URL_START+m.group(1));
+            ids.add(URL_START + m.group(1));
         }
 
         return null;
     }
 
-    final static String basePattern = "<meta name=\""+QUERY_MARKER+"\" content=\"(.*)\" />";
+    final static String basePattern = "<meta name=\"" + QUERY_MARKER + "\" content=\"(.*)\" />";
     final static Pattern titlePattern = Pattern.compile(basePattern.replace(QUERY_MARKER, "citation_title"));
     final static Pattern authorPattern = Pattern.compile(basePattern.replace(QUERY_MARKER, "citation_authors"));
     final static Pattern yearPattern = Pattern.compile(basePattern.replace(QUERY_MARKER, "citation_year"));
@@ -152,18 +153,20 @@ public class CiteSeerXFetcher implements EntryFetcher {
 
             // Find year:
             m = yearPattern.matcher(cont);
-            if (m.find())
+            if (m.find()) {
                 entry.setField("year", m.group(1));
+            }
 
             // Find abstract:
             m = abstractPattern.matcher(cont);
-            if (m.find())
+            if (m.find()) {
                 entry.setField("abstract", m.group(1));
+            }
 
             return entry;
-        }
-        else
+        } else {
             return null;
+        }
 
     }
 

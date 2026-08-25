@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
@@ -36,37 +36,37 @@ public class AdvancedCiteDialog {
     boolean okPressed = false;
     JDialog diag;
     JRadioButton inPar = new JRadioButton(Globals.lang("Cite selected entries")),
-        inText = new JRadioButton(Globals.lang("Cite selected entries with in-text citation"));
+            inText = new JRadioButton(Globals.lang("Cite selected entries with in-text citation"));
     JTextField pageInfo = new JTextField(15);
     JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
 
     public AdvancedCiteDialog(JabRefFrame parent) {
         diag = new JDialog(parent, Globals.lang("Cite special"), true);
         ButtonGroup bg = new ButtonGroup();
         bg.add(inPar);
         bg.add(inText);
-        if (defaultInPar)
+        if (defaultInPar) {
             inPar.setSelected(true);
-        else
+        } else {
             inText.setSelected(true);
-        
+        }
+
         inPar.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent changeEvent) {
                 defaultInPar = inPar.isSelected();
             }
         });
-        
-        DefaultFormBuilder b = new DefaultFormBuilder
-                (new FormLayout("left:pref, 4dlu, fill:pref", ""));
+
+        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("left:pref, 4dlu, fill:pref", ""));
         b.append(inPar, 3);
         b.nextLine();
         b.append(inText, 3);
         b.nextLine();
-        b.append(Globals.lang("Extra information (e.g. page number)")+":");
+        b.append(Globals.lang("Extra information (e.g. page number)") + ":");
         b.append(pageInfo);
 
-        b.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        b.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         diag.getContentPane().add(b.getPanel(), BorderLayout.CENTER);
 
         ButtonBarBuilder bb = new ButtonBarBuilder();
@@ -74,7 +74,7 @@ public class AdvancedCiteDialog {
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);
 
         diag.pack();
@@ -99,7 +99,7 @@ public class AdvancedCiteDialog {
         b.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
                 .put(Globals.prefs.getKey("Close dialog"), "close");
         b.getPanel().getActionMap().put("close", cancelAction);
-        
+
     }
 
     public void showDialog() {

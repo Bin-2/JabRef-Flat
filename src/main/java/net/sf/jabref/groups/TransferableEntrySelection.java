@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import java.awt.datatransfer.DataFlavor;
@@ -24,12 +24,13 @@ import java.io.IOException;
 import net.sf.jabref.BibtexEntry;
 
 public class TransferableEntrySelection implements Transferable {
+
     public static final DataFlavor flavorInternal;
     public static final DataFlavor flavorExternal;
     public static final DataFlavor[] flavors;
     public final BibtexEntry[] selectedEntries;
     public final String selectedEntriesCiteKeys;
-    
+
     protected boolean includeCiteKeyword = false;
 
     static {
@@ -44,7 +45,7 @@ public class TransferableEntrySelection implements Transferable {
         }
         flavorInternal = df1;
         flavorExternal = df2;
-        flavors = new DataFlavor[] { flavorInternal, flavorExternal };
+        flavors = new DataFlavor[]{flavorInternal, flavorExternal};
     }
 
     public TransferableEntrySelection(BibtexEntry[] selectedEntries) {
@@ -52,8 +53,9 @@ public class TransferableEntrySelection implements Transferable {
         StringBuffer keys = new StringBuffer();
         for (int i = 0; i < selectedEntries.length; ++i) {
             keys.append(selectedEntries[i].getCiteKey());
-            if (i + 1 < selectedEntries.length)
+            if (i + 1 < selectedEntries.length) {
                 keys.append(",");
+            }
         }
         selectedEntriesCiteKeys = keys.toString();
     }
@@ -69,12 +71,14 @@ public class TransferableEntrySelection implements Transferable {
 
     public Object getTransferData(DataFlavor someFlavor)
             throws UnsupportedFlavorException, IOException {
-        if (!isDataFlavorSupported(someFlavor))
+        if (!isDataFlavorSupported(someFlavor)) {
             throw new UnsupportedFlavorException(someFlavor);
-        if (someFlavor.equals(flavorInternal))
+        }
+        if (someFlavor.equals(flavorInternal)) {
             return this;
-        String s = includeCiteKeyword ?
-                "\\cite{" + selectedEntriesCiteKeys + "}" 
+        }
+        String s = includeCiteKeyword
+                ? "\\cite{" + selectedEntriesCiteKeys + "}"
                 : selectedEntriesCiteKeys;
         return new ByteArrayInputStream(s.getBytes(
                 flavorExternal.getParameter("charset").trim()));
@@ -87,6 +91,5 @@ public class TransferableEntrySelection implements Transferable {
     public void setIncludeCiteKeyword(boolean includeCiteKeyword) {
         this.includeCiteKeyword = includeCiteKeyword;
     }
-    
 
 }

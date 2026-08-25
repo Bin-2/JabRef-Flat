@@ -33,20 +33,20 @@ import net.sf.jabref.MnemonicAwareAction;
  * Dialog unless it is already visible, and shows the URL in it.
  */
 public class HelpAction extends MnemonicAwareAction {
-    
+
     private HelpDialog diag;
-    
+
     private Class resourceOwner = null;
-    
+
     private String helpFile;
-    
+
     public HelpAction(HelpDialog diag, String helpFile) {
         super(getHelpImageIcon());
         putValue(NAME, "Help");
         this.diag = diag;
         this.helpFile = helpFile;
     }
-    
+
     public HelpAction(HelpDialog diag, String helpFile, String tooltip) {
         super(getHelpImageIcon());
         putValue(NAME, "Help");
@@ -54,7 +54,7 @@ public class HelpAction extends MnemonicAwareAction {
         this.diag = diag;
         this.helpFile = helpFile;
     }
-    
+
     public HelpAction(HelpDialog diag, String helpFile, String tooltip, URL iconFile) {
         super(getHelpImageIcon()); // Use SVG icon converted to ImageIcon
         putValue(NAME, "Help");
@@ -62,7 +62,7 @@ public class HelpAction extends MnemonicAwareAction {
         this.diag = diag;
         this.helpFile = helpFile;
     }
-    
+
     public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip) {
         super(getHelpImageIcon());
         putValue(NAME, title);
@@ -70,7 +70,7 @@ public class HelpAction extends MnemonicAwareAction {
         this.diag = diag;
         this.helpFile = helpFile;
     }
-    
+
     public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip, KeyStroke key) {
         super(getHelpImageIcon());
         putValue(NAME, title);
@@ -79,7 +79,7 @@ public class HelpAction extends MnemonicAwareAction {
         this.diag = diag;
         this.helpFile = helpFile;
     }
-    
+
     public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip, URL iconFile) {
         super(getHelpImageIcon()); // Use SVG icon converted to ImageIcon
         putValue(NAME, title);
@@ -111,7 +111,7 @@ public class HelpAction extends MnemonicAwareAction {
         if (icon == null) {
             return null;
         }
-        
+
         if (icon instanceof ImageIcon) {
             return (ImageIcon) icon;
         } else {
@@ -138,11 +138,11 @@ public class HelpAction extends MnemonicAwareAction {
             return null;
         }
     }
-    
+
     public void setResourceOwner(Class resourceOwner) {
         this.resourceOwner = resourceOwner;
     }
-    
+
     public JButton getIconButton() {
         JButton hlp = new JButton(this);
         hlp.setText(null);
@@ -153,14 +153,14 @@ public class HelpAction extends MnemonicAwareAction {
         if (buttonIcon != null) {
             hlp.setIcon(buttonIcon);
         }
-        
+
         return hlp;
     }
-    
+
     public void setHelpFile(String helpFile) {
         this.helpFile = helpFile;
     }
-    
+
     public void actionPerformed(ActionEvent e) {
         if (resourceOwner == null) {
             diag.showPage(helpFile);

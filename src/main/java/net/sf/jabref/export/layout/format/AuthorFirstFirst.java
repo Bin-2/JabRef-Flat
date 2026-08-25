@@ -32,16 +32,15 @@ import net.sf.jabref.AuthorList;
 
 /**
  * Author First First prints ....
- * 
- * 
- * @author  $Author$
+ *
+ *
+ * @author $Author$
  * @version $Revision$ $Date$
- * 
+ *
  */
-public class AuthorFirstFirst implements LayoutFormatter
-{
-    public String format(String fieldText)
-    {
+public class AuthorFirstFirst implements LayoutFormatter {
+
+    public String format(String fieldText) {
         return AuthorList.fixAuthor_firstNameFirst(fieldText);
     }
 }

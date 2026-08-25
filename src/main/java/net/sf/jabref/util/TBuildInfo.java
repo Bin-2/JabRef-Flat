@@ -24,7 +24,6 @@
  http://www.gnu.org/copyleft/gpl.ja.html
 
  */
-
 // created by : r.nagel 01.06.2005
 //
 // function : read build informations from build.properies file
@@ -32,114 +31,87 @@
 //
 // modified:
 //
-
 package net.sf.jabref.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class TBuildInfo
-{
-  private String BUILD_DATE = "" ;
-  private String BUILD_VERSION = "devel - 1st edition family" ;
-  private String BUILD_NUMBER = "1" ;
+public class TBuildInfo {
+
+    private String BUILD_DATE = "";
+    private String BUILD_VERSION = "devel - 1st edition family";
+    private String BUILD_NUMBER = "1";
 
 //  private TBuilderInfo runtime = new TBuildInfo() ;
-  public TBuildInfo(String path)
-  {
-    readBuildVersionData(path) ;
-  }
+    public TBuildInfo(String path) {
+        readBuildVersionData(path);
+    }
 
 // --------------------------------------------------------------------------
-  // some informations from extern build file
-  private void readBuildVersionData(String path)
-  {
-    String buf = null ;
-    int sep = 0 ;
-    String Key, Value ;
-    BufferedReader input = null ;
+    // some informations from extern build file
+    private void readBuildVersionData(String path) {
+        String buf = null;
+        int sep = 0;
+        String Key, Value;
+        BufferedReader input = null;
 
-    try
-    {
+        try {
 
-      input = new BufferedReader(
-          new InputStreamReader( getClass().getResourceAsStream( path) ), 100 ) ;
-    }
-    catch ( Exception e1 )
-    {
+            input = new BufferedReader(
+                    new InputStreamReader(getClass().getResourceAsStream(path)), 100);
+        } catch (Exception e1) {
 //      System.out.println( e1 ) ;
 //      e1.printStackTrace();
 //      Logger.global.info( e1.getMessage() ) ;
-        return ;
-    }
-
-    try
-    {
-      while ( ( buf = input.readLine() ) != null )
-      {
-        if ( buf.length() > 0 )
-        { // no empty lines
-          if ( buf.charAt( 0 ) != '#' )
-          { // data line, comments - first char = #
-            sep = buf.indexOf( '=' ) ;
-            if ( sep > 0 )
-            { // = found
-              Key = buf.substring( 0, sep ) ;
-              Value = buf.substring( sep + 1 ) ;
-              if ( Key.equals( "builddate" ) )
-              {
-                BUILD_DATE = Value ;
-              }
-              else if ( Key.equals( "build" ) )
-              {
-                BUILD_NUMBER = Value ;
-              }
-              else if ( Key.equals( "version" ) )
-              {
-                BUILD_VERSION = Value ;
-              }
-
-            }
-          } // data line
+            return;
         }
-      } // while
-    }
-    catch ( IOException iex )
-    {
+
+        try {
+            while ((buf = input.readLine()) != null) {
+                if (buf.length() > 0) { // no empty lines
+                    if (buf.charAt(0) != '#') { // data line, comments - first char = #
+                        sep = buf.indexOf('=');
+                        if (sep > 0) { // = found
+                            Key = buf.substring(0, sep);
+                            Value = buf.substring(sep + 1);
+                            if (Key.equals("builddate")) {
+                                BUILD_DATE = Value;
+                            } else if (Key.equals("build")) {
+                                BUILD_NUMBER = Value;
+                            } else if (Key.equals("version")) {
+                                BUILD_VERSION = Value;
+                            }
+
+                        }
+                    } // data line
+                }
+            } // while
+        } catch (IOException iex) {
 //      System.err.println(iex.getMessage());
 //      Logger.global.info( iex.getMessage() ) ;
-    }
+        }
 
-    try
-    {
-      input.close() ;
-    }
-    catch ( Exception e )
-    {
+        try {
+            input.close();
+        } catch (Exception e) {
 //      System.out.println(e.getMessage());
 //      Logger.global.info( e.getMessage() ) ;
+        }
     }
-  }
 
-  // --------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
+    public String getBUILD_DATE() {
+        return BUILD_DATE;
+    }
 
-  public String getBUILD_DATE()
-  {
-    return BUILD_DATE;
-  }
+    public String getBUILD_VERSION() {
+        return BUILD_VERSION;
+    }
 
-  public String getBUILD_VERSION()
-  {
-    return BUILD_VERSION;
-  }
-
-  public String getBUILD_NUMBER()
-  {
-    return BUILD_NUMBER;
-  }
-
+    public String getBUILD_NUMBER() {
+        return BUILD_NUMBER;
+    }
 
 // --------------------------------------------------------------------------
-
 }

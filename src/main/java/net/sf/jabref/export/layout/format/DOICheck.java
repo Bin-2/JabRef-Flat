@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
@@ -21,7 +21,7 @@ import net.sf.jabref.Util;
 
 /**
  * Used to fix [ 1588028 ] export HTML table doi url.
- * 
+ *
  * Will prepend "http://dx.doi.org/" if only doi number and not a URL is given.
  *
  * @author mark-schenk
@@ -29,20 +29,20 @@ import net.sf.jabref.Util;
  */
 public class DOICheck implements LayoutFormatter {
 
-	public String format(String fieldText) {
-		
-		if (fieldText == null){
-			return null;
-		}
-		
-		if (fieldText.trim().isEmpty()) {
-		    return "";
-		}
+    public String format(String fieldText) {
 
-            if (Util.checkForDOIwithHTTPprefix(fieldText)) {
-		    return fieldText;
-		} else {
-		    return Globals.DOI_LOOKUP_PREFIX.concat(Util.getDOI(fieldText));
-		}
-	}
+        if (fieldText == null) {
+            return null;
+        }
+
+        if (fieldText.trim().isEmpty()) {
+            return "";
+        }
+
+        if (Util.checkForDOIwithHTTPprefix(fieldText)) {
+            return fieldText;
+        } else {
+            return Globals.DOI_LOOKUP_PREFIX.concat(Util.getDOI(fieldText));
+        }
+    }
 }

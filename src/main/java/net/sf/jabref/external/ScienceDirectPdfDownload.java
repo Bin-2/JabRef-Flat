@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.net.URL;
@@ -20,12 +20,12 @@ import java.net.MalformedURLException;
 import java.io.IOException;
 
 /**
- * FullTextFinder implementation that attempts to find PDF url from a Sciencedirect article page.
+ * FullTextFinder implementation that attempts to find PDF url from a
+ * Sciencedirect article page.
  */
 public class ScienceDirectPdfDownload implements FullTextFinder {
 
     //private static final String BASE_URL = "http://www.sciencedirect.com";
-
     public ScienceDirectPdfDownload() {
 
     }
@@ -33,8 +33,6 @@ public class ScienceDirectPdfDownload implements FullTextFinder {
     public boolean supportsSite(URL url) {
         return url.getHost().toLowerCase().contains("www.sciencedirect.com");
     }
-
-
 
     public URL findFullTextURL(URL url) throws IOException {
         String pageSource = FindFullText.loadPage(url);
@@ -46,18 +44,19 @@ public class ScienceDirectPdfDownload implements FullTextFinder {
             //System.out.println(leading.toLowerCase());
             index = leading.toLowerCase().lastIndexOf("<a href=");
             //System.out.println(index);
-            if ((index > -1) && (index+9 < leading.length())) {
-                int endIndex = leading.indexOf("\"", index+9);
+            if ((index > -1) && (index + 9 < leading.length())) {
+                int endIndex = leading.indexOf("\"", index + 9);
 
                 try {
-                    return new URL(/*BASE_URL+*/leading.substring(index+9, endIndex));
-                    
+                    return new URL(/*BASE_URL+*/leading.substring(index + 9, endIndex));
+
                 } catch (MalformedURLException e) {
                     return null;
                 }
             }
             return null;
-        } else
+        } else {
             return null;
+        }
     }
 }

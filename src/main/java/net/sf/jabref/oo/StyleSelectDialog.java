@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 import ca.odell.glazedlists.BasicEventList;
@@ -61,21 +61,21 @@ public class StyleSelectDialog {
     private JPopupMenu popup = new JPopupMenu();
     private JMenuItem edit = new JMenuItem(Globals.lang("Edit"));
     private JRadioButton useDefaultAuthoryear = new JRadioButton(Globals.lang("Default style (author-year citations)")),
-        useDefaultNumerical = new JRadioButton(Globals.lang("Default style (numerical citations)")),
-        chooseDirectly = new JRadioButton(Globals.lang("Choose style file directly")+":"),
-        setDirectory = new JRadioButton(Globals.lang("Choose from a directory")+":");
+            useDefaultNumerical = new JRadioButton(Globals.lang("Default style (numerical citations)")),
+            chooseDirectly = new JRadioButton(Globals.lang("Choose style file directly") + ":"),
+            setDirectory = new JRadioButton(Globals.lang("Choose from a directory") + ":");
     private JTextField directFile = new JTextField(),
-        styleDir = new JTextField();
+            styleDir = new JTextField();
     private JButton browseDirectFile = new JButton(Globals.lang("Browse")),
-        browseStyleDir = new JButton(Globals.lang("Browse")),
-        showDefaultAuthoryearStyle = new JButton(Globals.lang("View")),
-        showDefaultNumericalStyle = new JButton(Globals.lang("View"));
+            browseStyleDir = new JButton(Globals.lang("Browse")),
+            showDefaultAuthoryearStyle = new JButton(Globals.lang("View")),
+            showDefaultNumericalStyle = new JButton(Globals.lang("View"));
 
     PreviewPanel preview;
 
     private Rectangle toRect = new Rectangle(0, 0, 1, 1);
     private JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
     private BibtexEntry prevEntry = new BibtexEntry(Util.createNeutralId());
 
     private boolean okPressed = false;
@@ -96,15 +96,16 @@ public class StyleSelectDialog {
         bg.add(useDefaultNumerical);
         bg.add(chooseDirectly);
         bg.add(setDirectory);
-        if (Globals.prefs.getBoolean("ooUseDefaultAuthoryearStyle"))
+        if (Globals.prefs.getBoolean("ooUseDefaultAuthoryearStyle")) {
             useDefaultAuthoryear.setSelected(true);
-        else if (Globals.prefs.getBoolean("ooUseDefaultNumericalStyle"))
+        } else if (Globals.prefs.getBoolean("ooUseDefaultNumericalStyle")) {
             useDefaultNumerical.setSelected(true);
-        else {
-            if (Globals.prefs.getBoolean("ooChooseStyleDirectly"))
+        } else {
+            if (Globals.prefs.getBoolean("ooChooseStyleDirectly")) {
                 chooseDirectly.setSelected(true);
-            else
+            } else {
                 setDirectory.setSelected(true);
+            }
         }
 
         directFile.setText(Globals.prefs.get("ooDirectFile"));
@@ -134,16 +135,18 @@ public class StyleSelectDialog {
         edit.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 int i = table.getSelectedRow();
-                if (i == -1)
+                if (i == -1) {
                     return;
+                }
                 ExternalFileType type = Globals.prefs.getExternalFileTypeByExt("jstyle");
                 String link = tableModel.getElementAt(i).getFile().getPath();
                 try {
-                    if (type != null)
+                    if (type != null) {
                         Util.openExternalFileAnyFormat(new MetaData(), link, type);
-                    else
+                    } else {
                         Util.openExternalFileUnknown(frame, null, new MetaData(), link,
                                 new UnknownExternalFileType("jstyle"));
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
 
@@ -173,14 +176,16 @@ public class StyleSelectDialog {
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent mouseEvent) {
-                if (mouseEvent.isPopupTrigger())
+                if (mouseEvent.isPopupTrigger()) {
                     tablePopup(mouseEvent);
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent mouseEvent) {
-                if (mouseEvent.isPopupTrigger())
+                if (mouseEvent.isPopupTrigger()) {
                     tablePopup(mouseEvent);
+                }
             }
         });
 
@@ -191,10 +196,12 @@ public class StyleSelectDialog {
                 readStyles();
                 setDirectory.setSelected(true);
             }
+
             public void removeUpdate(DocumentEvent documentEvent) {
                 readStyles();
                 setDirectory.setSelected(true);
             }
+
             public void changedUpdate(DocumentEvent documentEvent) {
                 readStyles();
                 setDirectory.setSelected(true);
@@ -204,9 +211,11 @@ public class StyleSelectDialog {
             public void insertUpdate(DocumentEvent documentEvent) {
                 chooseDirectly.setSelected(true);
             }
+
             public void removeUpdate(DocumentEvent documentEvent) {
                 chooseDirectly.setSelected(true);
             }
+
             public void changedUpdate(DocumentEvent documentEvent) {
                 chooseDirectly.setSelected(true);
             }
@@ -217,7 +226,7 @@ public class StyleSelectDialog {
 
         readStyles();
 
-        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("fill:pref,4dlu,fill:150dlu,4dlu,fill:pref",""));
+        DefaultFormBuilder b = new DefaultFormBuilder(new FormLayout("fill:pref,4dlu,fill:150dlu,4dlu,fill:pref", ""));
         b.append(useDefaultAuthoryear, 3);
         b.append(showDefaultAuthoryearStyle);
         b.nextLine();
@@ -233,14 +242,14 @@ public class StyleSelectDialog {
         b.append(browseStyleDir);
         b.nextLine();
         DefaultFormBuilder b2 = new DefaultFormBuilder(new FormLayout("fill:1dlu:grow",
-                 "fill:pref, fill:pref, fill:270dlu:grow"));
+                "fill:pref, fill:pref, fill:270dlu:grow"));
 
         b2.nextLine();
-        b2.append(new JLabel("<html>"+Globals.lang("This is the list of available styles. Select the one you want to use.")+"</html>"));
+        b2.append(new JLabel("<html>" + Globals.lang("This is the list of available styles. Select the one you want to use.") + "</html>"));
         b2.nextLine();
         b2.append(contentPane);
-        b.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-        b2.getPanel().setBorder(BorderFactory.createEmptyBorder(15,5,5,5));
+        b.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        b2.getPanel().setBorder(BorderFactory.createEmptyBorder(15, 5, 5, 5));
         diag.add(b.getPanel(), BorderLayout.NORTH);
         diag.add(b2.getPanel(), BorderLayout.CENTER);
 
@@ -254,8 +263,7 @@ public class StyleSelectDialog {
                                     Globals.lang("Style selection"), JOptionPane.ERROR_MESSAGE);
                             return;
                         }
-                    }
-                    else {
+                    } else {
                         if (table.getRowCount() == 0 || table.getSelectedRowCount() == 0) {
                             JOptionPane.showMessageDialog(diag, Globals.lang("You must select either a valid style file, or use a default style."),
                                     Globals.lang("Style selection"), JOptionPane.ERROR_MESSAGE);
@@ -282,7 +290,7 @@ public class StyleSelectDialog {
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         diag.add(bb.getPanel(), BorderLayout.SOUTH);
 
         ActionMap am = bb.getPanel().getActionMap();
@@ -296,7 +304,7 @@ public class StyleSelectDialog {
         diag.setLocationRelativeTo(frame);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                contentPane.setDividerLocation(contentPane.getSize().height-150);
+                contentPane.setDividerLocation(contentPane.getSize().height - 150);
             }
         });
 
@@ -308,16 +316,17 @@ public class StyleSelectDialog {
     }
 
     /**
-     * Read all style files or directories of style files indicated by the current
-     * settings, and add the styles to the list of styles.
+     * Read all style files or directories of style files indicated by the
+     * current settings, and add the styles to the list of styles.
      */
     private void readStyles() {
         table.clearSelection();
 
         styles.getReadWriteLock().writeLock().lock();
         styles.clear();
-        if (styleDir.getText().length() > 0)
+        if (styleDir.getText().length() > 0) {
             addStyles(styleDir.getText(), true);
+        }
         styles.getReadWriteLock().writeLock().unlock();
 
         selectLastUsed();
@@ -325,35 +334,37 @@ public class StyleSelectDialog {
 
     /**
      * This method scans the current list of styles, and looks for the styles
-     * that was last used. If found, that style is selected. If not found,
-     * the first style is selected provided there are >0 styles.
+     * that was last used. If found, that style is selected. If not found, the
+     * first style is selected provided there are >0 styles.
      */
     private void selectLastUsed() {
         // Set the initial selection of the table:
         if (initSelection != null) {
             boolean found = false;
-            for (int i=0; i < table.getRowCount(); i++) {
+            for (int i = 0; i < table.getRowCount(); i++) {
                 if (tableModel.getElementAt(i).getFile().getPath().
                         equals(initSelection)) {
-                    table.setRowSelectionInterval(i,i);
+                    table.setRowSelectionInterval(i, i);
                     found = true;
                     break;
                 }
             }
-            if (!found && (table.getRowCount() > 0))
-                table.setRowSelectionInterval(0,0);
-        }
-        else {
-            if (table.getRowCount() > 0)
-                table.setRowSelectionInterval(0,0);
+            if (!found && (table.getRowCount() > 0)) {
+                table.setRowSelectionInterval(0, 0);
+            }
+        } else {
+            if (table.getRowCount() > 0) {
+                table.setRowSelectionInterval(0, 0);
+            }
         }
     }
 
     /**
-     * If the string dir indicates a file, parse it and add it to the list of styles if
-     * successful. If the string dir indicates a directory, parse all files looking like
-     * style files, and add them. The parameter recurse determines whether we should
-     * recurse into subdirectories.
+     * If the string dir indicates a file, parse it and add it to the list of
+     * styles if successful. If the string dir indicates a directory, parse all
+     * files looking like style files, and add them. The parameter recurse
+     * determines whether we should recurse into subdirectories.
+     *
      * @param dir the directory or file to handle.
      * @param recurse true indicates that we should recurse into subdirectories.
      */
@@ -365,31 +376,32 @@ public class StyleSelectDialog {
                 // If the file looks like a style file, parse it:
                 if (!file.isDirectory() && (file.getName().endsWith(STYLE_FILE_EXTENSION))) {
                     addSingleFile(file);
-                }
-                // If the file is a directory, and we should recurse, do:
+                } // If the file is a directory, and we should recurse, do:
                 else if (file.isDirectory() && recurse) {
                     addStyles(file.getPath(), recurse);
                 }
             }
-        }
-        else {
+        } else {
             // The file wasn't a directory, so we simply parse it:
             addSingleFile(dirF);
         }
     }
 
     /**
-     * Parse a single file, and add it to the list of styles if parse was successful.
+     * Parse a single file, and add it to the list of styles if parse was
+     * successful.
+     *
      * @param file the file to parse.
      */
     private void addSingleFile(File file) {
         try {
             OOBibStyle style = new OOBibStyle(file);
             // Check if the parse was successful before adding it:
-            if (style.isValid() && !styles.contains(style))
+            if (style.isValid() && !styles.contains(style)) {
                 styles.add(style);
+            }
         } catch (Exception e) {
-            System.out.println("Unable to read style file: '"+file.getPath()+"'");
+            System.out.println("Unable to read style file: '" + file.getPath() + "'");
             e.printStackTrace();
         }
     }
@@ -403,23 +415,23 @@ public class StyleSelectDialog {
         Globals.prefs.put("ooStyleDirectory", styleDir.getText());
         if (chooseDirectly.isSelected()) {
             Globals.prefs.put("ooBibliographyStyleFile", directFile.getText());
-        }
-        else if (setDirectory.isSelected() && (selected != null)) {
+        } else if (setDirectory.isSelected() && (selected != null)) {
             Globals.prefs.put("ooBibliographyStyleFile", selected.getFile().getPath());
         }
-
 
     }
 
     /**
      * Get the currently selected style.
+     *
      * @return the selected style, or null if no style is selected.
      */
     public OOBibStyle getSelectedStyle() {
-        if (selectionModel.getSelected().size() > 0)
+        if (selectionModel.getSelected().size() > 0) {
             return selectionModel.getSelected().get(0);
-        else
+        } else {
             return null;
+        }
     }
 
     private void setupPrevEntry() {
@@ -466,15 +478,15 @@ public class StyleSelectDialog {
             }
         }
 
-
         private String formatJournals(Set<String> journals) {
             StringBuilder sb = new StringBuilder("");
             for (Iterator<String> i = journals.iterator(); i.hasNext();) {
                 sb.append(i.next());
-                if (i.hasNext())
+                if (i.hasNext()) {
                     sb.append(", ");
+                }
             }
-            return sb.toString();    
+            return sb.toString();
         }
     }
 
@@ -489,8 +501,8 @@ public class StyleSelectDialog {
     protected void displayDefaultStyle(boolean authoryear) {
         try {
             // Read the contents of the default style file:
-            URL defPath = authoryear ? JabRef.class.getResource(OpenOfficePanel.defaultAuthorYearStylePath) :
-                    JabRef.class.getResource(OpenOfficePanel.defaultNumericalStylePath);
+            URL defPath = authoryear ? JabRef.class.getResource(OpenOfficePanel.defaultAuthorYearStylePath)
+                    : JabRef.class.getResource(OpenOfficePanel.defaultNumericalStylePath);
             BufferedReader r = new BufferedReader(new InputStreamReader(defPath.openStream()));
             String line;
             StringBuilder sb = new StringBuilder();
@@ -501,24 +513,24 @@ public class StyleSelectDialog {
 
             // Make a dialog box to display the contents:
             final JDialog dd = new JDialog(diag, Globals.lang("Default style"), true);
-            JLabel header = new JLabel("<html>"+Globals.lang("The panel below shows the definition of the default style.")
-                //+"<br>"
-                +Globals.lang("If you want to use it as a template for a new style, you can copy the contents into a new .jstyle file")
-                +"</html>");
+            JLabel header = new JLabel("<html>" + Globals.lang("The panel below shows the definition of the default style.")
+                    //+"<br>"
+                    + Globals.lang("If you want to use it as a template for a new style, you can copy the contents into a new .jstyle file")
+                    + "</html>");
 
-            header.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+            header.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             dd.getContentPane().add(header, BorderLayout.NORTH);
             JTextArea ta = new JTextArea(sb.toString());
             ta.setEditable(false);
             JScrollPane sp = new JScrollPane(ta);
-            sp.setPreferredSize(new Dimension(700,500));
+            sp.setPreferredSize(new Dimension(700, 500));
             dd.getContentPane().add(sp, BorderLayout.CENTER);
             JButton ok = new JButton(Globals.lang("Ok"));
             ButtonBarBuilder bb = new ButtonBarBuilder();
             bb.addGlue();
             bb.addButton(ok);
             bb.addGlue();
-            bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+            bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             dd.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);
             ok.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent actionEvent) {
@@ -533,10 +545,9 @@ public class StyleSelectDialog {
         }
     }
 
-
     /**
-     * The listener for the Glazed list monitoring the current selection.
-     * When selection changes, we need to update the preview panel.
+     * The listener for the Glazed list monitoring the current selection. When
+     * selection changes, we need to update the preview panel.
      */
     class EntrySelectionListener implements ListEventListener<OOBibStyle> {
 
@@ -546,7 +557,7 @@ public class StyleSelectDialog {
                 initSelection = style.getFile().getPath();
                 preview.setLayout(style.getReferenceFormat("default"));
                 // Update the preview's entry:
-                contentPane.setDividerLocation(contentPane.getSize().height-150); 
+                contentPane.setDividerLocation(contentPane.getSize().height - 150);
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         preview.update();

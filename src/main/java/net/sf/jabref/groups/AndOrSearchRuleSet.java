@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import java.util.Map;
@@ -36,22 +36,24 @@ class AndOrSearchRuleSet extends SearchRuleSet {
 
     public int applyRule(Map<String, String> searchString, BibtexEntry bibtexEntry) {
         int score = 0;
-        
+
         // We let each rule add a maximum of 1 to the score.
         for (SearchRule rule : ruleSet) {
-			score += rule.applyRule(searchString, bibtexEntry) > 0 ? 1 : 0;
-		}
+            score += rule.applyRule(searchString, bibtexEntry) > 0 ? 1 : 0;
+        }
 
         // Then an AND rule demands that score == number of rules, and
         // an OR rule demands score > 0.
         boolean res;
-        if (and)
+        if (and) {
             res = (score == ruleSet.size());
-        else
+        } else {
             res = (score > 0);
+        }
 
-        if (invert)
+        if (invert) {
             return (res ? 0 : 1);
+        }
         return (res ? 1 : 0);
     }
 }

@@ -880,7 +880,6 @@ public class HTMLConverter implements LayoutFormatter {
             return index; // Just skip the tag.
         } else return position; // Don't do anything.
     }*/
-
     private int readTag(String text, StringBuilder sb, int position) {
         // Have just read the < character that starts the tag.
         int index = text.indexOf('>', position);

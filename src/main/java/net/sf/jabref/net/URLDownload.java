@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.net;
 
 import net.sf.jabref.Globals;
@@ -25,7 +25,8 @@ import java.net.URL;
 import java.net.URLConnection;
 
 /**
- * Each call to a public method creates a new HTTP connection. Nothing is cached.
+ * Each call to a public method creates a new HTTP connection. Nothing is
+ * cached.
  *
  * @author Erik Putrycz erik.putrycz-at-nrc-cnrc.gc.ca
  * @author Simon Harrer
@@ -46,11 +47,9 @@ public class URLDownload {
     /**
      * URL download to a string.
      * <p/>
-     * Example
-     * URLDownload dl = new URLDownload(URL);
-     * String content = dl.downloadToString(ENCODING);
-     * dl.downloadToFile(FILE); // available in FILE
-     * String contentType = dl.determineMimeType();
+     * Example URLDownload dl = new URLDownload(URL); String content =
+     * dl.downloadToString(ENCODING); dl.downloadToFile(FILE); // available in
+     * FILE String contentType = dl.determineMimeType();
      *
      * @param source The URL to download.
      */
@@ -167,7 +166,9 @@ public class URLDownload {
         byte[] buffer = new byte[512];
         while (true) {
             int bytesRead = monitorInputStream.read(buffer);
-            if (bytesRead == -1) break;
+            if (bytesRead == -1) {
+                break;
+            }
             out.write(buffer, 0, bytesRead);
         }
     }

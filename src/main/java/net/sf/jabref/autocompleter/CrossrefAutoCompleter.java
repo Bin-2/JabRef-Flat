@@ -12,42 +12,43 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.autocompleter;
 
 import net.sf.jabref.BibtexEntry;
 
 /**
  * Crossref autocompleter stores info from the key field.
- * 
+ *
  * @author kahlert, cordes
- * 
+ *
  */
 public class CrossrefAutoCompleter extends AbstractAutoCompleter {
 
-	public String _fieldName;
+    public String _fieldName;
 
-	/**
-	 * @see AutoCompleterFactory
-	 */
-	protected CrossrefAutoCompleter(String fieldName) {
-		_fieldName = fieldName;
-	}
+    /**
+     * @see AutoCompleterFactory
+     */
+    protected CrossrefAutoCompleter(String fieldName) {
+        _fieldName = fieldName;
+    }
 
-	public boolean isSingleUnitField() {
-		return false;
-	}
+    public boolean isSingleUnitField() {
+        return false;
+    }
 
-	public String[] complete(String s) {
-		return super.complete(s);
-	}
+    public String[] complete(String s) {
+        return super.complete(s);
+    }
 
-	@Override
-	public void addBibtexEntry(BibtexEntry entry) {
-		if (entry != null) {
-			String key = entry.getCiteKey();
-			if (key != null)
-				addWordToIndex(key.trim());
-		}
-	}
+    @Override
+    public void addBibtexEntry(BibtexEntry entry) {
+        if (entry != null) {
+            String key = entry.getCiteKey();
+            if (key != null) {
+                addWordToIndex(key.trim());
+            }
+        }
+    }
 }

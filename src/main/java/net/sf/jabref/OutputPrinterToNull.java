@@ -12,27 +12,27 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 /**
  * Outputs nothing
- * 
+ *
  * Used where really no output is desired
- * 
+ *
  */
 public class OutputPrinterToNull implements OutputPrinter {
 
-	@Override
-	public void setStatus(String s) {
-	}
+    @Override
+    public void setStatus(String s) {
+    }
 
-	@Override
-	public void showMessage(Object message, String title, int msgType) {
-	}
+    @Override
+    public void showMessage(Object message, String title, int msgType) {
+    }
 
-	@Override
-	public void showMessage(String string) {
-	}
+    @Override
+    public void showMessage(String string) {
+    }
 
 }

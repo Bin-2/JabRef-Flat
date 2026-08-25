@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 import com.sun.star.awt.Point;
@@ -31,10 +31,11 @@ public class ComparableMark implements Comparable<ComparableMark> {
     }
 
     public int compareTo(ComparableMark other) {
-        if (position.Y != other.position.Y)
-            return position.Y-other.position.Y;
-        else
-            return position.X-other.position.X;
+        if (position.Y != other.position.Y) {
+            return position.Y - other.position.Y;
+        } else {
+            return position.X - other.position.X;
+        }
     }
 
     public String getName() {

@@ -243,7 +243,6 @@ public class FieldTextMenu implements MouseListener {
         }
     }
 
-
     //***********************************
     /**
      * Clean up text by joining lines with spaces, preserving paragraph breaks

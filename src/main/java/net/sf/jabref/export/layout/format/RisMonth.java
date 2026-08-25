@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.MonthUtil;
@@ -21,11 +21,12 @@ import net.sf.jabref.export.layout.LayoutFormatter;
 public class RisMonth implements LayoutFormatter {
 
     public String format(String month) {
-        if (month == null)
+        if (month == null) {
             return "";
+        }
 
         MonthUtil.Month m = MonthUtil.getMonthByShortName(month);
-        if(m.isValid()) {
+        if (m.isValid()) {
             return m.twoDigitNumber;
         } else {
             return month.toLowerCase();

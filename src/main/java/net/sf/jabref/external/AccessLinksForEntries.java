@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.awt.BorderLayout;
@@ -35,17 +35,16 @@ import net.sf.jabref.Util;
 import net.sf.jabref.gui.FileListEntry;
 import net.sf.jabref.gui.FileListTableModel;
 
-
 /**
  * This class handles the task of looking up all external files linked for a set
- * of entries. This is useful for tasks where the user wants e.g. to send a database
- * with external files included.
+ * of entries. This is useful for tasks where the user wants e.g. to send a
+ * database with external files included.
  */
 public class AccessLinksForEntries {
 
     /**
-     * Look up all external files linked from (at least) one of the entries in a set.
-     * This method does not verify the links.
+     * Look up all external files linked from (at least) one of the entries in a
+     * set. This method does not verify the links.
      *
      * @param entries The set of entries.
      * @return A list of FileListEntry objects pointing to the external files.
@@ -55,48 +54,53 @@ public class AccessLinksForEntries {
         FileListTableModel model = new FileListTableModel();
         for (BibtexEntry entry : entries) {
             String links = entry.getField(GUIGlobals.FILE_FIELD);
-            if (links == null)
+            if (links == null) {
                 continue;
+            }
             model.setContent(links);
-            for (int i = 0; i < model.getRowCount(); i++)
+            for (int i = 0; i < model.getRowCount(); i++) {
                 files.add(model.getEntry(i));
+            }
         }
         return files;
     }
 
     /**
-     * Take a list of external links and copy the referred files to a given directory.
-     * This method should be run off the Event Dispatch Thread. A progress bar, if given,
-     * will be updated on the EDT.
+     * Take a list of external links and copy the referred files to a given
+     * directory. This method should be run off the Event Dispatch Thread. A
+     * progress bar, if given, will be updated on the EDT.
      *
      * @param files The list of file links.
      * @param toDir The directory to copy the files to.
-     * @param metaData The MetaData for the database containing the external links. This is needed
-     *  because the database might have its own file directory.
-     * @param prog A JProgressBar which will be updated to show the progress of the process.
-     *  This argument can be null if no progress bar is needed.
-     * @param deleteOriginalFiles if true, the files in their original locations will be deleted
-     *  after copying, for each file whose source directory is different from the destination
-     *  directory differs.
-     * @param callback An ActionListener which should be notified when the process is finished.
-     *  This parameter can be null if no callback is needed.
+     * @param metaData The MetaData for the database containing the external
+     * links. This is needed because the database might have its own file
+     * directory.
+     * @param prog A JProgressBar which will be updated to show the progress of
+     * the process. This argument can be null if no progress bar is needed.
+     * @param deleteOriginalFiles if true, the files in their original locations
+     * will be deleted after copying, for each file whose source directory is
+     * different from the destination directory differs.
+     * @param callback An ActionListener which should be notified when the
+     * process is finished. This parameter can be null if no callback is needed.
      */
     public static void copyExternalLinksToDirectory(final List<FileListEntry> files, File toDir,
-                                                    MetaData metaData, final JProgressBar prog,
-                                                    boolean deleteOriginalFiles,
-                                                    final ActionListener callback) {
+            MetaData metaData, final JProgressBar prog,
+            boolean deleteOriginalFiles,
+            final ActionListener callback) {
 
-        if (prog != null) SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                prog.setMaximum(files.size());
-                prog.setValue(0);
-                prog.setIndeterminate(false);
-            }
-        });
+        if (prog != null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    prog.setMaximum(files.size());
+                    prog.setValue(0);
+                    prog.setIndeterminate(false);
+                }
+            });
+        }
 
         Set<String> fileNames = new HashSet<String>();
 
-        int i=0;
+        int i = 0;
 
         for (FileListEntry entry : files) {
             File file = new File(entry.getLink());
@@ -113,13 +117,22 @@ public class AccessLinksForEntries {
             String[] fileDir = metaData.getFileDirectory(GUIGlobals.FILE_FIELD);
             // Include the directory of the bib file:
             ArrayList<String> al = new ArrayList<String>();
-            for (String aDir : dir) if (!al.contains(aDir)) al.add(aDir);
-            for (String aFileDir : fileDir) if (!al.contains(aFileDir)) al.add(aFileDir);
+            for (String aDir : dir) {
+                if (!al.contains(aDir)) {
+                    al.add(aDir);
+                }
+            }
+            for (String aFileDir : fileDir) {
+                if (!al.contains(aFileDir)) {
+                    al.add(aFileDir);
+                }
+            }
 
             String[] dirs = al.toArray(new String[al.size()]);
             File tmp = Util.expandFilename(entry.getLink(), dirs);
-            if (tmp != null)
+            if (tmp != null) {
                 file = tmp;
+            }
 
             // Check if we have arrived at an existing file:
             if (file.exists()) {
@@ -135,8 +148,9 @@ public class AccessLinksForEntries {
                             // Copy the file:
                             Util.copyFile(file, destination, false);
                             // Delete the original file if requested:
-                            if (deleteOriginalFiles)
+                            if (deleteOriginalFiles) {
                                 file.delete();
+                            }
 
                         } catch (IOException ex) {
                             ex.printStackTrace();
@@ -148,11 +162,13 @@ public class AccessLinksForEntries {
                     i++;
                     final int j = i;
 
-                    if (prog != null) SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            prog.setValue(j);
-                        }
-                    });
+                    if (prog != null) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                prog.setValue(j);
+                            }
+                        });
+                    }
                 }
             } else {
                 // The link could not be resolved to an existing file.
@@ -165,8 +181,8 @@ public class AccessLinksForEntries {
         }
     }
 
-
     public static class SaveWithLinkedFiles extends BaseAction {
+
         private BasePanel panel;
 
         public SaveWithLinkedFiles(BasePanel panel) {
@@ -180,8 +196,8 @@ public class AccessLinksForEntries {
             ArrayList<BibtexEntry> entries = new ArrayList<BibtexEntry>();
             BibtexEntry[] sel = panel.getSelectedEntries();
             Collections.addAll(entries, sel);
-            final List<FileListEntry> links =
-                    AccessLinksForEntries.getExternalLinksForEntries(entries);
+            final List<FileListEntry> links
+                    = AccessLinksForEntries.getExternalLinksForEntries(entries);
             for (FileListEntry entry : links) {
                 System.out.println("Link: " + entry.getLink());
             }
@@ -198,17 +214,15 @@ public class AccessLinksForEntries {
                     AccessLinksForEntries.copyExternalLinksToDirectory(links,
                             new File("/home/alver/tmp"), panel.metaData(), prog, false,
                             new ActionListener() {
-                                public void actionPerformed(ActionEvent actionEvent) {
-                                    diag.dispose();
-                                }
-                            });
+                        public void actionPerformed(ActionEvent actionEvent) {
+                            diag.dispose();
+                        }
+                    });
                 }
             });
             t.start();
 
-            
         }
     }
-
 
 }

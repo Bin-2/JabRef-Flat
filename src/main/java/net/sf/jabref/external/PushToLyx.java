@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.io.BufferedWriter;
@@ -26,11 +26,11 @@ import net.sf.jabref.*;
 
 public class PushToLyx implements PushToApplication {
 
-    private JTextField lyxPipe=new JTextField(30);
+    private JTextField lyxPipe = new JTextField(30);
     private JPanel settings = null;
 
-    private boolean couldNotFindPipe=false;
-    private boolean couldNotWrite=false;
+    private boolean couldNotFindPipe = false;
+    private boolean couldNotWrite = false;
 
     public void pushEntries(BibtexDatabase database, final BibtexEntry[] entries, final String keyString, MetaData metaData) {
 
@@ -38,13 +38,14 @@ public class PushToLyx implements PushToApplication {
         couldNotWrite = false;
 
         String lyxpipeSetting = Globals.prefs.get("lyxpipe");
-        if (!lyxpipeSetting.endsWith(".in"))
-            lyxpipeSetting = lyxpipeSetting+".in";
+        if (!lyxpipeSetting.endsWith(".in")) {
+            lyxpipeSetting = lyxpipeSetting + ".in";
+        }
         File lp = new File(lyxpipeSetting); // this needs to fixed because it gives "asdf" when going prefs.get("lyxpipe")
-        if( !lp.exists() || !lp.canWrite()){
+        if (!lp.exists() || !lp.canWrite()) {
             // See if it helps to append ".in":
-            lp = new File(lyxpipeSetting+".in");
-            if( !lp.exists() || !lp.canWrite()){
+            lp = new File(lyxpipeSetting + ".in");
+            if (!lp.exists() || !lp.canWrite()) {
                 couldNotFindPipe = true;
                 return;
             }
@@ -69,10 +70,9 @@ public class PushToLyx implements PushToApplication {
             }
         });
 
-
-	    t.start();
-	    //new Timeout(2000, t, Globals.lang("Error")+": "+
-            //Globals.lang("unable to access LyX-pipe"));
+        t.start();
+        //new Timeout(2000, t, Globals.lang("Error")+": "+
+        //Globals.lang("unable to access LyX-pipe"));
         try {
             t.join();
         } catch (InterruptedException e) {
@@ -100,19 +100,18 @@ public class PushToLyx implements PushToApplication {
         return "Push to LyX";
     }
 
-
     public void operationCompleted(BasePanel panel) {
         if (couldNotFindPipe) {
             panel.output(Globals.lang("Error") + ": " + Globals.lang("verify that LyX is running and that the lyxpipe is valid")
                     + ". [" + Globals.prefs.get("lyxpipe") + "]");
         } else if (couldNotWrite) {
-            panel.output(Globals.lang("Error") + ": " + Globals.lang("unable to write to") + " " + Globals.prefs.get("lyxpipe") +
-                    ".in");
+            panel.output(Globals.lang("Error") + ": " + Globals.lang("unable to write to") + " " + Globals.prefs.get("lyxpipe")
+                    + ".in");
         } else {
 
             String message = "";
-            panel.output(Globals.lang("Pushed the citations for the following rows to") + " Lyx: " +
-                    message);
+            panel.output(Globals.lang("Pushed the citations for the following rows to") + " Lyx: "
+                    + message);
         }
 
     }
@@ -122,8 +121,9 @@ public class PushToLyx implements PushToApplication {
     }
 
     public JPanel getSettingsPanel() {
-        if (settings == null)
+        if (settings == null) {
             initSettingsPanel();
+        }
         lyxPipe.setText(Globals.prefs.get("lyxpipe"));
         return settings;
     }

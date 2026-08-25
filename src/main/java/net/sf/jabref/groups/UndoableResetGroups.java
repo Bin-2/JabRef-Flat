@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -20,9 +20,14 @@ import javax.swing.undo.AbstractUndoableEdit;
 import net.sf.jabref.Globals;
 
 class UndoableResetGroups extends AbstractUndoableEdit {
-    /** A backup of the groups before the modification */
+
+    /**
+     * A backup of the groups before the modification
+     */
     private final GroupTreeNode m_groupsBackup;
-    /** A handle to the global groups root node */
+    /**
+     * A handle to the global groups root node
+     */
     private final GroupTreeNode m_groupsRootHandle;
     private final GroupSelector m_groupSelector;
     private boolean m_revalidate = true;
@@ -35,13 +40,13 @@ class UndoableResetGroups extends AbstractUndoableEdit {
     }
 
     public String getUndoPresentationName() {
-        return Globals.lang("Undo") + ": " 
-            + Globals.lang("clear all groups");
+        return Globals.lang("Undo") + ": "
+                + Globals.lang("clear all groups");
     }
 
     public String getRedoPresentationName() {
-        return Globals.lang("Redo") + ": " 
-            + Globals.lang("clear all groups");
+        return Globals.lang("Redo") + ": "
+                + Globals.lang("clear all groups");
     }
 
     public void undo() {
@@ -49,19 +54,22 @@ class UndoableResetGroups extends AbstractUndoableEdit {
         // keep root handle, but restore everything else from backup
         m_groupsRootHandle.removeAllChildren();
         m_groupsRootHandle.setGroup(m_groupsBackup.getGroup().deepCopy());
-        for (int i = 0; i < m_groupsBackup.getChildCount(); ++i)
+        for (int i = 0; i < m_groupsBackup.getChildCount(); ++i) {
             m_groupsRootHandle.add(((GroupTreeNode) m_groupsBackup
                     .getChildAt(i)).deepCopy());
-        if (m_revalidate)
+        }
+        if (m_revalidate) {
             m_groupSelector.revalidateGroups();
+        }
     }
 
     public void redo() {
         super.redo();
         m_groupsRootHandle.removeAllChildren();
         m_groupsRootHandle.setGroup(new AllEntriesGroup());
-        if (m_revalidate)
+        if (m_revalidate) {
             m_groupSelector.revalidateGroups();
+        }
     }
 
     /**

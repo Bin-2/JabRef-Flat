@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.oo;
 
 import ca.odell.glazedlists.BasicEventList;
@@ -44,7 +44,7 @@ public class CitationManager {
     JTable table;
     EventTableModel<CitEntry> tableModel;
     JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
 
     public CitationManager(final JabRefFrame frame, OOBibBase ooBase) throws Exception {
         diag = new JDialog(frame, Globals.lang("Manage citations"), true);
@@ -68,7 +68,7 @@ public class CitationManager {
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
-        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         diag.add(bb.getPanel(), BorderLayout.SOUTH);
 
         diag.pack();
@@ -94,8 +94,7 @@ public class CitationManager {
         };
         cancel.addActionListener(cancelAction);
 
-        bb.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put
-                (Globals.prefs.getKey("Close dialog"), "close");
+        bb.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(Globals.prefs.getKey("Close dialog"), "close");
         bb.getPanel().getActionMap().put("close", cancelAction);
 
         table.getColumnModel().getColumn(0).setPreferredWidth(600);
@@ -118,6 +117,7 @@ public class CitationManager {
     }
 
     class CitEntry implements Comparable<CitEntry> {
+
         String refMarkName, pageInfo, keyString, context, origPageInfo;
         List<String> keys;
 
@@ -128,21 +128,25 @@ public class CitationManager {
             this.pageInfo = pageInfo;
             this.origPageInfo = pageInfo;
             StringBuilder sb = new StringBuilder();
-            for (int j=0; j<keys.size(); j++) {
+            for (int j = 0; j < keys.size(); j++) {
                 sb.append(keys.get(j));
-                if (j < keys.size()-1)
+                if (j < keys.size() - 1) {
                     sb.append(", ");
+                }
             }
             keyString = sb.toString();
         }
 
         public boolean pageInfoChanged() {
             if (((pageInfo != null) && (origPageInfo == null))
-                || ((pageInfo == null) && (origPageInfo != null)))
+                    || ((pageInfo == null) && (origPageInfo != null))) {
                 return true;
-            if (pageInfo != null)
+            }
+            if (pageInfo != null) {
                 return pageInfo.compareTo(origPageInfo) != 0;
-            else return false;
+            } else {
+                return false;
+            }
         }
 
         public int compareTo(CitEntry other) {
@@ -158,17 +162,21 @@ public class CitationManager {
 
         public String getColumnName(int i) {
             switch (i) {
-                case 0: return Globals.lang("Citation");
+                case 0:
+                    return Globals.lang("Citation");
                 //case 1: return Globals.lang("Context");
-                default: return Globals.lang("Extra information");
+                default:
+                    return Globals.lang("Extra information");
             }
         }
 
         public Object getColumnValue(CitEntry citEntry, int i) {
             switch (i) {
                 //case 0: return citEntry.keyString;
-                case 0: return citEntry.context;
-                default: return citEntry.pageInfo != null ? citEntry.pageInfo : "";
+                case 0:
+                    return citEntry.context;
+                default:
+                    return citEntry.pageInfo != null ? citEntry.pageInfo : "";
             }
         }
     }
@@ -189,6 +197,7 @@ public class CitationManager {
     }
 
     class SingleCitDialog {
+
         JDialog diag;
         JTextField pageInfo = new JTextField(20);
         JLabel title;
@@ -209,7 +218,7 @@ public class CitationManager {
             b.nextLine();
             b.append(Globals.lang("Extra information (e.g. page number)"));
             b.append(pageInfo);
-            b.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+            b.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             diag.getContentPane().add(b.getPanel(), BorderLayout.CENTER);
 
             ButtonBarBuilder bb = new ButtonBarBuilder();
@@ -217,17 +226,16 @@ public class CitationManager {
             bb.addButton(ok);
             bb.addButton(cancel);
             bb.addGlue();
-            bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+            bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             diag.add(bb.getPanel(), BorderLayout.SOUTH);
-
 
             Action okAction = new AbstractAction() {
                 public void actionPerformed(ActionEvent actionEvent) {
                     if (pageInfo.getText().trim().length() > 0) {
                         _entry.pageInfo = pageInfo.getText().trim();
-                    }
-                    else
+                    } else {
                         _entry.pageInfo = null;
+                    }
                     tableModel.fireTableDataChanged();
                     diag.dispose();
                 }
@@ -241,8 +249,7 @@ public class CitationManager {
             };
             cancel.addActionListener(cancelAction);
 
-            b.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put
-                    (Globals.prefs.getKey("Close dialog"), "close");
+            b.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(Globals.prefs.getKey("Close dialog"), "close");
             b.getPanel().getActionMap().put("close", cancelAction);
 
         }

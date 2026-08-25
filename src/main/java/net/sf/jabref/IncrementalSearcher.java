@@ -12,11 +12,10 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.util.Set;
-
 
 public class IncrementalSearcher {
 
@@ -24,48 +23,49 @@ public class IncrementalSearcher {
     private String hitInField;
 
     public IncrementalSearcher(JabRefPreferences prefs) {
-	this.prefs = prefs;
+        this.prefs = prefs;
     }
 
     public String getField() {
-	return hitInField;
+        return hitInField;
     }
 
     public boolean search(String pattern, BibtexEntry bibtexEntry) {
-	    hitInField = null;
-	    return searchFields(bibtexEntry.getAllFields(), bibtexEntry, pattern);
+        hitInField = null;
+        return searchFields(bibtexEntry.getAllFields(), bibtexEntry, pattern);
     }
 
-	protected boolean searchFields(Set<String> fields, BibtexEntry bibtexEntry, 
-				       String searchString) {
-	    boolean found = false;
-	    if (fields != null) {
-	    	
-	    	for (String field : fields){
-		    try {
-			/*Globals.logger("Searching field '"+fields[i].toString()
+    protected boolean searchFields(Set<String> fields, BibtexEntry bibtexEntry,
+            String searchString) {
+        boolean found = false;
+        if (fields != null) {
+
+            for (String field : fields) {
+                try {
+                    /*Globals.logger("Searching field '"+fields[i].toString()
 				       +"' for '"
 				       +pattern.toString()+"'.");*/
-			if (bibtexEntry.getField(field) != null) {
-			    if (prefs.getBoolean("caseSensitiveSearch")) {
-				if (bibtexEntry.getField(field).contains(searchString))
-				    found = true;
-			    } else {
-				if (bibtexEntry.getField(field).toLowerCase().contains(searchString.toLowerCase()))
-				    found = true;
-			    }
-			    
-			    if (found) {
-				hitInField = field;
-				return true;
-			    }
-			}
-		    }			
-		    catch(Throwable t ){
-			System.err.println("Searching error: "+t) ; 
-		    }
-		}  
-	    }
-	    return false;
-	}
+                    if (bibtexEntry.getField(field) != null) {
+                        if (prefs.getBoolean("caseSensitiveSearch")) {
+                            if (bibtexEntry.getField(field).contains(searchString)) {
+                                found = true;
+                            }
+                        } else {
+                            if (bibtexEntry.getField(field).toLowerCase().contains(searchString.toLowerCase())) {
+                                found = true;
+                            }
+                        }
+
+                        if (found) {
+                            hitInField = field;
+                            return true;
+                        }
+                    }
+                } catch (Throwable t) {
+                    System.err.println("Searching error: " + t);
+                }
+            }
+        }
+        return false;
+    }
 }

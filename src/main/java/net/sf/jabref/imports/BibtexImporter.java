@@ -14,7 +14,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with JAbRef.  If not, see <http://www.gnu.org/licenses/>. 
  */
-
 package net.sf.jabref.imports;
 
 import java.io.IOException;
@@ -27,12 +26,13 @@ import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.OutputPrinter;
 
 /**
- * Imported requried to support --importToOpen someEntry.bib 
+ * Imported requried to support --importToOpen someEntry.bib
  */
 public class BibtexImporter extends ImportFormat {
 
     /**
-     * @return false as that does not cause any harm in the current implementation of JabRef
+     * @return false as that does not cause any harm in the current
+     * implementation of JabRef
      */
     @Override
     public boolean isRecognizedFormat(InputStream in) throws IOException {
@@ -40,10 +40,9 @@ public class BibtexImporter extends ImportFormat {
     }
 
     /**
-     * Parses the given input stream.
-     * Only plain bibtex entries are returned.
+     * Parses the given input stream. Only plain bibtex entries are returned.
      * That especially means that metadata is ignored.
-     * 
+     *
      * @param in the inputStream to read from
      * @param status the OutputPrinter to put status to
      * @return a list of BibTeX entries contained in the given inputStream

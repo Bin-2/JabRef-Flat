@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import net.sf.jabref.*;
@@ -24,9 +24,11 @@ import javax.swing.*;
 import java.io.IOException;
 
 /**
- * Try to download fulltext PDF for selected entry(ies) by following URL or DOI link.
-*/
+ * Try to download fulltext PDF for selected entry(ies) by following URL or DOI
+ * link.
+ */
 public class FindFullTextAction extends AbstractWorker {
+
     private BasePanel basePanel;
     private BibtexEntry entry = null;
     private FindFullText.FindResult result = null;
@@ -78,17 +80,16 @@ public class FindFullTextAction extends AbstractWorker {
                 e.printStackTrace();
             }
             basePanel.output(Globals.lang("Finished downloading full text document"));
-        }
-        else {
+        } else {
             String message = null;
             switch (result.status) {
                 case FindFullText.UNKNOWN_DOMAIN:
                     message = Globals.lang("Unable to find full text article. No search algorithm "
-                        +"defined for the '%0' web site.", result.host);
+                            + "defined for the '%0' web site.", result.host);
                     break;
                 case FindFullText.WRONG_MIME_TYPE:
                     message = Globals.lang("Found pdf link, but received the wrong MIME type. "
-                        +"This could indicate that you don't have access to the fulltext article.");
+                            + "This could indicate that you don't have access to the fulltext article.");
                     break;
                 case FindFullText.LINK_NOT_FOUND:
                     message = Globals.lang("Unable to find full text document in the linked web page.");

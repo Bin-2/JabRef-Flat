@@ -49,8 +49,9 @@ public class RegExpRule implements SearchRule {
         String searchString = searchStrings.values().iterator().next();
 
         int flags = 0;
-        if (!m_caseSensitiveSearch)
+        if (!m_caseSensitiveSearch) {
             flags = Pattern.CASE_INSENSITIVE; // testing
+        }
         try {
             Pattern pattern = Pattern.compile(searchString, flags);
         } catch (PatternSyntaxException ex) {
@@ -65,9 +66,9 @@ public class RegExpRule implements SearchRule {
         String searchString = searchStrings.values().iterator().next();
 
         int flags = 0;
-        if (!m_caseSensitiveSearch)
+        if (!m_caseSensitiveSearch) {
             flags = Pattern.CASE_INSENSITIVE; // testing
-        //System.out.println(searchString);
+        }        //System.out.println(searchString);
         Pattern pattern = Pattern.compile(searchString, flags);
 
         score += searchFields(bibtexEntry.getAllFields(), bibtexEntry, pattern);
@@ -76,20 +77,19 @@ public class RegExpRule implements SearchRule {
     }
 
     protected int searchFields(Set<String> fields, BibtexEntry bibtexEntry,
-                               Pattern pattern) {
+            Pattern pattern) {
         int score = 0;
         if (fields != null) {
-        	for (String field : fields){
+            for (String field : fields) {
                 try {
                     Object value = bibtexEntry.getField(field);
                     if (value != null) {
-                        Matcher m = pattern.matcher(removeBrackets.format((String)value));
-                        if (m.find())
+                        Matcher m = pattern.matcher(removeBrackets.format((String) value));
+                        if (m.find()) {
                             score++;
+                        }
                     }
-                }
-
-                catch (Throwable t) {
+                } catch (Throwable t) {
                     System.err.println("Searching error: " + t);
                 }
             }

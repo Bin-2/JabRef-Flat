@@ -111,14 +111,14 @@ public class GenFieldsCustomizer extends JDialog {
 
         this.getContentPane().add(jPanel3, BorderLayout.CENTER);
         jPanel3.add(jLabel1, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
-                 GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+                GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
         jPanel3.add(jPanel4, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                 GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 318, 193));
+                GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 318, 193));
         jPanel4.add(jScrollPane1, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                 GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
+                GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 0, 0));
         jScrollPane1.getViewport().add(fieldsArea, null);
         jPanel4.add(jLabel2, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                 GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+                GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
 
         // Key bindings:
         ActionMap am = buttons.getActionMap();

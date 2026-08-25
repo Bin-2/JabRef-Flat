@@ -25,47 +25,48 @@ import net.sf.jabref.sql.DBStrings;
 import net.sf.jabref.sql.SQLUtil;
 
 /**
- * 
+ *
  * @author ifsteinm.
- * 
- *  Jan 20th	Extends DBExporter to provide features specific for PostgreSQL
- *  			Created after a refactory on SQLUtil. 
- *          
+ *
+ * Jan 20th	Extends DBExporter to provide features specific for PostgreSQL
+ * Created after a refactory on SQLUtil.
+ *
  */
 public class PostgreSQLImporter extends DBImporter {
 
-	private static PostgreSQLImporter instance = null;
+    private static PostgreSQLImporter instance = null;
 
-	private PostgreSQLImporter() {
-	}
+    private PostgreSQLImporter() {
+    }
 
-	/**
-	 * 
-	 * @return The singleton instance of the MySQLImporter
-	 */
-	public static PostgreSQLImporter getInstance() {
-		if (instance == null)
-			instance = new PostgreSQLImporter();
-		return instance;
-	}
+    /**
+     *
+     * @return The singleton instance of the MySQLImporter
+     */
+    public static PostgreSQLImporter getInstance() {
+        if (instance == null) {
+            instance = new PostgreSQLImporter();
+        }
+        return instance;
+    }
 
-	@Override
-	protected ResultSet readColumnNames(Connection conn) throws SQLException {
-		Statement statement = (Statement) SQLUtil.processQueryWithResults(conn,
-				"SELECT column_name FROM information_schema.columns WHERE table_name ='entries';");
-		ResultSet rs = statement.getResultSet();
-		return rs;
-	}
+    @Override
+    protected ResultSet readColumnNames(Connection conn) throws SQLException {
+        Statement statement = (Statement) SQLUtil.processQueryWithResults(conn,
+                "SELECT column_name FROM information_schema.columns WHERE table_name ='entries';");
+        ResultSet rs = statement.getResultSet();
+        return rs;
+    }
 
-	@Override
-	protected Connection connectToDB(DBStrings dbstrings) throws Exception{
-		String url = SQLUtil.createJDBCurl(dbstrings, true);
-		String drv = "org.postgresql.Driver";
+    @Override
+    protected Connection connectToDB(DBStrings dbstrings) throws Exception {
+        String url = SQLUtil.createJDBCurl(dbstrings, true);
+        String drv = "org.postgresql.Driver";
 
-		Class.forName(drv).newInstance();
-		Connection conn = DriverManager.getConnection(url,
-				dbstrings.getUsername(), dbstrings.getPassword());
-		return conn;
-	}
+        Class.forName(drv).newInstance();
+        Connection conn = DriverManager.getConnection(url,
+                dbstrings.getUsername(), dbstrings.getPassword());
+        return conn;
+    }
 
 }

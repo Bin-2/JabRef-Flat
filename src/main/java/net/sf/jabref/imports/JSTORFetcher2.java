@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import net.sf.jabref.BibtexEntry;
@@ -39,14 +39,14 @@ public class JSTORFetcher2 implements EntryFetcher {
     protected static final String JSTOR_URL = "http://www.jstor.org";
     protected static final String SEARCH_URL = JSTOR_URL + "/action/doBasicSearch?Query=";
     protected static final String SEARCH_URL_END = "&x=0&y=0&wc=on";
-    protected static final String SINGLE_CIT_ENC =
-            //"http://www.jstor.org/action/exportSingleCitation?singleCitation=true&suffix=";
+    protected static final String SINGLE_CIT_ENC
+            = //"http://www.jstor.org/action/exportSingleCitation?singleCitation=true&suffix=";
             "http://www.jstor.org/action/exportSingleCitation?singleCitation=true&doi=10.2307/";
     // suffix doesn't work anymore (March 2013), changed to doi=10.2307/citations but only if it a doi
     // to be improved...
 
     //"http%3A%2F%2Fwww.jstor.org%2Faction%2FexportSingleCitation%3FsingleCitation"
-            //+"%3Dtrue%26suffix%3D";
+    //+"%3Dtrue%26suffix%3D";
     protected static final Pattern idPattern = Pattern.compile(
             "<a class=\"title\" href=\"/stable/(\\d+)\\?");
     protected static final Pattern numberofhits = Pattern.compile(
@@ -95,12 +95,12 @@ public class JSTORFetcher2 implements EntryFetcher {
             if (citations.size() == 0) {
                 if (!noAccessFound) {
                     status.showMessage(Globals.lang("No entries found for the search string '%0'",
-                        query),
-                        Globals.lang("Search JSTOR"), JOptionPane.INFORMATION_MESSAGE);
+                            query),
+                            Globals.lang("Search JSTOR"), JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     status.showMessage(Globals.lang("No entries found. It looks like you do not have access to search JStor.",
-                        query),
-                        Globals.lang("Search JSTOR"), JOptionPane.INFORMATION_MESSAGE);
+                            query),
+                            Globals.lang("Search JSTOR"), JOptionPane.INFORMATION_MESSAGE);
                 }
                 return false;
             }
@@ -118,7 +118,7 @@ public class JSTORFetcher2 implements EntryFetcher {
             }
 
             return true;
-            
+
         } catch (IOException e) {
             e.printStackTrace();
             status.showMessage(Globals.lang("Error while fetching from JSTOR") + ": " + e.getMessage());
@@ -128,8 +128,7 @@ public class JSTORFetcher2 implements EntryFetcher {
 
     /**
      *
-     * @param query
-     *            The search term to query JStor for.
+     * @param query The search term to query JStor for.
      * @return a list of IDs
      * @throws java.io.IOException
      */
@@ -147,13 +146,14 @@ public class JSTORFetcher2 implements EntryFetcher {
             while ((count <= Math.min(MAX_PAGES_TO_LOAD, numberOfPagesRequested))
                     && ((nextPage = getCitationsFromUrl(urlQuery, ids, count, numberOfRefs, dialog, status)) != null)) {
                 // If user has cancelled the import, return null to signal this:
-                if ((count == 1) && (nextPage.equals(CANCELLED)))
+                if ((count == 1) && (nextPage.equals(CANCELLED))) {
                     return null;
+                }
                 //System.out.println("JSTORFetcher2 getCitations numberofrefs=" + numberOfRefs[0]);
                 //System.out.println("JSTORFetcher2 getCitations numberofrefs=" + " refsRequested=" + numberOfRefs[1]);
                 refsRequested = Integer.valueOf(numberOfRefs[1]);
                 //System.out.println("JSTORFetcher2 getCitations refsRequested=" + Integer.valueOf(refsRequested));
-                numberOfPagesRequested = ((refsRequested -1) - (refsRequested -1) % REFS_PER_PAGE) / REFS_PER_PAGE + 1;
+                numberOfPagesRequested = ((refsRequested - 1) - (refsRequested - 1) % REFS_PER_PAGE) / REFS_PER_PAGE + 1;
                 //System.out.println("JSTORFetcher2 getCitations numberOfPagesRequested=" + Integer.valueOf(numberOfPagesRequested));
                 urlQuery = nextPage;
                 //System.out.println("JSTORFetcher2 getcitations count=" + Integer.valueOf(count) + " ids=" + ids);
@@ -176,8 +176,6 @@ public class JSTORFetcher2 implements EntryFetcher {
 
         int countOfRefs = 0;
         int refsRequested = 0;
-
-
 
         if (count == 1) { //  Readin the numberofhits (only once)
             Matcher mn = numberofhits.matcher(pageEntire);
@@ -211,10 +209,10 @@ public class JSTORFetcher2 implements EntryFetcher {
         }
         countOfRefs = Integer.valueOf(numberOfRefs[0]);
         refsRequested = Integer.valueOf(numberOfRefs[1]);
-        
+
         Matcher m = idPattern.matcher(cont);
 
-        if (m.find() && (ids.size() + 1 <= refsRequested) ) {
+        if (m.find() && (ids.size() + 1 <= refsRequested)) {
             do {
                 ids.add(m.group(1));
                 cont = cont.substring(m.end());
@@ -228,13 +226,12 @@ public class JSTORFetcher2 implements EntryFetcher {
         }
         m = nextPagePattern.matcher(entirePage);
 
-
         if (m.find()) {
             String newQuery = JSTOR_URL + m.group(1);
             return newQuery;
         } else {
             return null;
-    }
+        }
     }
 
     protected BibtexEntry getSingleCitation(String cit) {

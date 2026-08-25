@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Filename: $RCSfile$
 //  Purpose:  Atom representation.
@@ -38,18 +38,16 @@ package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
 
-
 /**
  * @author $author$
  * @version $Revision: 2268 $
  */
-public class CreateBibORDFAuthors implements LayoutFormatter
-{
+public class CreateBibORDFAuthors implements LayoutFormatter {
     //~ Methods ////////////////////////////////////////////////////////////////
 
     public String format(String fieldText) {
-    	// Yeah, the format is quite verbose... sorry about that :)
-    	
+        // Yeah, the format is quite verbose... sorry about that :)
+
 //      <bibo:contribution>
 //        <bibo:Contribution>
 //          <bibo:role rdf:resource="http://purl.org/ontology/bibo/roles/author" />
@@ -57,25 +55,19 @@ public class CreateBibORDFAuthors implements LayoutFormatter
 //          <bibo:position>1</bibo:position>
 //        </bibo:Contribution>
 //      </bibo:contribution>
-
         StringBuffer sb = new StringBuffer(100);
 
-        if (!fieldText.contains(" and "))
-        {
-          singleAuthor(sb, fieldText, 1);
-        }
-        else
-        {
+        if (!fieldText.contains(" and ")) {
+            singleAuthor(sb, fieldText, 1);
+        } else {
             String[] names = fieldText.split(" and ");
-            for (int i=0; i<names.length; i++)
-            {
-              singleAuthor(sb, names[i], (i+1));
-              if (i < names.length -1)
-                sb.append("\n");
+            for (int i = 0; i < names.length; i++) {
+                singleAuthor(sb, names[i], (i + 1));
+                if (i < names.length - 1) {
+                    sb.append("\n");
+                }
             }
         }
-
-
 
         fieldText = sb.toString();
 

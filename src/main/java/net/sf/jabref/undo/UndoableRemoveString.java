@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.undo;
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -26,42 +26,40 @@ public class UndoableRemoveString extends AbstractUndoableEdit {
     private BasePanel panel;
 
     public UndoableRemoveString(BasePanel panel,
-				BibtexDatabase base, BibtexString string) {
-	this.base = base;
-	this.string = string;
-	this.panel = panel;
+            BibtexDatabase base, BibtexString string) {
+        this.base = base;
+        this.string = string;
+        this.panel = panel;
     }
 
     public String getUndoPresentationName() {
-	return Globals.lang("Undo")+": "+Globals.lang("remove string ");
+        return Globals.lang("Undo") + ": " + Globals.lang("remove string ");
     }
 
     public String getRedoPresentationName() {
-	return Globals.lang("Redo")+": "+Globals.lang("remove string ");
+        return Globals.lang("Redo") + ": " + Globals.lang("remove string ");
     }
 
     public void undo() {
-	super.undo();
-	
-	// Revert the change.
-	try {
-	    base.addString(string);
-	} catch (KeyCollisionException ex) {
-	    ex.printStackTrace();
-	}
+        super.undo();
 
-	panel.updateStringDialog();
+        // Revert the change.
+        try {
+            base.addString(string);
+        } catch (KeyCollisionException ex) {
+            ex.printStackTrace();
+        }
+
+        panel.updateStringDialog();
     }
 
     public void redo() {
-	super.redo();
+        super.redo();
 
-	// Redo the change.
-	base.removeString(string.getId());
+        // Redo the change.
+        base.removeString(string.getId());
 
-	panel.updateStringDialog();
+        panel.updateStringDialog();
     }
-
-
 
 }

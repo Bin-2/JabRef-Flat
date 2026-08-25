@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.undo;
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -24,9 +24,9 @@ import net.sf.jabref.Util;
 
 /**
  * This class represents the removal of an entry. The constructor needs
- * references to the database, the entry, and the map of open entry editors.
- * The latter to be able to close the entry's editor if it is opened after
- * an undo, and the removal is then undone.
+ * references to the database, the entry, and the map of open entry editors. The
+ * latter to be able to close the entry's editor if it is opened after an undo,
+ * and the removal is then undone.
  */
 public class UndoableRemoveEntry extends AbstractUndoableEdit {
 
@@ -35,46 +35,44 @@ public class UndoableRemoveEntry extends AbstractUndoableEdit {
     private BasePanel panel;
 
     public UndoableRemoveEntry(BibtexDatabase base, BibtexEntry entry,
-			       BasePanel panel) {
-	this.base = base;
-	this.entry = entry;
-	this.panel = panel;
+            BasePanel panel) {
+        this.base = base;
+        this.entry = entry;
+        this.panel = panel;
     }
 
     public String getUndoPresentationName() {
-	return "Undo: remove entry";
+        return "Undo: remove entry";
     }
 
     public String getRedoPresentationName() {
-	return "Redo: remove entry";
+        return "Redo: remove entry";
     }
 
     public void undo() {
-	super.undo();
+        super.undo();
 
-	// Revert the change.
-	try {
-	    String id = Util.createNeutralId();
-	    entry.setId(id);
-	    base.insertEntry(entry);
-	} catch (Throwable ex) {
-          ex.printStackTrace();
-	}
+        // Revert the change.
+        try {
+            String id = Util.createNeutralId();
+            entry.setId(id);
+            base.insertEntry(entry);
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+        }
     }
 
     public void redo() {
-	super.redo();
+        super.redo();
 
-	// Redo the change.
-	try {
-	    base.removeEntry(entry.getId());
-	    // If the entry has an editor currently open, we must close it.
-	    panel.ensureNotShowing(entry);
-	} catch (Throwable ex) {
-          ex.printStackTrace();
-	}
+        // Redo the change.
+        try {
+            base.removeEntry(entry.getId());
+            // If the entry has an editor currently open, we must close it.
+            panel.ensureNotShowing(entry);
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+        }
     }
-
-
 
 }

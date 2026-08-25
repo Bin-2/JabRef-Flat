@@ -7,11 +7,8 @@ import net.sf.jabref.gui.FileListTableModel;
 import net.sf.jabref.undo.UndoableFieldChange;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: 5/24/12
- * Time: 8:48 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: 5/24/12 Time: 8:48 PM To change
+ * this template use File | Settings | File Templates.
  */
 public class AttachFileAction extends BaseAction {
 
@@ -23,8 +20,9 @@ public class AttachFileAction extends BaseAction {
     }
 
     public void action() {
-        if (panel.getSelectedEntries().length != 1)
+        if (panel.getSelectedEntries().length != 1) {
             return; // TODO: display error message?
+        }
         entry = panel.getSelectedEntries()[0];
         FileListEntry flEntry = new FileListEntry("", "", null);
         FileListEntryEditor editor = new FileListEntryEditor(panel.frame(), flEntry, false, true,
@@ -33,8 +31,9 @@ public class AttachFileAction extends BaseAction {
         if (editor.okPressed()) {
             FileListTableModel model = new FileListTableModel();
             String oldVal = entry.getField(GUIGlobals.FILE_FIELD);
-            if (oldVal != null)
+            if (oldVal != null) {
                 model.setContent(oldVal);
+            }
             model.addEntry(model.getRowCount(), flEntry);
             String newVal = model.getStringRepresentation();
 
@@ -45,6 +44,5 @@ public class AttachFileAction extends BaseAction {
             panel.markBaseChanged();
         }
     }
-
 
 }

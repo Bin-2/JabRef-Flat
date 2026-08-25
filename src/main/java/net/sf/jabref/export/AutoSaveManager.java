@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import net.sf.jabref.JabRefFrame;
@@ -29,6 +29,7 @@ import java.io.File;
  * Background task and utilities for autosave feature.
  */
 public class AutoSaveManager {
+
     private JabRefFrame frame;
     private Timer t = null;
 
@@ -40,7 +41,7 @@ public class AutoSaveManager {
     public void startAutoSaveTimer() {
         TimerTask task = new AutoSaveTask();
         t = new Timer();
-        long interval = (long)(60000*Globals.prefs.getInt("autoSaveInterval"));
+        long interval = (long) (60000 * Globals.prefs.getInt("autoSaveInterval"));
         t.scheduleAtFixedRate(task, interval, interval);
     }
 
@@ -49,22 +50,23 @@ public class AutoSaveManager {
     }
 
     class AutoSaveTask extends TimerTask {
+
         public void run() {
             // Since this method is running in the background, we must be prepared that
             // there could be changes done by the user while this method is running.
 
             List<BasePanel> panels = new ArrayList<BasePanel>();
-            for (int i=0; i<frame.baseCount(); i++)
+            for (int i = 0; i < frame.baseCount(); i++) {
                 panels.add(frame.baseAt(i));
+            }
 
-            int i=0;
+            int i = 0;
             for (BasePanel panel : panels) {
                 if (panel.isBaseChanged()) {
                     if (panel.getFile() != null) {
                         autoSave(panel);
                     }
-                }
-                else {
+                } else {
                 }
                 i++;
             }
@@ -72,17 +74,20 @@ public class AutoSaveManager {
     }
 
     /**
-     * Get a File object pointing to the autosave file corresponding to the given file.
+     * Get a File object pointing to the autosave file corresponding to the
+     * given file.
+     *
      * @param f The database file.
      * @return its corresponding autosave file.
      */
     public static File getAutoSaveFile(File f) {
         String n = f.getName();
-        return new File(f.getParentFile(), ".$"+n+"$");
+        return new File(f.getParentFile(), ".$" + n + "$");
     }
 
     /**
      * Perform an autosave.
+     *
      * @param panel The BasePanel to autosave for.
      * @return true if successful, false otherwise.
      */
@@ -105,17 +110,21 @@ public class AutoSaveManager {
 
     /**
      * Delete this BasePanel's autosave if it exists.
+     *
      * @param panel The BasePanel in question.
-     * @return true if there was no autosave or if the autosave was successfully deleted, false otherwise.
+     * @return true if there was no autosave or if the autosave was successfully
+     * deleted, false otherwise.
      */
     public static boolean deleteAutoSaveFile(BasePanel panel) {
-        if (panel.getFile() == null)
+        if (panel.getFile() == null) {
             return true;
+        }
         File backupFile = getAutoSaveFile(panel.getFile());
         if (backupFile.exists()) {
             return backupFile.delete();
+        } else {
+            return true;
         }
-        else return true;
     }
 
     /**
@@ -124,8 +133,9 @@ public class AutoSaveManager {
      */
     public void clearAutoSaves() {
         List<BasePanel> panels = new ArrayList<BasePanel>();
-        for (int i=0; i<frame.baseCount(); i++)
+        for (int i = 0; i < frame.baseCount(); i++) {
             panels.add(frame.baseAt(i));
+        }
         for (BasePanel panel : panels) {
             deleteAutoSaveFile(panel);
         }
@@ -133,9 +143,10 @@ public class AutoSaveManager {
 
     /**
      * Check if a newer autosave exists for the given file.
+     *
      * @param f The file to check.
-     * @return true if an autosave is found, and if the autosave is newer
-     *   than the given file.
+     * @return true if an autosave is found, and if the autosave is newer than
+     * the given file.
      */
     public static boolean newerAutoSaveExists(File f) {
         File asFile = getAutoSaveFile(f);

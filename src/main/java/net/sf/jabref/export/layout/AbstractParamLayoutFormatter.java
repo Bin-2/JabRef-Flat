@@ -12,23 +12,25 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This is an abstract implementation of ParamLayoutFormatter, which provides some
- * functionality for the handling of argument strings.
+ * This is an abstract implementation of ParamLayoutFormatter, which provides
+ * some functionality for the handling of argument strings.
  */
 public abstract class AbstractParamLayoutFormatter implements ParamLayoutFormatter {
 
     private static final char SEPARATOR = ',';
 
     /**
-     * Parse an argument string and return the parts of the argument. The parts are
-     * separated by commas, and escaped commas are reduced to literal commas.
+     * Parse an argument string and return the parts of the argument. The parts
+     * are separated by commas, and escaped commas are reduced to literal
+     * commas.
+     *
      * @param arg The argument string.
      * @return An array of strings representing the parts of the argument.
      */
@@ -36,7 +38,7 @@ public abstract class AbstractParamLayoutFormatter implements ParamLayoutFormatt
         List<String> parts = new ArrayList<String>();
         StringBuilder current = new StringBuilder();
         boolean escaped = false;
-        for (int i=0; i<arg.length(); i++) {
+        for (int i = 0; i < arg.length(); i++) {
             if ((arg.charAt(i) == SEPARATOR) && !escaped) {
                 parts.add(current.toString());
                 current = new StringBuilder();
@@ -44,25 +46,28 @@ public abstract class AbstractParamLayoutFormatter implements ParamLayoutFormatt
                 if (escaped) {
                     escaped = false;
                     current.append(arg.charAt(i));
-                } else
+                } else {
                     escaped = true;
+                }
             } else if (escaped) {
                 // Handle newline and tab:
-                if (arg.charAt(i)=='n')
+                if (arg.charAt(i) == 'n') {
                     current.append('\n');
-                else if (arg.charAt(i)=='t')
+                } else if (arg.charAt(i) == 't') {
                     current.append('\t');
-                else {
-                    if ((arg.charAt(i) != ',') && (arg.charAt(i) != '"'))
+                } else {
+                    if ((arg.charAt(i) != ',') && (arg.charAt(i) != '"')) {
                         current.append('\\');
+                    }
                     current.append(arg.charAt(i));
                 }
                 escaped = false;
-            } else
+            } else {
                 current.append(arg.charAt(i));
+            }
         }
         parts.add(current.toString());
-	    return parts.toArray(new String[parts.size()]);
+        return parts.toArray(new String[parts.size()]);
     }
 
 }

@@ -105,8 +105,8 @@ public class SaveDatabaseAction extends AbstractWorker {
                                 }
 
                                 panel.setUpdatedExternally(false);
-                                SwingUtilities.invokeLater(() ->
-                                        panel.getSidePaneManager().hide("fileUpdate"));
+                                SwingUtilities.invokeLater(()
+                                        -> panel.getSidePaneManager().hide("fileUpdate"));
                             });
                         }
                     }, "ExternalChangeScanner").start();

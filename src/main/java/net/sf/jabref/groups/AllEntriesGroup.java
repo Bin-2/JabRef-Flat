@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import java.util.Map;
@@ -28,26 +28,28 @@ import net.sf.jabref.SearchRule;
  * This group contains all entries.
  */
 public class AllEntriesGroup extends AbstractGroup implements SearchRule {
+
     public static final String ID = "AllEntriesGroup:";
 
     public AllEntriesGroup() {
         super(Globals.lang("All Entries"), AbstractGroup.INDEPENDENT);
     }
-    
+
     public static AbstractGroup fromString(String s, BibtexDatabase db, int version) throws Exception {
-        if (!s.startsWith(ID))
+        if (!s.startsWith(ID)) {
             throw new Exception(
                     "Internal error: AllEntriesGroup cannot be created from \""
-                            + s + "\". "
-                            + "Please report this on www.sf.net/projects/jabref");
+                    + s + "\". "
+                    + "Please report this on www.sf.net/projects/jabref");
+        }
         switch (version) {
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-            return new AllEntriesGroup();
-        default:
-            throw new UnsupportedVersionException("AllEntriesGroup", version); 
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                return new AllEntriesGroup();
+            default:
+                throw new UnsupportedVersionException("AllEntriesGroup", version);
         }
     }
 
@@ -100,20 +102,20 @@ public class AllEntriesGroup extends AbstractGroup implements SearchRule {
     public boolean contains(BibtexEntry entry) {
         return true;
     }
-    
+
     public boolean isDynamic() {
-    	// this is actually a special case; I define it as non-dynamic
-    	return false;
+        // this is actually a special case; I define it as non-dynamic
+        return false;
     }
 
-	public String getDescription() {
-		return "This group contains all entries. It cannot be edited or removed.";
-		// JZTODO lyrics
-	}
-	
-	public String getShortDescription() {
-		return Globals.lang("<b>All Entries</b> (this group cannot be edited or removed)");
-	}
+    public String getDescription() {
+        return "This group contains all entries. It cannot be edited or removed.";
+        // JZTODO lyrics
+    }
+
+    public String getShortDescription() {
+        return Globals.lang("<b>All Entries</b> (this group cannot be edited or removed)");
+    }
 
     public String getTypeId() {
         return ID;

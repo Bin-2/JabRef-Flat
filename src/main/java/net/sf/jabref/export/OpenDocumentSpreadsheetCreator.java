@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.io.*;
@@ -45,7 +45,7 @@ public class OpenDocumentSpreadsheetCreator extends ExportFormat {
     }
 
     public void performExport(final BibtexDatabase database, final MetaData metaData,
-                              final String file, final String encoding, Set<String> keySet) throws Exception {
+            final String file, final String encoding, Set<String> keySet) throws Exception {
         exportOpenDocumentSpreadsheet(new File(file), database, keySet);
     }
 
@@ -53,7 +53,7 @@ public class OpenDocumentSpreadsheetCreator extends ExportFormat {
         ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
 
         try {
-            
+
             //addResourceFile("mimetype", "/resource/ods/mimetype", out);
             ZipEntry ze = new ZipEntry("mimetype");
             String mime = "application/vnd.oasis.opendocument.spreadsheet";
@@ -63,7 +63,7 @@ public class OpenDocumentSpreadsheetCreator extends ExportFormat {
             crc.update(mime.getBytes());
             ze.setCrc(crc.getValue());
             out.putNextEntry(ze);
-            for (int i=0; i<mime.length(); i++) {
+            for (int i = 0; i < mime.length(); i++) {
                 out.write(mime.charAt(i));
             }
             out.closeEntry();
@@ -84,7 +84,6 @@ public class OpenDocumentSpreadsheetCreator extends ExportFormat {
             addResourceFile("META-INF/manifest.xml", "/resource/ods/manifest.xml", out);
 
             //zipEntry = new ZipEntry()
-
         } finally {
             out.close();
         }
@@ -142,7 +141,9 @@ public class OpenDocumentSpreadsheetCreator extends ExportFormat {
                 synchronized (out) {
                     while (true) {
                         int bytesRead = in.read(buffer);
-                        if (bytesRead == -1) break;
+                        if (bytesRead == -1) {
+                            break;
+                        }
                         out.write(buffer, 0, bytesRead);
                     }
                 }

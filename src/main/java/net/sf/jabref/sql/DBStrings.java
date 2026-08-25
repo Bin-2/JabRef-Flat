@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.sql;
 
 import net.sf.jabref.Globals;
@@ -22,7 +22,7 @@ import net.sf.jabref.Globals;
  * @author pattonlk
  */
 public class DBStrings {
-   
+
     private String serverType;
     private String serverHostname;
     private String database;
@@ -33,7 +33,9 @@ public class DBStrings {
     private boolean isInitialized;
     private boolean configValid;
 
-    /** Creates a new instance of DBStrings */
+    /**
+     * Creates a new instance of DBStrings
+     */
     public DBStrings() {
         this.setServerType(null);
         this.setServerHostname(null);
@@ -44,11 +46,11 @@ public class DBStrings {
         this.isConfigValid(false);
     }
 
-   /**
-    * Initializes the variables needed with defaults
-    */
+    /**
+     * Initializes the variables needed with defaults
+     */
     public void initialize() {
-        String [] servers = {Globals.lang("MySQL"), Globals.lang("PostgreSQL")};
+        String[] servers = {Globals.lang("MySQL"), Globals.lang("PostgreSQL")};
         setServerTypes(servers);
         setServerType(Globals.prefs.get("dbConnectServerType"));
         setServerHostname(Globals.prefs.get("dbConnectHostname"));

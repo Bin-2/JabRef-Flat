@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.specialfields;
 
 import java.awt.event.ActionEvent;
@@ -22,17 +22,17 @@ import javax.swing.AbstractAction;
 import net.sf.jabref.JabRefFrame;
 
 public class SpecialFieldMenuAction extends AbstractAction {
-	private JabRefFrame frame;
-	private String actionName;
 
-	public SpecialFieldMenuAction(SpecialFieldValue val, JabRefFrame frame) {
-		super(val.getMenuString(), val.getIcon());
-		this.frame = frame;
-		this.actionName = val.getActionName();
-	}
-	
-	public void actionPerformed(ActionEvent evt) {
-		frame.basePanel().runCommand(actionName);
-	}
+    private JabRefFrame frame;
+    private String actionName;
+
+    public SpecialFieldMenuAction(SpecialFieldValue val, JabRefFrame frame) {
+        super(val.getMenuString(), val.getIcon());
+        this.frame = frame;
+        this.actionName = val.getActionName();
+    }
+
+    public void actionPerformed(ActionEvent evt) {
+        frame.basePanel().runCommand(actionName);
+    }
 }
-

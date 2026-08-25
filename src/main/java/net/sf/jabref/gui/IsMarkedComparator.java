@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
@@ -24,10 +24,10 @@ import java.util.Comparator;
 
 public class IsMarkedComparator implements Comparator<BibtexEntry> {
 
-	public int compare(BibtexEntry e1, BibtexEntry e2) {
+    public int compare(BibtexEntry e1, BibtexEntry e2) {
 
-        return - Util.isMarked(e1) + Util.isMarked(e2);
-		
-	}
+        return -Util.isMarked(e1) + Util.isMarked(e2);
+
+    }
 
 }

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.awt.datatransfer.DataFlavor;
@@ -21,8 +21,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-
 public class RtfSelection implements Transferable {
+
     DataFlavor rtfFlavor;
     DataFlavor[] supportedFlavors;
     private String content;
@@ -30,18 +30,16 @@ public class RtfSelection implements Transferable {
     public RtfSelection(String s) {
         content = s;
         try {
-            rtfFlavor = new DataFlavor
-                    ("text/rtf; class=java.io.InputStream");
-            supportedFlavors = new DataFlavor[]
-            {rtfFlavor, DataFlavor.stringFlavor};
+            rtfFlavor = new DataFlavor("text/rtf; class=java.io.InputStream");
+            supportedFlavors = new DataFlavor[]{rtfFlavor, DataFlavor.stringFlavor};
         } catch (ClassNotFoundException ex) {
             ex.printStackTrace();
         }
     }
 
     public boolean isDataFlavorSupported(DataFlavor flavor) {
-        return flavor.equals(rtfFlavor) ||
-                flavor.equals(DataFlavor.stringFlavor);
+        return flavor.equals(rtfFlavor)
+                || flavor.equals(DataFlavor.stringFlavor);
     }
 
     public java.awt.datatransfer.DataFlavor[] getTransferDataFlavors() {

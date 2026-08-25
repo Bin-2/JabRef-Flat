@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.io.File;
@@ -35,28 +35,26 @@ import net.sf.jabref.msbib.MSBibDatabase;
  */
 class MSBibExportFormat extends ExportFormat {
 
-	public MSBibExportFormat() {
+    public MSBibExportFormat() {
         super(Globals.lang("MS Office 2007"), "MSBib", null, null, ".xml");
     }
 
     public void performExport(final BibtexDatabase database, final MetaData metaData,
-                              final String file, final String encoding, Set<String> keySet) throws IOException {
-    	// forcing to use UTF8 output format for some problems with
-    	// xml export in other encodings
+            final String file, final String encoding, Set<String> keySet) throws IOException {
+        // forcing to use UTF8 output format for some problems with
+        // xml export in other encodings
         SaveSession ss = getSaveSession("UTF8", new File(file));
         VerifyingWriter ps = ss.getWriter();
         MSBibDatabase md = new MSBibDatabase(database, keySet);
 
         // PS: DOES NOT SUPPORT EXPORTING ONLY A SET OF ENTRIES
-
         try {
             DOMSource source = new DOMSource(md.getDOMrepresentation());
             StreamResult result = new StreamResult(ps);
             Transformer trans = TransformerFactory.newInstance().newTransformer();
             trans.setOutputProperty(OutputKeys.INDENT, "yes");
             trans.transform(source, result);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new Error(e);
         }
 

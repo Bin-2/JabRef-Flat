@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.journals;
 
 import net.sf.jabref.Globals;
@@ -23,11 +23,8 @@ import net.sf.jabref.Util;
 import java.awt.event.ActionEvent;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: Sep 22, 2005
- * Time: 10:45:02 PM
- * To browseOld this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: Sep 22, 2005 Time: 10:45:02 PM To
+ * browseOld this template use File | Settings | File Templates.
  */
 public class ManageJournalsAction extends MnemonicAwareAction {
 
@@ -38,6 +35,7 @@ public class ManageJournalsAction extends MnemonicAwareAction {
         putValue(NAME, Globals.menuTitle("Manage journal abbreviations"));
         this.frame = frame;
     }
+
     public void actionPerformed(ActionEvent actionEvent) {
         ManageJournalsPanel panel = new ManageJournalsPanel(frame);
         Util.placeDialog(panel.getDialog(), frame);

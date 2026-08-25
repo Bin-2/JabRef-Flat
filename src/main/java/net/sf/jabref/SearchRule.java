@@ -23,16 +23,14 @@ USA
 Further information about the GNU GPL is available at:
 http://www.gnu.org/copyleft/gpl.ja.html
 
-*/
+ */
 package net.sf.jabref;
 
 import java.util.Map;
 
-public interface SearchRule{
+public interface SearchRule {
 
-    public int applyRule(Map<String, String> searchStrings,BibtexEntry bibtexEntry) ;
+    public int applyRule(Map<String, String> searchStrings, BibtexEntry bibtexEntry);
 
     public boolean validateSearchStrings(Map<String, String> searchStrings);
 }
-
-

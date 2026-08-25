@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
@@ -23,12 +23,13 @@ import net.sf.jabref.AuthorList;
  * <li>Names are given in order: von last, jr, first.</li>
  * <li>First names will NOT be abbreviated.</li>
  * <li>Individual authors are separated by commas.</li>
- * <li>There is no comma before the 'and' at the end of a list of three or more authors</li>
+ * <li>There is no comma before the 'and' at the end of a list of three or more
+ * authors</li>
  * </ul>
- * 
+ *
  * @author mkovtun
  * @author Christopher Oezbek <oezi@oezi.de>
- * 
+ *
  */
 public class AuthorLastFirstCommas implements LayoutFormatter {
 

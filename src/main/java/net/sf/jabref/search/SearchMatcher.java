@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.search;
 
 import net.sf.jabref.BibtexEntry;
@@ -24,9 +24,9 @@ import ca.odell.glazedlists.matchers.Matcher;
  */
 public class SearchMatcher implements Matcher<BibtexEntry> {
 
-	public static SearchMatcher INSTANCE = new SearchMatcher();
+    public static SearchMatcher INSTANCE = new SearchMatcher();
 
-	public boolean matches(BibtexEntry entry) {
-		return entry.isSearchHit();
-	}
+    public boolean matches(BibtexEntry entry) {
+        return entry.isSearchHit();
+    }
 }

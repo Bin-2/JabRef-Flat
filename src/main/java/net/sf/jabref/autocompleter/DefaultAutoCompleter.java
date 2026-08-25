@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.autocompleter;
 
 import java.util.StringTokenizer;
@@ -23,40 +23,40 @@ import net.sf.jabref.Globals;
 /**
  * Stores all words which are separated by Globals.SEPARATING_CHARS. This
  * autocompleter only processes the field which is given by the fieldname.
- * 
+ *
  * @author kahlert, cordes
- * 
+ *
  */
 public class DefaultAutoCompleter extends AbstractAutoCompleter {
 
-	public String _fieldName;
+    public String _fieldName;
 
-	/**
-	 * @see AutoCompleterFactory
-	 */
-	protected DefaultAutoCompleter(String fieldName) {
-		_fieldName = fieldName;
-	}
+    /**
+     * @see AutoCompleterFactory
+     */
+    protected DefaultAutoCompleter(String fieldName) {
+        _fieldName = fieldName;
+    }
 
-	public boolean isSingleUnitField() {
-		return false;
-	}
+    public boolean isSingleUnitField() {
+        return false;
+    }
 
-	public String[] complete(String s) {
-		return super.complete(s);
-	}
+    public String[] complete(String s) {
+        return super.complete(s);
+    }
 
-	@Override
-	public void addBibtexEntry(BibtexEntry entry) {
-		if (entry != null) {
-			String fieldValue = entry.getField(_fieldName);
+    @Override
+    public void addBibtexEntry(BibtexEntry entry) {
+        if (entry != null) {
+            String fieldValue = entry.getField(_fieldName);
             if (fieldValue != null) {
-				StringTokenizer tok = new StringTokenizer(fieldValue, Globals.SEPARATING_CHARS);
-				while (tok.hasMoreTokens()) {
-					String word = tok.nextToken();
-					addWordToIndex(word);
-				}
-			}
+                StringTokenizer tok = new StringTokenizer(fieldValue, Globals.SEPARATING_CHARS);
+                while (tok.hasMoreTokens()) {
+                    String word = tok.nextToken();
+                    addWordToIndex(word);
+                }
+            }
         }
-	}
+    }
 }

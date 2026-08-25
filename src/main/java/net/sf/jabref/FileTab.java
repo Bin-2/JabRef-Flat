@@ -213,7 +213,6 @@ public class FileTab extends JPanel implements PrefsTab {
 //        // Ensure proper background
 //        pan.setBackground(UIManager.getColor("Panel.background"));
 //        setBackground(UIManager.getColor("Panel.background"));
-
         setLayout(new BorderLayout());
         add(pan, BorderLayout.CENTER);
     }

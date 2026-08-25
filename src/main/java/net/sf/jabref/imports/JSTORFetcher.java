@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.io.BufferedReader;
@@ -45,7 +45,7 @@ import net.sf.jabref.OutputPrinter;
  * <li>Parse it with the BibtexParser</li>
  * <li>Import the BibtexEntrys via the ImportInspectionDialog</li>
  * </ol>
- * 
+ *
  * @author Juliane Doege, Tobias Langner
  */
 public class JSTORFetcher implements EntryFetcher {
@@ -62,19 +62,19 @@ public class JSTORFetcher implements EntryFetcher {
 
     /**
      * location where the ticket is obtained
-     * 
+     *
      */
     protected static final String URL_TICKET = "http://www.jstor.org/search";
 
     /**
      * Cookie key for citations to be fetched
-     * 
+     *
      */
     protected static final String COOKIE_CITATIONS = "Jstor_citations0";
 
     /**
      * location where to obtain the citations cookie
-     * 
+     *
      */
     protected static final String URL_BIBTEX = "http://www.jstor.org/browse/citations.txt?exportFormat=bibtex&exportAction=Display&frame=noframe&dpi=3&config=jstor&viewCitations=1&View=View";
 
@@ -98,7 +98,7 @@ public class JSTORFetcher implements EntryFetcher {
     public String getTitle() {
         return "JSTOR";
     }
-    
+
     public void stopFetching() {
         // cannot be interrupted
     }
@@ -114,15 +114,15 @@ public class JSTORFetcher implements EntryFetcher {
 
             // Last retrieve the Bibtex-entries of the citations found
             Collection<BibtexEntry> entries = getBibtexEntries(ticket, citations);
-            
-            if (entries.size() == 0){
+
+            if (entries.size() == 0) {
                 status.showMessage(Globals.lang("No entries found for the search string '%0'",
                         query),
                         Globals.lang("Search JSTOR"), JOptionPane.INFORMATION_MESSAGE);
                 return false;
             }
-            
-            for (BibtexEntry entry : entries){
+
+            for (BibtexEntry entry : entries) {
                 dialog.addEntry(entry);
             }
             return true;
@@ -134,18 +134,16 @@ public class JSTORFetcher implements EntryFetcher {
 
     /**
      * Given a ticket an a list of citations, retrieve BibtexEntries from JStor
-     * 
-     * @param ticket
-     *            A valid ticket as returned by openTicket()
-     * @param citations
-     *            A list of citations as returned by getCitations()
+     *
+     * @param ticket A valid ticket as returned by openTicket()
+     * @param citations A list of citations as returned by getCitations()
      * @return A collection of BibtexEntries parsed from the bibtex returned by
-     *         JStor.
-     * @throws IOException
-     *             Most probably related to a problem connecting to JStor.
+     * JStor.
+     * @throws IOException Most probably related to a problem connecting to
+     * JStor.
      */
     protected Collection<BibtexEntry> getBibtexEntries(String ticket, String citations)
-        throws IOException {
+            throws IOException {
         try {
             URL url = new URL(URL_BIBTEX);
             URLConnection conn = url.openConnection();
@@ -153,7 +151,7 @@ public class JSTORFetcher implements EntryFetcher {
             conn.connect();
 
             BibtexParser parser = new BibtexParser(new BufferedReader(new InputStreamReader(conn
-                .getInputStream())));
+                    .getInputStream())));
             return parser.parse().getDatabase().getEntries();
         } catch (MalformedURLException e) {
             // Propagate...
@@ -162,7 +160,7 @@ public class JSTORFetcher implements EntryFetcher {
     }
 
     /**
-     * 
+     *
      * @return a Jstor ticket ID
      * @throws IOException
      */
@@ -174,21 +172,19 @@ public class JSTORFetcher implements EntryFetcher {
 
     /**
      * requires a valid JStor Ticket ID
-     * 
-     * @param query
-     *            The search term to query JStor for.
-     * @param ticket
-     *            JStor ticket
+     *
+     * @param query The search term to query JStor for.
+     * @param ticket JStor ticket
      * @return cookie value of the key JSTORFetcher.COOKIE_CITATIONS. null if
-     *         search is empty or ticket is invalid
+     * search is empty or ticket is invalid
      * @throws IOException
      */
     protected String getCitations(String ticket, String query) throws IOException {
         String urlQuery;
         try {
-            urlQuery = "http://www.jstor.org/search/BasicResults?hp=" + MAX_CITATIONS +
-                "&si=1&gw=jtx&jtxsi=1&jcpsi=1&artsi=1&Query=" + URLEncoder.encode(query, "UTF-8") +
-                "&wc=on&citationAction=saveAll";
+            urlQuery = "http://www.jstor.org/search/BasicResults?hp=" + MAX_CITATIONS
+                    + "&si=1&gw=jtx&jtxsi=1&jcpsi=1&artsi=1&Query=" + URLEncoder.encode(query, "UTF-8")
+                    + "&wc=on&citationAction=saveAll";
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -201,11 +197,9 @@ public class JSTORFetcher implements EntryFetcher {
 
     /**
      * evaluates the 'Set-Cookie'-Header of a HTTP response
-     * 
-     * @param name
-     *            key of a cookie value
-     * @param conn
-     *            URLConnection
+     *
+     * @param name key of a cookie value
+     * @param conn URLConnection
      * @return cookie value referenced by the key. null if key not found
      * @throws IOException
      */

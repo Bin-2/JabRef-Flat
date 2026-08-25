@@ -23,7 +23,7 @@ USA
 Further information about the GNU GPL is available at:
 http://www.gnu.org/copyleft/gpl.ja.html
 
-*/
+ */
 package net.sf.jabref;
 
 import java.awt.Component;
@@ -44,7 +44,6 @@ import net.sf.jabref.EntryEditor.StoreFieldAction;
 /**
  * @author Erik Putrycz erik.putrycz-at-nrc-cnrc.gc.ca
  */
-
 public class SimpleUrlDragDrop implements DropTargetListener {
 
     private static Logger logger = Logger.getLogger(SimpleUrlDragDrop.class
@@ -102,24 +101,24 @@ public class SimpleUrlDragDrop implements DropTargetListener {
         dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
         //try with an URL
         DataFlavor dtURL = null;
-        try{
+        try {
             dtURL = new DataFlavor("application/x-java-url; class=java.net.URL");
-        }catch (ClassNotFoundException e){
+        } catch (ClassNotFoundException e) {
             logger.log(Level.WARNING,
                     "Class not found for DnD... should not happen", e);
         }
-        try{
+        try {
             URL url = (URL) tsf.getTransferData(dtURL);
             //insert URL
             editor.setText(url.toString());
             storeFieldAction.actionPerformed(new ActionEvent(editor, 0, ""));
-        }catch (UnsupportedFlavorException nfe){
+        } catch (UnsupportedFlavorException nfe) {
             // if not an URL
-            JOptionPane.showMessageDialog((Component) editor, 
+            JOptionPane.showMessageDialog((Component) editor,
                     Globals.lang("Operation not supported"),
                     Globals.lang("Drag and Drop Error"), JOptionPane.ERROR_MESSAGE);
             logger.log(Level.WARNING, "Transfer exception", nfe);
-        }catch (IOException ioex){
+        } catch (IOException ioex) {
             logger.log(Level.WARNING, "!should not happen!", ioex);
         }
     }

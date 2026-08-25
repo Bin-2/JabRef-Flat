@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.io.*;
@@ -44,7 +44,7 @@ public class OpenOfficeDocumentCreator extends ExportFormat {
     }
 
     public void performExport(final BibtexDatabase database, final MetaData metaData,
-                              final String file, final String encoding, Set<String> keySet) throws Exception {
+            final String file, final String encoding, Set<String> keySet) throws Exception {
         exportOpenOfficeCalc(new File(file), database, keySet);
     }
 
@@ -66,15 +66,13 @@ public class OpenOfficeDocumentCreator extends ExportFormat {
             addResourceFile("META-INF/manifest.xml", "/resource/openoffice/manifest.xml", out);
 
             //zipEntry = new ZipEntry()
-
         } finally {
             out.close();
         }
     }
 
     public static void exportOpenOfficeCalc(File file, BibtexDatabase database,
-        Set<String> keySet) throws Exception {
-
+            Set<String> keySet) throws Exception {
 
         // First store the xml formatted content to a temporary file.
         File tmpFile = File.createTempFile("oocalc", null);
@@ -126,7 +124,9 @@ public class OpenOfficeDocumentCreator extends ExportFormat {
                 synchronized (out) {
                     while (true) {
                         int bytesRead = in.read(buffer);
-                        if (bytesRead == -1) break;
+                        if (bytesRead == -1) {
+                            break;
+                        }
                         out.write(buffer, 0, bytesRead);
                     }
                 }

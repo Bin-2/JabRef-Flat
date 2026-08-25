@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.collab;
 
 import javax.swing.JComponent;
@@ -24,28 +24,28 @@ import net.sf.jabref.undo.UndoableInsertEntry;
 
 public class EntryAddChange extends Change {
 
-  BibtexEntry diskEntry;
+    BibtexEntry diskEntry;
 //  boolean isModifiedLocally, modificationsAgree;[[[[[[
-  PreviewPanel previewpanel;
-  JScrollPane scrallpane;
+    PreviewPanel previewpanel;
+    JScrollPane scrallpane;
 
-  public EntryAddChange(BibtexEntry diskEntry) {
-    super("Added entry");
-    this.diskEntry = diskEntry;
+    public EntryAddChange(BibtexEntry diskEntry) {
+        super("Added entry");
+        this.diskEntry = diskEntry;
 
-    previewpanel = new PreviewPanel(null, diskEntry, null, new MetaData(), Globals.prefs.get("preview0"));
-    scrallpane = new JScrollPane(previewpanel);
-  }
+        previewpanel = new PreviewPanel(null, diskEntry, null, new MetaData(), Globals.prefs.get("preview0"));
+        scrallpane = new JScrollPane(previewpanel);
+    }
 
-  public boolean makeChange(BasePanel panel, BibtexDatabase secondary, NamedCompound undoEdit) {
-      diskEntry.setId(Util.createNeutralId());
-      panel.database().insertEntry(diskEntry);
-      secondary.insertEntry(diskEntry);
-      undoEdit.addEdit(new UndoableInsertEntry(panel.database(), diskEntry, panel));
-      return true;
-  }
+    public boolean makeChange(BasePanel panel, BibtexDatabase secondary, NamedCompound undoEdit) {
+        diskEntry.setId(Util.createNeutralId());
+        panel.database().insertEntry(diskEntry);
+        secondary.insertEntry(diskEntry);
+        undoEdit.addEdit(new UndoableInsertEntry(panel.database(), diskEntry, panel));
+        return true;
+    }
 
-  JComponent description() {
-    return scrallpane;
-  }
+    JComponent description() {
+        return scrallpane;
+    }
 }

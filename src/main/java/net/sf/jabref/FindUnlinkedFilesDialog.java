@@ -1136,7 +1136,6 @@ public class FindUnlinkedFilesDialog extends JDialog {
 
 //            newPanel.setBackground(nodeComponent.getBackground());
 //            checkbox.setBackground(nodeComponent.getBackground());
-
             GridBagLayout gbl = new GridBagLayout();
             addComponent(gbl, newPanel, checkbox, null, null, null, 0, 0, 1, 1, 0, 0, 0, 0);
             addComponent(gbl, newPanel, nodeComponent, GridBagConstraints.HORIZONTAL, null, new Insets(1, 2, 0, 0), 1, 0, 1, 1, 1, 0, 0, 0);

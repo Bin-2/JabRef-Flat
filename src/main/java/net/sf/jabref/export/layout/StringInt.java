@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Filename: $RCSfile$
 //  Purpose:  Atom representation.
@@ -40,31 +40,28 @@ package net.sf.jabref.export.layout;
 /*==========================================================================*
  * IMPORTS
  *========================================================================== */
-/*==========================================================================*
+ /*==========================================================================*
  * CLASS DECLARATION
  *========================================================================== */
-
 /**
  * String and integer value.
  *
- * @author     wegnerj
- * @version    $Revision$, $Date$
+ * @author wegnerj
+ * @version $Revision$, $Date$
  */
-public class StringInt implements java.io.Serializable
-{
+public class StringInt implements java.io.Serializable {
     //~ Instance fields ////////////////////////////////////////////////////////
 
     /*-------------------------------------------------------------------------*
      * public member variables
      *------------------------------------------------------------------------- */
-
     /**
-     *  Description of the Field
+     * Description of the Field
      */
     public String s;
 
     /**
-     *  Description of the Field
+     * Description of the Field
      */
     public int i;
 
@@ -73,15 +70,13 @@ public class StringInt implements java.io.Serializable
     /*-------------------------------------------------------------------------*
      * constructor
      *------------------------------------------------------------------------- */
-
     /**
-     *  Constructor for the StringString object
+     * Constructor for the StringString object
      *
-     * @param  _s  Description of the Parameter
-     * @param  _i  Description of the Parameter
+     * @param _s Description of the Parameter
+     * @param _i Description of the Parameter
      */
-    public StringInt(String _s, int _i)
-    {
+    public StringInt(String _s, int _i) {
         s = _s;
         i = _i;
     }

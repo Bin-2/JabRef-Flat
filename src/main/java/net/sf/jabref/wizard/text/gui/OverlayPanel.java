@@ -24,9 +24,7 @@
  http://www.gnu.org/copyleft/gpl.ja.html
 
  */
-
 // created by : r.nagel 04.11.2004
-
 package net.sf.jabref.wizard.text.gui;
 
 import javax.swing.*;

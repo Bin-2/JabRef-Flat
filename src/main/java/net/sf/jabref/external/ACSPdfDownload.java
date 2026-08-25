@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import java.net.URL;
@@ -24,8 +24,8 @@ import java.io.IOException;
  */
 public class ACSPdfDownload implements FullTextFinder {
 
-	private static final String BASE_URL = "http://pubs.acs.org/doi/pdf/";
-	
+    private static final String BASE_URL = "http://pubs.acs.org/doi/pdf/";
+
     public ACSPdfDownload() {
 
     }
@@ -36,7 +36,7 @@ public class ACSPdfDownload implements FullTextFinder {
 
     public URL findFullTextURL(URL url) throws IOException {
         try {
-            return new URL(BASE_URL+url.getPath().substring("/doi/abs/".length()));
+            return new URL(BASE_URL + url.getPath().substring("/doi/abs/".length()));
         } catch (MalformedURLException e) {
             return null;
         }

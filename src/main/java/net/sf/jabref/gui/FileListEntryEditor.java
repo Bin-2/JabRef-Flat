@@ -145,7 +145,6 @@ public class FileListEntryEditor {
 //        styleLabel(linkLabel);
 //        styleLabel(descLabel);
 //        styleLabel(typeLabel);
-
         builder.append(linkLabel);
         builder.append(link);
 
@@ -188,7 +187,6 @@ public class FileListEntryEditor {
 //        styleButton(ok);
 //        styleButton(cancel);
 //        styleButton(open);
-
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
@@ -269,7 +267,6 @@ public class FileListEntryEditor {
 //        styleButton(ok);
 //        styleButton(cancel);
 //        styleButton(open);
-
         // Style progress bar
 //        prog.setBackground(UIManager.getColor("ProgressBar.background"));
 //        prog.setForeground(UIManager.getColor("ProgressBar.foreground"));

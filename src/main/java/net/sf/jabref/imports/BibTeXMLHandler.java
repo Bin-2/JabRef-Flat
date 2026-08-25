@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import java.util.ArrayList;
@@ -44,12 +44,14 @@ public class BibTeXMLHandler extends DefaultHandler {
         super();
     }
 
-    public ArrayList<BibtexEntry> getItems(){ return bibitems;}
+    public ArrayList<BibtexEntry> getItems() {
+        return bibitems;
+    }
 
     // SAX parsing methods
-
     public void doctypeDecl(String name, String publicId,
-        String systemId) {}
+            String systemId) {
+    }
 
     public void startDocument() {
         bibitems = new ArrayList<BibtexEntry>();
@@ -68,28 +70,27 @@ public class BibTeXMLHandler extends DefaultHandler {
         if (name.equals("bibtex:entry")) {
             String articleID = null;
             for (int i = 0; i < atts.getLength(); i++) {
-                if (atts.getQName(i).equals("bibtex:id") ||
-                    atts.getQName(i).equals("id")) {
+                if (atts.getQName(i).equals("bibtex:id")
+                        || atts.getQName(i).equals("id")) {
                     articleID = atts.getValue(i);
                 }
             }
             b = new BibtexEntry(Util.createNeutralId());
             b.setField(BibtexFields.KEY_FIELD, articleID);
-        } else if (
-            name.equals("bibtex:article") ||
-            name.equals("bibtex:inbook") ||
-            name.equals("bibtex:book") ||
-            name.equals("bibtex:booklet") ||
-            name.equals("bibtex:incollection") ||
-            name.equals("bibtex:inproceedings") ||
-            name.equals("bibtex:proceedings") ||
-            name.equals("bibtex:manual") ||
-            name.equals("bibtex:mastersthesis") ||
-            name.equals("bibtex:phdthesis") ||
-            name.equals("bibtex:techreport") ||
-            name.equals("bibtex:unpublished") ||
-            name.equals("bibtex:misc") ||
-            name.equals("bibtex:other")) {
+        } else if (name.equals("bibtex:article")
+                || name.equals("bibtex:inbook")
+                || name.equals("bibtex:book")
+                || name.equals("bibtex:booklet")
+                || name.equals("bibtex:incollection")
+                || name.equals("bibtex:inproceedings")
+                || name.equals("bibtex:proceedings")
+                || name.equals("bibtex:manual")
+                || name.equals("bibtex:mastersthesis")
+                || name.equals("bibtex:phdthesis")
+                || name.equals("bibtex:techreport")
+                || name.equals("bibtex:unpublished")
+                || name.equals("bibtex:misc")
+                || name.equals("bibtex:other")) {
             BibtexEntryType tp = BibtexEntryType.getType(local);
             b.setType(tp);
         }
@@ -99,7 +100,7 @@ public class BibTeXMLHandler extends DefaultHandler {
     public void endElement(String uri, String local, String raw) {
         String name = raw;
         if (name.equals("bibtex:entry")) {
-            bibitems.add( b  );
+            bibitems.add(b);
         } else if (name.startsWith("bibtex:")) {
             b.setField(local, currentChars);
             // Util.pr(local+ " "+currentChars);

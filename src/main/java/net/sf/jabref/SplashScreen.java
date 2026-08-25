@@ -87,7 +87,6 @@ public class SplashScreen extends Window {
     /**
      * Paints the image on the window.
      */
-
     public void paint(Graphics g) {
         g.drawImage(splashImage, 0, 0, this);
 

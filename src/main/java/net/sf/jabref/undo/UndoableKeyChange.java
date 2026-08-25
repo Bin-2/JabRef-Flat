@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.undo;
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -21,9 +21,9 @@ import net.sf.jabref.BibtexDatabase;
 import net.sf.jabref.Globals;
 
 /**
- * This class represents a change in any field value. The relevant
- * information is the BibtexEntry, the field name, the old and the
- * new value. Old/new values can be null.
+ * This class represents a change in any field value. The relevant information
+ * is the BibtexEntry, the field name, the old and the new value. Old/new values
+ * can be null.
  */
 public class UndoableKeyChange extends AbstractUndoableEdit {
 
@@ -32,11 +32,11 @@ public class UndoableKeyChange extends AbstractUndoableEdit {
     private String oldValue, newValue;
 
     public UndoableKeyChange(BibtexDatabase base, String entryId,
-			     String oldValue, String newValue) {
-	this.base = base;
-	this.entryId = entryId;
-	this.oldValue = oldValue;
-	this.newValue = newValue;
+            String oldValue, String newValue) {
+        this.base = base;
+        this.entryId = entryId;
+        this.oldValue = oldValue;
+        this.newValue = newValue;
     }
 
     @Override
@@ -46,30 +46,30 @@ public class UndoableKeyChange extends AbstractUndoableEdit {
 
     @Override
     public String getUndoPresentationName() {
-	return Globals.lang("Undo")+": "+Globals.lang("change key");
+        return Globals.lang("Undo") + ": " + Globals.lang("change key");
     }
 
     @Override
     public String getRedoPresentationName() {
-	return Globals.lang("Redo")+": "+Globals.lang("change key");
+        return Globals.lang("Redo") + ": " + Globals.lang("change key");
     }
 
     public void undo() {
-	super.undo();
-	
-	// Revert the change.
-	set(oldValue);
+        super.undo();
+
+        // Revert the change.
+        set(oldValue);
     }
 
     public void redo() {
-	super.redo();
+        super.redo();
 
-	// Redo the change.
-	set(newValue);
+        // Redo the change.
+        set(newValue);
     }
 
     private void set(String to) {
-	base.setCiteKeyForEntry(entryId, to);
+        base.setCiteKeyForEntry(entryId, to);
     }
 
 }

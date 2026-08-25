@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import net.sf.jabref.*;
@@ -27,7 +27,6 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 public class GoogleScholarFetcher implements PreviewEntryFetcher {
 
@@ -51,7 +50,6 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
     //        "<a href=\"([^\"]*)\"><span class=\"SPRITE_nav_next\"> </span><br><span style=\".*\">Next</span></a>");
 
     protected boolean stopFetching = false;
-
 
     public int getWarningLimit() {
         return 10;
@@ -90,13 +88,18 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
         int toDownload = 0, downloaded = 0;
         for (String link : selection.keySet()) {
             boolean isSelected = selection.get(link);
-            if (isSelected) toDownload++;
+            if (isSelected) {
+                toDownload++;
+            }
         }
-        if (toDownload == 0) return;
+        if (toDownload == 0) {
+            return;
+        }
 
         for (String link : selection.keySet()) {
-            if (stopFetching)
+            if (stopFetching) {
                 break;
+            }
             inspector.setProgress(downloaded, toDownload);
             boolean isSelected = selection.get(link);
             if (isSelected) {
@@ -111,7 +114,6 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
         }
 
     }
-
 
     public String getTitle() {
         return "Google Scholar";
@@ -137,7 +139,6 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
         stopFetching = true;
     }
 
-
     private void save(String filename, String content) throws IOException {
         BufferedWriter out = new BufferedWriter(new FileWriter(filename));
         out.write(content);
@@ -156,11 +157,12 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
             formItems.put("scisf", "4");
             formItems.put("num", String.valueOf(MAX_ENTRIES_TO_LOAD));
             StringBuilder ub = new StringBuilder(URL_SETPREFS + "?");
-            for (Iterator<String> i = formItems.keySet().iterator(); i.hasNext(); ) {
+            for (Iterator<String> i = formItems.keySet().iterator(); i.hasNext();) {
                 String name = i.next();
                 ub.append(name).append("=").append(formItems.get(name));
-                if (i.hasNext())
+                if (i.hasNext()) {
                     ub.append("&");
+                }
             }
             ub.append("&submit=");
             // Download the URL to set preferences:
@@ -187,8 +189,9 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
                     && (count < 2)) {
                 urlQuery = nextPage;
                 count++;
-                if (stopFetching)
+                if (stopFetching) {
                     break;
+                }
             }
             return res;
         } catch (UnsupportedEncodingException e) {
@@ -216,9 +219,12 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
             if (fS && fE) {
                 if (titleS.end() < titleE.start()) {
                     pText = part.substring(titleS.end(), titleE.start());
-                } else pText = part;
-            } else
+                } else {
+                    pText = part;
+                }
+            } else {
                 pText = link;
+            }
 
             pText = pText.replaceAll("\\[PDF\\]", "");
             JLabel preview = new JLabel("<html>" + pText + "</html>");
@@ -227,8 +233,9 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
             // See if we can extract the link Google Scholar puts on the entry's title.
             // That will be set as "url" for the entry if downloaded:
             Matcher linkMatcher = LINK_PATTERN.matcher(pText);
-            if (linkMatcher.find())
+            if (linkMatcher.find()) {
                 entryLinks.put(link, linkMatcher.group(1));
+            }
 
             lastRegionStart = m.end();
         }
@@ -252,14 +259,16 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
                 Collection<BibtexEntry> entries = pr.getDatabase().getEntries();
                 if (entries.size() == 1) {
                     BibtexEntry entry = entries.iterator().next();
-                    if (clearKeys)
+                    if (clearKeys) {
                         entry.setField(BibtexFields.KEY_FIELD, null);
+                    }
                     // If the entry's url field is not set, and we have stored an url for this
                     // entry, set it:
                     if (entry.getField("url") == null) {
                         String storedUrl = entryLinks.get(link);
-                        if (storedUrl != null)
+                        if (storedUrl != null) {
                             entry.setField("url", storedUrl);
+                        }
                     }
 
                     // Clean up some remaining HTML code from Elsevier(?) papers
@@ -292,7 +301,6 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
         }
     }
 
-
     static Pattern inputPattern = Pattern.compile("<input type=([^ ]+) name=([^ ]+) value=([^> ]+)");
 
     public static HashMap<String, String> getFormElements(String page) {
@@ -301,12 +309,14 @@ public class GoogleScholarFetcher implements PreviewEntryFetcher {
         while (m.find()) {
             String name = m.group(2);
             if ((name.length() > 2) && (name.charAt(0) == '"')
-                    && (name.charAt(name.length() - 1) == '"'))
+                    && (name.charAt(name.length() - 1) == '"')) {
                 name = name.substring(1, name.length() - 1);
+            }
             String value = m.group(3);
             if ((value.length() > 2) && (value.charAt(0) == '"')
-                    && (value.charAt(value.length() - 1) == '"'))
+                    && (value.charAt(value.length() - 1) == '"')) {
                 value = value.substring(1, value.length() - 1);
+            }
             items.put(name, value);
         }
         return items;

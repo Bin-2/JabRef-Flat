@@ -72,7 +72,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     // needed to activate/deactivate the listener
     private final PersistenceTableColumnListener tableColumnListener;
 
-
     private static final boolean PERF_TIMERS = true;
     private static final long PERF_LOG_THRESHOLD_MS = 500L;
     private static final int PERF_RENDERER_LOG_EVERY = 50000;
@@ -959,9 +958,9 @@ public class MainTable extends JTable implements ThemeAwareComponent {
                     blend(tableColor, selectionBackground, 0.3f));
             markedNumberRenderers[i] = new CompleteRenderer(tableColor);
         }
-    
+
         perfLog("updateRenderers total", startNs);
-}
+    }
 
     private static Color adjustColorForTheme(Color original) {
         // Adjust the original marking color to work better with current theme

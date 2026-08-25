@@ -99,7 +99,6 @@ public class FileActions {
         return "file=" + file.getPath() + " exists=" + file.exists() + " bytes=" + fileSize(file);
     }
 
-
     private static void writePreamble(Writer fw, String preamble) throws IOException {
         if (preamble != null) {
             fw.write("@PREAMBLE{");

@@ -12,18 +12,18 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
-
+ */
 package net.sf.jabref.imports;
 
 /**
- * Container class for lists with keywords where the case should be kept independent of bibstyle
- * 
+ * Container class for lists with keywords where the case should be kept
+ * independent of bibstyle
+ *
  */
 public class CaseKeeperList {
-   
+
     // Common words in IEEE Xplore that should always be in the given case
-   public String[] wordListIEEEXplore = new String[]{
+    public String[] wordListIEEEXplore = new String[]{
         "1-D",
         "1D",
         "2-D",
@@ -38,11 +38,11 @@ public class CaseKeeperList {
         "4H",
         "6H",
         "A/D",
-	"ACM",
+        "ACM",
         "AC",
         "ADC",
         "ADI",
-	"ADSL",
+        "ADSL",
         "ADP",
         "ADPLL",
         "AES",
@@ -63,7 +63,7 @@ public class CaseKeeperList {
         "ASIP",
         "ASK",
         "ATE",
-	"ATM",
+        "ATM",
         "ATP",
         "ATPG",
         "ATSC",
@@ -119,7 +119,7 @@ public class CaseKeeperList {
         "CNF",
         "CNN",
         "CO2",
-	"CORDIC",
+        "CORDIC",
         "COTS",
         "CP",
         "CPE",
@@ -145,9 +145,9 @@ public class CaseKeeperList {
         "Cooley",
         "D/A",
         "DAB",
-	"DAC",
+        "DAC",
         "DBMS",
-	"DCT",
+        "DCT",
         "DC",
         "DDC",
         "DDFS",
@@ -163,7 +163,7 @@ public class CaseKeeperList {
         "DHT",
         "DIMM",
         "DLL",
-	"DMT",
+        "DMT",
         "DNA",
         "DNL",
         "DOA",
@@ -174,7 +174,7 @@ public class CaseKeeperList {
         "DRM",
         "DS",
         "DSP",
-	"DST",
+        "DST",
         "DTMB",
         "DTTB",
         "DTV",
@@ -222,9 +222,9 @@ public class CaseKeeperList {
         "FET",
         "FFT",
         "FIFO",
-	"FIR",
+        "FIR",
         "FMCW",
-	"FM",
+        "FM",
         "FP",
         "FPAA",
         "FPGA",
@@ -287,7 +287,7 @@ public class CaseKeeperList {
         "Hamming",
         "Hankel",
         "Hartley",
-        "Hermit",  // Hermitian, Hermite, Hermit
+        "Hermit", // Hermitian, Hermite, Hermit
         "Hilbert",
         "I-V",
         "I/O",
@@ -486,7 +486,7 @@ public class CaseKeeperList {
         "PV",
         "PWB",
         "PWM",
-        "Parks-McClellan",  // Only Parks will give lots of incorrect hits
+        "Parks-McClellan", // Only Parks will give lots of incorrect hits
         "Pb",
         "Planck",
         "PowerPC",
@@ -663,32 +663,32 @@ public class CaseKeeperList {
         "ZigBee",
         "Ziv",
         "xDSL"
-   };
-    
-   // Weekdays and months
-   public String[] wordListDayMonth = new String[]{
-       "Monday",
-       "Tuesday",
-       "Wednesday",
-       "Thursday",
-       "Friday",
-       "Saturday",
-       "Sunday",
-       "January",
-       "February",
-       "March",
-       "April",
-       "May",
-       "June",
-       "July",
-       "August",
-       "September",
-       "October",
-       "November",
-       "December"
-   };
-   
-   private String[] wordListCountries = new String[] {
+    };
+
+    // Weekdays and months
+    public String[] wordListDayMonth = new String[]{
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    };
+
+    private String[] wordListCountries = new String[]{
         "Andorra",
         "United Arab Emirates",
         "UAE",
@@ -976,23 +976,23 @@ public class CaseKeeperList {
         "Africa",
         "South America",
         "North America"
-   };
-   
-   // List of all keyword lists
-   private String[][] allLists = new String[][] {
-       wordListIEEEXplore,
-       wordListDayMonth,
-       wordListCountries
-   };
-   
-   private String[][] genericLists = new String[][] {
-       wordListDayMonth,
-       wordListCountries
-   };
-   
-   public CaseKeeperList () {
-   
-   }
+    };
+
+    // List of all keyword lists
+    private String[][] allLists = new String[][]{
+        wordListIEEEXplore,
+        wordListDayMonth,
+        wordListCountries
+    };
+
+    private String[][] genericLists = new String[][]{
+        wordListDayMonth,
+        wordListCountries
+    };
+
+    public CaseKeeperList() {
+
+    }
 
     /* Return all lists concatenated
      * Can be done faster once deciding on Java 6.0

@@ -45,10 +45,8 @@ public class SidePane extends JPanel {
 
         // For debugging the border:
         // setBorder(BorderFactory.createLineBorder(Color.BLUE));
-
         // Add right border only
         // setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("Separator.foreground")));
-
         setLayout(new BorderLayout());
         mainPanel.setLayout(gridBagLayout);
 

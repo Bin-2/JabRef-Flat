@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import javax.swing.*;
@@ -20,9 +20,9 @@ import javax.swing.*;
 import net.sf.jabref.GUIGlobals;
 
 /**
- * This class defines a type of external files that can be linked to from JabRef.
- * The class contains enough information to provide an icon, a standard extension
- * and a link to which application handles files of this type.
+ * This class defines a type of external files that can be linked to from
+ * JabRef. The class contains enough information to provide an icon, a standard
+ * extension and a link to which application handles files of this type.
  */
 public class ExternalFileType implements Comparable<ExternalFileType> {
 
@@ -31,7 +31,7 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     protected JLabel label = new JLabel();
 
     public ExternalFileType(String name, String extension, String mimeType,
-                            String openWith, String iconName) {
+            String openWith, String iconName) {
         label.setText(null);
         this.name = name;
         label.setToolTipText(this.name);
@@ -42,21 +42,22 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     }
 
     /**
-     * Construct an ExternalFileType from a String array. This constructor is used when
-     * reading file type definitions from Preferences, where the available data types are
-     * limited. We assume that the array contains the same values as the main constructor,
-     * in the same order.
+     * Construct an ExternalFileType from a String array. This constructor is
+     * used when reading file type definitions from Preferences, where the
+     * available data types are limited. We assume that the array contains the
+     * same values as the main constructor, in the same order.
      *
-     * TODO: The icon argument needs special treatment. At the moment, we assume that the fourth
-     * element of the array contains the icon keyword to be looked up in the current icon theme.
-     * To support icons found elsewhere on the file system we simply need to prefix the icon name
-     * with a marker. 
+     * TODO: The icon argument needs special treatment. At the moment, we assume
+     * that the fourth element of the array contains the icon keyword to be
+     * looked up in the current icon theme. To support icons found elsewhere on
+     * the file system we simply need to prefix the icon name with a marker.
      *
      * @param val Constructor arguments.
      */
     public ExternalFileType(String[] val) {
-        if ((val == null) || (val.length < 4))
+        if ((val == null) || (val.length < 4)) {
             throw new IllegalArgumentException("Cannot contruct ExternalFileType without four elements in String[] argument.");
+        }
         this.name = val[0];
         label.setToolTipText(this.name);
         this.extension = val[1];
@@ -65,8 +66,7 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
         if (val.length == 4) {
             this.openWith = val[2];
             setIconName(val[3]);
-        }
-        // When mime type is included, the array length should be 5:
+        } // When mime type is included, the array length should be 5:
         else if (val.length == 5) {
             this.mimeType = val[2];
             this.openWith = val[3];
@@ -75,14 +75,14 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     }
 
     /**
-     * Return a String array representing this file type. This is used for storage into
-     * Preferences, and the same array can be used to construct the file type later,
-     * using the String[] constructor.
+     * Return a String array representing this file type. This is used for
+     * storage into Preferences, and the same array can be used to construct the
+     * file type later, using the String[] constructor.
      *
      * @return A String[] containing all information about this file type.
      */
     public String[] getStringArrayRepresentation() {
-        return new String[] {name, extension, mimeType, openWith, iconName};
+        return new String[]{name, extension, mimeType, openWith, iconName};
     }
 
     public String getName() {
@@ -111,8 +111,9 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     }
 
     /**
-     * Get the bibtex field name used to extension to this file type.
-     * Currently we assume that field name equals filename extension.
+     * Get the bibtex field name used to extension to this file type. Currently
+     * we assume that field name equals filename extension.
+     *
      * @return The field name.
      */
     public String getFieldName() {
@@ -130,6 +131,7 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     /**
      * Set the string associated with this file type's icon. The string is used
      * to get the actual icon by the method GUIGlobals.getIcon(String)
+     *
      * @param name The icon name to use.
      */
     public void setIconName(String name) {
@@ -149,6 +151,7 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     /**
      * Obtain a JLabel instance set with this file type's icon. The same JLabel
      * is returned from each call of this method.
+     *
      * @return the label.
      */
     public JLabel getIconLabel() {
@@ -158,6 +161,7 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
     /**
      * Get the string associated with this file type's icon. The string is used
      * to get the actual icon by the method GUIGlobals.getIcon(String)
+     *
      * @return The icon name.
      */
     public String getIconName() {
@@ -184,26 +188,26 @@ public class ExternalFileType implements Comparable<ExternalFileType> {
         return new ExternalFileType(name, extension, mimeType, openWith, iconName);
     }
 
-
     public int hashCode() {
         return name.hashCode();
     }
 
     /**
-     * We define two file type objects as equal if their name, extension, openWith and
-     * iconName are equal.
+     * We define two file type objects as equal if their name, extension,
+     * openWith and iconName are equal.
      *
      * @param object The file type to compare with.
      * @return true if the file types are equal.
      */
     public boolean equals(Object object) {
-        ExternalFileType other = (ExternalFileType)object;
-        if (other == null)
+        ExternalFileType other = (ExternalFileType) object;
+        if (other == null) {
             return false;
+        }
         return (name == null ? other.name == null : name.equals(other.name))
                 && (extension == null ? other.extension == null : extension.equals(other.extension))
                 && (mimeType == null ? other.mimeType == null : mimeType.equals(other.mimeType))
-                && (openWith== null ? other.openWith == null : openWith.equals(other.openWith))
-                && (iconName== null ? other.iconName == null : iconName.equals(other.iconName));
+                && (openWith == null ? other.openWith == null : openWith.equals(other.openWith))
+                && (iconName == null ? other.iconName == null : iconName.equals(other.iconName));
     }
 }

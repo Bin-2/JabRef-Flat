@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.gui;
 
 import com.formdev.flatlaf.FlatLightLaf;
@@ -35,36 +35,32 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alver
- * Date: Aug 23, 2005
- * Time: 11:30:48 PM
- * To change this template use File | Settings | File Templates.
+ * Created by IntelliJ IDEA. User: alver Date: Aug 23, 2005 Time: 11:30:48 PM To
+ * change this template use File | Settings | File Templates.
  */
 public class FieldWeightDialog extends JDialog {
 
     JabRefFrame frame;
     HashMap<JSlider, SliderInfo> sliders = new HashMap<JSlider, SliderInfo>();
     JButton ok = new JButton(Globals.lang("Ok")),
-        cancel = new JButton(Globals.lang("Cancel"));
+            cancel = new JButton(Globals.lang("Cancel"));
 
-   public static void main(String[] args) {
+    public static void main(String[] args) {
         new FieldWeightDialog(null).setVisible(true);
     }
 
     public FieldWeightDialog(JabRefFrame frame) {
         this.frame = frame;
         JPanel main = buildMainPanel();
-        main.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        main.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         getContentPane().add(main, BorderLayout.CENTER);
         getContentPane().add(buildButtonPanel(), BorderLayout.SOUTH);
         pack();
     }
 
     public JPanel buildMainPanel() {
-        FormLayout layout = new FormLayout
-            ("right:pref, 4dlu, fill:pref, 8dlu, right:pref, 4dlu, fill:pref", // 4dlu, left:pref, 4dlu",
-             "");
+        FormLayout layout = new FormLayout("right:pref, 4dlu, fill:pref, 8dlu, right:pref, 4dlu, fill:pref", // 4dlu, left:pref, 4dlu",
+                "");
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
 
         builder.appendSeparator(Globals.lang("Field sizes"));
@@ -73,15 +69,13 @@ public class FieldWeightDialog extends JDialog {
         TreeSet<String> fields = new TreeSet<String>();
         // We use this map to remember which slider represents which field name:
         sliders.clear();
-        for (int i=0, len=BibtexFields.numberOfPublicFields(); i<len; i++)
-        {
+        for (int i = 0, len = BibtexFields.numberOfPublicFields(); i < len; i++) {
             fields.add(BibtexFields.getFieldName(i));
         }
         fields.remove("bibtexkey"); // bibtex key doesn't need weight.
         // Here is the place to add other fields:
 
         // --------------
-
         for (String field : fields) {
             builder.append(field);
             int weight = (int) (100 * BibtexFields.getFieldWeight(field) / GUIGlobals.MAX_FIELD_WEIGHT);
@@ -135,8 +129,10 @@ public class FieldWeightDialog extends JDialog {
      * which field it represents, and what value it started out with.
      */
     static class SliderInfo {
+
         String fieldName;
         int originalValue;
+
         public SliderInfo(String fieldName, int originalValue) {
             this.fieldName = fieldName;
             this.originalValue = originalValue;

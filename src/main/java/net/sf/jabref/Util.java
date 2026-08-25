@@ -138,11 +138,12 @@ public class Util {
     }
 
     /**
-     * Repairs URL strings that were accidentally converted to Windows path style.
+     * Repairs URL strings that were accidentally converted to Windows path
+     * style.
      *
      * This method must not touch local Windows paths such as D:\\file.pdf or
-     * UNC paths such as \\server\\share\\file.pdf. Those strings are local files,
-     * not URLs, even though D: superficially looks like a URI scheme.
+     * UNC paths such as \\server\\share\\file.pdf. Those strings are local
+     * files, not URLs, even though D: superficially looks like a URI scheme.
      */
     private static String normalizeUrlSlashes(String link) {
         if (link == null) {
@@ -766,37 +767,36 @@ public class Util {
     /**
      * Opens a local file with a user-configured Windows application.
      *
-     * Important: do not replace this with Runtime.exec(application + " " + link)
-     * or with new ProcessBuilder(application, link).start().
+     * Important: do not replace this with Runtime.exec(application + " " +
+     * link) or with new ProcessBuilder(application, link).start().
      *
-     * Older JabRef versions historically launched external viewers by building one
-     * command string. That is fragile on Windows because paths containing spaces,
-     * ampersands, quotes, or other shell-significant characters can be split or
-     * interpreted incorrectly. This class of bug was later tracked in JabRef issue
-     * #1381, where SumatraPDF received broken file paths when it was configured as
-     * a non-default PDF viewer.
+     * Older JabRef versions historically launched external viewers by building
+     * one command string. That is fragile on Windows because paths containing
+     * spaces, ampersands, quotes, or other shell-significant characters can be
+     * split or interpreted incorrectly. This class of bug was later tracked in
+     * JabRef issue #1381, where SumatraPDF received broken file paths when it
+     * was configured as a non-default PDF viewer.
      *
-     * In this JabRef 2.x code path there is an additional compatibility problem:
-     * launching SumatraPDF directly as a child process of JabRef can expose a
-     * SumatraPDF save/reload crash after editing PDF bookmarks. The same SumatraPDF
-     * binary and the same PDF file work correctly when started manually or via the
-     * Windows default file association. Launching through "cmd.exe /c start" makes
-     * this path behave more like a normal shell/default-association launch instead
-     * of keeping SumatraPDF as a direct Java child process.
+     * In this JabRef 2.x code path there is an additional compatibility
+     * problem: launching SumatraPDF directly as a child process of JabRef can
+     * expose a SumatraPDF save/reload crash after editing PDF bookmarks. The
+     * same SumatraPDF binary and the same PDF file work correctly when started
+     * manually or via the Windows default file association. Launching through
+     * "cmd.exe /c start" makes this path behave more like a normal
+     * shell/default-association launch instead of keeping SumatraPDF as a
+     * direct Java child process.
      *
      * The empty string after "start" is intentional. The Windows START command
      * treats the first quoted argument as the window title. Without an explicit
-     * title placeholder, a quoted executable path such as
-     * "C:\Program Files\SumatraPDF\SumatraPDF.exe" can be parsed as the title
-     * instead of the command. The /D argument sets the startup directory explicitly.
+     * title placeholder, a quoted executable path such as "C:\Program
+     * Files\SumatraPDF\SumatraPDF.exe" can be parsed as the title instead of
+     * the command. The /D argument sets the startup directory explicitly.
      *
-     * Related references:
-     * - JabRef issue #1381: file links containing blanks broken with non-default
-     *   viewer on Windows.
-     * - Later JabRef fix: replaced Runtime.exec(commandString) with structured
-     *   ProcessBuilder arguments for external viewers.
-     * - Microsoft START documentation: START has a quoted title argument and /D
-     *   specifies the startup directory.
+     * Related references: - JabRef issue #1381: file links containing blanks
+     * broken with non-default viewer on Windows. - Later JabRef fix: replaced
+     * Runtime.exec(commandString) with structured ProcessBuilder arguments for
+     * external viewers. - Microsoft START documentation: START has a quoted
+     * title argument and /D specifies the startup directory.
      */
     public static void openFileWithApplicationOnWindows(String link, String application)
             throws IOException {

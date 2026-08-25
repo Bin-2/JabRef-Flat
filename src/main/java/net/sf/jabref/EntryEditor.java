@@ -677,8 +677,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             // Add external viewer listener for "pdf" and "url" fields.
             if (ed instanceof JComponent) {
                 if (ed instanceof JComponent) {
-                ((JComponent) ed).addMouseListener(new ExternalViewerListener());
-            }
+                    ((JComponent) ed).addMouseListener(new ExternalViewerListener());
+                }
             }
 
             return null;

@@ -14,6 +14,7 @@ import javax.swing.text.TextAction;
 public class MyEditorKit extends LargeHTMLEditorKit {
 
     public class MyNextVisualPositionAction extends TextAction {
+
         private Action textActn;
 
         private int direction;

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import net.sf.jabref.BibtexEntry;
@@ -29,11 +29,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 import net.sf.jabref.BibtexFields;
 
-
 /**
  * Importer for the ISI Web of Science format.
  */
 public class BiomailImporter extends ImportFormat {
+
     /**
      * Return the name of this import format.
      */
@@ -46,7 +46,7 @@ public class BiomailImporter extends ImportFormat {
      * @see net.sf.jabref.imports.ImportFormat#getCLIId()
      */
     public String getCLIId() {
-      return "biomail";
+        return "biomail";
     }
 
     /**
@@ -55,21 +55,21 @@ public class BiomailImporter extends ImportFormat {
     public boolean isRecognizedFormat(InputStream stream)
             throws IOException {
         // Our strategy is to look for the "BioMail" line.
-        BufferedReader in =
-                new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
+        BufferedReader in
+                = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
         Pattern pat1 = Pattern.compile("BioMail");
 
         String str;
 
         while ((str = in.readLine()) != null) {
 
-            if (pat1.matcher(str).find())
+            if (pat1.matcher(str).find()) {
                 return true;
+            }
         }
 
         return false;
     }
-
 
     /**
      * Parse the entries in the source, and return a List of BibtexEntry
@@ -79,19 +79,20 @@ public class BiomailImporter extends ImportFormat {
         ArrayList<BibtexEntry> bibitems = new ArrayList<BibtexEntry>();
         StringBuilder sb = new StringBuilder();
 
-        BufferedReader in =
-                new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
+        BufferedReader in
+                = new BufferedReader(ImportFormatReader.getReaderDefaultEncoding(stream));
 
         String str;
 
         while ((str = in.readLine()) != null) {
-            if (str.length() < 3)
+            if (str.length() < 3) {
                 continue;
+            }
 
             // begining of a new item
-            if (str.substring(0, 6).equals("PMID- "))
+            if (str.substring(0, 6).equals("PMID- ")) {
                 sb.append("::").append(str);
-            else {
+            } else {
                 String beg = str.substring(0, 6);
 
                 if (beg.indexOf(" ") > 0) {
@@ -112,8 +113,9 @@ public class BiomailImporter extends ImportFormat {
         for (String entry : entries) {
             String[] fields = entry.split(" ## ");
 
-            if (fields.length == 0)
+            if (fields.length == 0) {
                 fields = entry.split("\n");
+            }
 
             String Type = "";
             String pages = "";
@@ -125,8 +127,9 @@ public class BiomailImporter extends ImportFormat {
                 System.out.println(">>>" + field + "<<<");
 
                 //empty field don't do anything
-                if (field.length() <= 2)
+                if (field.length() <= 2) {
                     continue;
+                }
 
                 String beg = field.substring(0, 6);
                 String value = field.substring(6);
@@ -136,42 +139,45 @@ public class BiomailImporter extends ImportFormat {
                     // PT = value.replaceAll("JOURNAL ARTICLE", "article").replaceAll("Journal Article", "article");
                     Type = "article"; //make all of them PT?
                 } else if (beg.equals("TY  - ")) {
-                    if ("CONF".equals(value))
+                    if ("CONF".equals(value)) {
                         Type = "inproceedings";
-                } else if (beg.equals("JO  - "))
+                    }
+                } else if (beg.equals("JO  - ")) {
                     hm.put("booktitle", value);
-                else if (beg.equals("FAU - ")) {
+                } else if (beg.equals("FAU - ")) {
                     String tmpauthor = value.replaceAll("EOLEOL", " and ");
 
                     // if there is already someone there then append with "and"
-                    if (!"".equals(fullauthor))
+                    if (!"".equals(fullauthor)) {
                         fullauthor = fullauthor + " and " + tmpauthor;
-                    else
+                    } else {
                         fullauthor = tmpauthor;
+                    }
                 } else if (beg.equals("AU  - ")) {
                     String tmpauthor = value.replaceAll("EOLEOL", " and ").replaceAll(" ", ", ");
 
                     // if there is already someone there then append with "and"
-                    if (!"".equals(shortauthor))
+                    if (!"".equals(shortauthor)) {
                         shortauthor = shortauthor + " and " + tmpauthor;
-                    else
+                    } else {
                         shortauthor = tmpauthor;
-                } else if (beg.equals("TI  - "))
+                    }
+                } else if (beg.equals("TI  - ")) {
                     hm.put("title", value.replaceAll("EOLEOL", " "));
-                else if (beg.equals("TA  - "))
+                } else if (beg.equals("TA  - ")) {
                     hm.put("journal", value.replaceAll("EOLEOL", " "));
-                else if (beg.equals("AB  - "))
+                } else if (beg.equals("AB  - ")) {
                     hm.put("abstract", value.replaceAll("EOLEOL", " "));
-                else if (beg.equals("PG  - "))
+                } else if (beg.equals("PG  - ")) {
                     pages = value.replaceAll("-", "--");
-                else if (beg.equals("IP  - "))
+                } else if (beg.equals("IP  - ")) {
                     hm.put("number", value);
-                else if (beg.equals("DP  - ")) {
+                } else if (beg.equals("DP  - ")) {
                     String[] parts = value.split(" "); // sometimes this is just year, sometimes full date
                     hm.put("year", parts[0]);
-                } else if (beg.equals("VI  - "))
+                } else if (beg.equals("VI  - ")) {
                     hm.put("volume", value);
-                else if (beg.equals("AID - ")) {
+                } else if (beg.equals("AID - ")) {
                     String[] parts = value.split(" ");
                     if ("[doi]".equals(parts[1])) {
                         hm.put("doi", parts[0]);
@@ -180,15 +186,17 @@ public class BiomailImporter extends ImportFormat {
                 }
             }
 
-            if (!"".equals(pages))
+            if (!"".equals(pages)) {
                 hm.put("pages", pages);
-            if (!"".equals(fullauthor))
+            }
+            if (!"".equals(fullauthor)) {
                 hm.put("author", fullauthor);
-            else if (!"".equals(shortauthor))
+            } else if (!"".equals(shortauthor)) {
                 hm.put("author", shortauthor);
+            }
 
-            BibtexEntry b =
-                    new BibtexEntry(BibtexFields.DEFAULT_BIBTEXENTRY_ID, Globals.getEntryType(Type)); // id assumes an existing database so don't
+            BibtexEntry b
+                    = new BibtexEntry(BibtexFields.DEFAULT_BIBTEXENTRY_ID, Globals.getEntryType(Type)); // id assumes an existing database so don't
 
             // create one here
             b.setField(hm);
@@ -196,12 +204,12 @@ public class BiomailImporter extends ImportFormat {
             // the first bibitem is always empty, presumably as a result of trying
             // to parse header informaion. So add only if we have at least author or
             // title fields.
-            if (hm.get("author") != null || hm.get("title") != null)
+            if (hm.get("author") != null || hm.get("title") != null) {
                 bibitems.add(b);
+            }
         }
 
         return bibitems;
     }
-
 
 }

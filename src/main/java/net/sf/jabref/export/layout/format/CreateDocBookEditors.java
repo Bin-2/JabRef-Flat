@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 ///////////////////////////////////////////////////////////////////////////////
 //  Filename: $RCSfile$
 //  Purpose:  Atom representation.
@@ -38,25 +38,22 @@ package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.AuthorList;
 
-
 /**
  * Create DocBook editors formatter.
  *
  * @author $author$
  * @version $Revision$
  */
-public class CreateDocBookEditors extends CreateDocBookAuthors
-{
+public class CreateDocBookEditors extends CreateDocBookAuthors {
     //~ Methods ////////////////////////////////////////////////////////////////
 
-    public String format(String fieldText)
-    {
+    public String format(String fieldText) {
         //		<editor><firstname>L.</firstname><surname>Xue</surname></editor>
         StringBuilder sb = new StringBuilder(100);
         AuthorList al = AuthorList.getAuthorList(fieldText);
         addBody(sb, al, "editor");
         return sb.toString();
-        
+
     }
 
 }

@@ -12,23 +12,24 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref;
 
 import java.util.ArrayList;
 
 /**
- * Every Listener that wants to receive events from a search needs to
- * implement this interface
- * 
+ * Every Listener that wants to receive events from a search needs to implement
+ * this interface
+ *
  * @author Ben
- * 
+ *
  */
 interface SearchTextListener {
-	/**
-	 * Array of words that were searched for
-	 * 
-	 * @param words null if nothing is searched for
-	 */
-	public void searchText(ArrayList<String> words);
+
+    /**
+     * Array of words that were searched for
+     *
+     * @param words null if nothing is searched for
+     */
+    public void searchText(ArrayList<String> words);
 }

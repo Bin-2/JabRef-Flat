@@ -12,33 +12,34 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout;
 
 /**
  * The LayoutFormatter is used for a Filter design-pattern.
- * 
- * Implementing classes have to accept a String and returned a formatted version of it.
- * 
+ *
+ * Implementing classes have to accept a String and returned a formatted version
+ * of it.
+ *
  * Example:
- * 
- *   "John von Neumann" => "von Neumann, John"
+ *
+ * "John von Neumann" => "von Neumann, John"
  *
  * @version 1.2 - Documentation CO
  */
 public interface LayoutFormatter {
-	/**
-	 * Failure Mode:
-	 * <p>
-	 * Formatters should be robust in the sense that they always return some
-	 * relevant string.
-	 * <p>
-	 * If the formatter can detect an invalid input it should return the
-	 * original string otherwise it may simply return a wrong output.
-	 * 
-	 * @param fieldText
-	 *            The text to layout.
-	 * @return The layouted text.
-	 */
-	public String format(String fieldText);
+
+    /**
+     * Failure Mode:
+     * <p>
+     * Formatters should be robust in the sense that they always return some
+     * relevant string.
+     * <p>
+     * If the formatter can detect an invalid input it should return the
+     * original string otherwise it may simply return a wrong output.
+     *
+     * @param fieldText The text to layout.
+     * @return The layouted text.
+     */
+    public String format(String fieldText);
 }

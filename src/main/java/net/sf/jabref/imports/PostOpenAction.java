@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.imports;
 
 import net.sf.jabref.BasePanel;
@@ -29,21 +29,22 @@ import net.sf.jabref.BasePanel;
 public interface PostOpenAction {
 
     /**
-     * This method is queried in order to find out whether the action needs to be
-     * performed or not.
+     * This method is queried in order to find out whether the action needs to
+     * be performed or not.
+     *
      * @param pr The result of the bib parse operation.
      * @return true if the action should be called, false otherwise.
      */
     public boolean isActionNecessary(ParserResult pr);
 
     /**
-     * This method is called after the new database has been added to the GUI, if
-     * the isActionNecessary() method returned true.
+     * This method is called after the new database has been added to the GUI,
+     * if the isActionNecessary() method returned true.
      *
      * Note: if several such methods need to be called sequentially, it is
-     *       important that all implementations of this method do not return
-     *       until the operation is finished. If work needs to be off-loaded
-     *       into a worker thread, use Spin to do this synchronously.
+     * important that all implementations of this method do not return until the
+     * operation is finished. If work needs to be off-loaded into a worker
+     * thread, use Spin to do this synchronously.
      *
      * @param panel The BasePanel where the database is shown.
      * @param pr The result of the bib parse operation.

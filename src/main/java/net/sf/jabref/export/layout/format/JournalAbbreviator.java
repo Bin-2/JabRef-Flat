@@ -31,31 +31,28 @@ import net.sf.jabref.export.layout.LayoutFormatter;
 import net.sf.jabref.Globals;
 
 /**
- * JournalAbbreviator formats the given text in an abbreviated form
- * according to the journal abbreviation lists.
- * 
- * The given input text is abbreviated according to the journal abbreviation lists.
- * If no abbreviation for input is found (e.g. not in list or already abbreviated), the input will be returned unmodified.
- * 
- * Usage:
- *    \format[JournalAbbreviator]{\journal}
- * Example result:
- *    "Phys. Rev. Lett." instead of "Physical Review Letters"
- * 
- * @author  Meigel
- * 
+ * JournalAbbreviator formats the given text in an abbreviated form according to
+ * the journal abbreviation lists.
+ *
+ * The given input text is abbreviated according to the journal abbreviation
+ * lists. If no abbreviation for input is found (e.g. not in list or already
+ * abbreviated), the input will be returned unmodified.
+ *
+ * Usage: \format[JournalAbbreviator]{\journal} Example result: "Phys. Rev.
+ * Lett." instead of "Physical Review Letters"
+ *
+ * @author Meigel
+ *
  */
-public class JournalAbbreviator implements LayoutFormatter
-{
-    public String format(String fieldText)
-    {
+public class JournalAbbreviator implements LayoutFormatter {
+
+    public String format(String fieldText) {
         String strJournal = Globals.journalAbbrev.getAbbreviatedName(fieldText, true);
-        if (null == strJournal)
-        {
-    	    // no abbreviation found => use unabbreviated journal name
-    	    strJournal = fieldText;
+        if (null == strJournal) {
+            // no abbreviation found => use unabbreviated journal name
+            strJournal = fieldText;
         }
-        
-	return strJournal;
+
+        return strJournal;
     }
 }

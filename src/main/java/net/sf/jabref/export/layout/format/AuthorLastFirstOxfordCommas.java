@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
@@ -25,14 +25,14 @@ import net.sf.jabref.AuthorList;
  * <li>Individual authors are separated by commas.</li>
  * <li>The 'and' of a list of three or more authors is preceeded by a comma
  * (Oxford comma)</li>
- * 
+ *
  * @author mkovtun
  * @author Christopher Oezbek <oezi@oezi.de>
- * 
+ *
  */
 public class AuthorLastFirstOxfordCommas implements LayoutFormatter {
 
-	public String format(String fieldText) {
-		return AuthorList.fixAuthor_lastNameFirstCommas(fieldText, false, true);
-	}
+    public String format(String fieldText) {
+        return AuthorList.fixAuthor_lastNameFirstCommas(fieldText, false, true);
+    }
 }

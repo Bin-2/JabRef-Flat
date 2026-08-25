@@ -67,9 +67,9 @@ public class FieldComparator implements Comparator<BibtexEntry> {
     int multiplier;
 
     /**
-     * Timestamp values are machine-generated date/time strings. Locale collation
-     * and lower-case allocation are unnecessary for them, and they dominate the
-     * initial table sort on large databases.
+     * Timestamp values are machine-generated date/time strings. Locale
+     * collation and lower-case allocation are unnecessary for them, and they
+     * dominate the initial table sort on large databases.
      */
     private final boolean useFastTimestampCompare;
 
@@ -80,9 +80,9 @@ public class FieldComparator implements Comparator<BibtexEntry> {
     private final boolean useFastStringCompare;
 
     /**
-     * Cache normalized sort values for this comparator instance. This is safe for
-     * normal table sorting because the raw field value is checked on every lookup;
-     * if an entry changes, the cached normalized value is rebuilt.
+     * Cache normalized sort values for this comparator instance. This is safe
+     * for normal table sorting because the raw field value is checked on every
+     * lookup; if an entry changes, the cached normalized value is rebuilt.
      */
     private final Map<BibtexEntry, CachedSortValue> sortValueCache = new IdentityHashMap<BibtexEntry, CachedSortValue>();
 
@@ -106,6 +106,7 @@ public class FieldComparator implements Comparator<BibtexEntry> {
     private long collationKeyCreations = 0;
 
     private static final class CachedSortValue {
+
         private Object rawValue;
         private Object normalizedValue;
         private boolean numericCandidate;

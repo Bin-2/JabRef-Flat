@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.labelPattern;
 
 import net.sf.jabref.*;
@@ -28,6 +28,7 @@ import java.util.List;
  * Function for resolving duplicate BibTeX keys.
  */
 public class SearchFixDuplicateLabels extends AbstractWorker {
+
     private BasePanel panel;
     HashMap<String, List<BibtexEntry>> dupes = null;
 
@@ -50,14 +51,12 @@ public class SearchFixDuplicateLabels extends AbstractWorker {
                 if (!foundKeys.containsKey(key)) {
                     // Not already known. Add key and entry to map:
                     foundKeys.put(key, entry);
-                }
-                else {
+                } else {
                     // Already known, so we have found a dupe. See if it was already found as a dupe:
                     if (dupes.containsKey(key)) {
                         // Already in the dupe map. Add this entry as well:
                         dupes.get(key).add(entry);
-                    }
-                    else {
+                    } else {
                         // Construct a list of entries for this key:
                         ArrayList<BibtexEntry> al = new ArrayList<BibtexEntry>();
                         // Add both the first one we found, and the one we found just now:
@@ -86,7 +85,7 @@ public class SearchFixDuplicateLabels extends AbstractWorker {
             rdld.show();
             if (rdld.isOkPressed()) {
                 List<JCheckBox> cbs = rdld.getCheckBoxes();
-                for (int i=0; i<cbs.size(); i++) {
+                for (int i = 0; i < cbs.size(); i++) {
                     if (cbs.get(i).isSelected()) {
                         // The checkbox for entry i has been selected, so we should generate a new key for it:
                         toGenerateFor.add(dupes.get(key).get(i));
@@ -102,7 +101,7 @@ public class SearchFixDuplicateLabels extends AbstractWorker {
                 String oldKey = entry.getCiteKey();
                 entry = LabelPatternUtil.makeLabel(panel.metaData(), panel.database(), entry);
                 ce.addEdit(new UndoableKeyChange(panel.database(), entry.getId(), oldKey,
-                    entry.getField(BibtexFields.KEY_FIELD)));
+                        entry.getField(BibtexFields.KEY_FIELD)));
             }
             ce.end();
             panel.undoManager.addEdit(ce);

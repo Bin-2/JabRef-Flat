@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.external;
 
 import net.sf.jabref.BibtexEntry;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
- * 
+ *
  */
 public class TransferableFileLinkSelection implements Transferable {
 
@@ -39,8 +39,9 @@ public class TransferableFileLinkSelection implements Transferable {
     public TransferableFileLinkSelection(BasePanel panel, BibtexEntry[] selection) {
         String s = selection[0].getField(GUIGlobals.FILE_FIELD);
         FileListTableModel tm = new FileListTableModel();
-        if (s != null)
+        if (s != null) {
             tm.setContent(s);
+        }
         if (tm.getRowCount() > 0) {
             // Find the default directory for this field type, if any:
             String[] dirs = panel.metaData().getFileDirectory(GUIGlobals.FILE_FIELD);
@@ -52,19 +53,19 @@ public class TransferableFileLinkSelection implements Transferable {
     }
 
     public DataFlavor[] getTransferDataFlavors() {
-        return new DataFlavor[] {DataFlavor.javaFileListFlavor};//, DataFlavor.stringFlavor};
+        return new DataFlavor[]{DataFlavor.javaFileListFlavor};//, DataFlavor.stringFlavor};
     }
 
     public boolean isDataFlavorSupported(DataFlavor dataFlavor) {
-        System.out.println("Query: "+dataFlavor.getHumanPresentableName()+" , "+
-            dataFlavor.getDefaultRepresentationClass()+" , "+dataFlavor.getMimeType());
+        System.out.println("Query: " + dataFlavor.getHumanPresentableName() + " , "
+                + dataFlavor.getDefaultRepresentationClass() + " , " + dataFlavor.getMimeType());
         return dataFlavor.equals(DataFlavor.javaFileListFlavor)
                 || dataFlavor.equals(DataFlavor.stringFlavor);
     }
 
     public Object getTransferData(DataFlavor dataFlavor) throws UnsupportedFlavorException, IOException {
         //if (dataFlavor.equals(DataFlavor.javaFileListFlavor))
-            return fileList;
+        return fileList;
         //else
         //    return "test";
     }

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.groups;
 
 import javax.swing.undo.AbstractUndoableEdit;
@@ -21,11 +21,12 @@ import net.sf.jabref.Globals;
 
 /**
  * @author jzieren
- * 
+ *
  * TODO To change the template for this generated type comment go to Window -
  * Preferences - Java - Code Style - Code Templates
  */
 public class UndoableMoveGroup extends AbstractUndoableEdit {
+
     private final GroupSelector m_groupSelector;
     private final GroupTreeNode m_groupsRootHandle;
     private final int[] m_pathToNewParent;
@@ -34,14 +35,13 @@ public class UndoableMoveGroup extends AbstractUndoableEdit {
     private final int m_oldChildIndex;
 
     /**
-     * @param moveNode
-     *            The node which is being moved. At the time of construction of
-     *            this object, it must not have moved yet.
-     * @param newParent
-     *            The new parent node to which <b>moveNode </b> will be moved.
-     * @param newChildIndex
-     *            The child index at <b>newParent </b> to which <b>moveNode </b>
-     *            will be moved.
+     * @param moveNode The node which is being moved. At the time of
+     * construction of this object, it must not have moved yet.
+     * @param newParent The new parent node to which <b>moveNode </b> will be
+     * moved.
+     * @param newChildIndex The child index at <b>newParent </b> to which
+     * <b>moveNode </b>
+     * will be moved.
      */
     public UndoableMoveGroup(GroupSelector gs, GroupTreeNode groupsRoot,
             GroupTreeNode moveNode, GroupTreeNode newParent, int newChildIndex) {
@@ -55,13 +55,13 @@ public class UndoableMoveGroup extends AbstractUndoableEdit {
     }
 
     public String getUndoPresentationName() {
-        return Globals.lang("Undo") + ": " 
-            + Globals.lang("move group");
+        return Globals.lang("Undo") + ": "
+                + Globals.lang("move group");
     }
 
     public String getRedoPresentationName() {
-        return Globals.lang("Redo") + ": " 
-            + Globals.lang("move group");
+        return Globals.lang("Redo") + ": "
+                + Globals.lang("move group");
     }
 
     public void undo() {

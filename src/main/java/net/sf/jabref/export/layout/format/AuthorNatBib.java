@@ -12,20 +12,19 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
 import net.sf.jabref.AuthorList;
 
 /**
- * Natbib style: Last names only. Two authors are separated by "and",
- * three or more authors are given as "Smith et al."
+ * Natbib style: Last names only. Two authors are separated by "and", three or
+ * more authors are given as "Smith et al."
  *
  * @author Morten O. Alver
  */
 public class AuthorNatBib implements LayoutFormatter {
-
 
     public String format(String fieldText) {
         return AuthorList.fixAuthor_Natbib(fieldText);

@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
@@ -23,13 +23,15 @@ import net.sf.jabref.AuthorList;
  * <li>Names are given as first name, von and last name.</li>
  * <li>First names will be abbreviated.</li>
  * <li>Individual authors separated by comma.</li>
- * <li>There is no command in front the and of a list of three or more authors.</li>
+ * <li>There is no command in front the and of a list of three or more
+ * authors.</li>
  * </ul>
- * 
+ *
  * @author Christopher Oezbek <oezi@oezi.de>
  */
 public class AuthorFirstAbbrLastCommas implements LayoutFormatter {
-	public String format(String fieldText) {
-		return AuthorList.fixAuthor_firstNameFirstCommas(fieldText, true, false);
-	}
+
+    public String format(String fieldText) {
+        return AuthorList.fixAuthor_firstNameFirstCommas(fieldText, true, false);
+    }
 }

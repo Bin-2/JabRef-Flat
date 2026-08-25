@@ -12,7 +12,7 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export.layout.format;
 
 import net.sf.jabref.export.layout.LayoutFormatter;
@@ -31,22 +31,22 @@ import net.sf.jabref.export.layout.LayoutFormatter;
  * <p>
  * See Testcase for more examples.
  * <p>
- * 
+ *
  * @author $Author$
  * @version $Revision$ ($Date$)
- * 
+ *
  */
 public class NoSpaceBetweenAbbreviations implements LayoutFormatter {
 
-	/*
+    /*
 	 * Match '.' followed by spaces followed by uppercase char followed by '.'
 	 * but don't include the last dot into the capturing group.
 	 * 
 	 * Replace the match by removing the spaces.
 	 * 
 	 * @see net.sf.jabref.export.layout.LayoutFormatter#format(java.lang.String)
-	 */
-	public String format(String fieldText) {
-		return fieldText.replaceAll("\\.\\s+(\\p{Lu})(?=\\.)", "\\.$1");
-	}
+     */
+    public String format(String fieldText) {
+        return fieldText.replaceAll("\\.\\s+(\\p{Lu})(?=\\.)", "\\.$1");
+    }
 }

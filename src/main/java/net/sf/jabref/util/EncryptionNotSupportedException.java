@@ -12,17 +12,17 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.util;
 
 import java.io.IOException;
 
 public class EncryptionNotSupportedException extends IOException {
 
-	private static final long serialVersionUID = 3280233692527372333L;
+    private static final long serialVersionUID = 3280233692527372333L;
 
-	public EncryptionNotSupportedException(String string) {
-		super(string);
-	}
+    public EncryptionNotSupportedException(String string) {
+        super(string);
+    }
 
 }
