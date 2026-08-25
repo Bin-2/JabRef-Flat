@@ -42,6 +42,8 @@ public class SaveDatabaseAction extends AbstractWorker {
     private JabRefFrame frame;
     private boolean success = false, cancelled = false, fileLockedError = false;
 
+    private boolean saveAsHandledInInit = false;
+
     public SaveDatabaseAction(BasePanel panel) {
 
         this.panel = panel;
@@ -52,8 +54,11 @@ public class SaveDatabaseAction extends AbstractWorker {
         success = false;
         cancelled = false;
         fileLockedError = false;
+        saveAsHandledInInit = false;
         if (panel.getFile() == null) {
             saveAs();
+            saveAsHandledInInit = true;
+            return;
         } else {
 
             // Check for external modifications:
@@ -129,6 +134,11 @@ public class SaveDatabaseAction extends AbstractWorker {
 
     @Override
     public void update() {
+        if (saveAsHandledInInit) {
+            saveAsHandledInInit = false;
+            return;
+        }
+
         panel.setSaving(false);
 
         if (success) {
@@ -153,7 +163,7 @@ public class SaveDatabaseAction extends AbstractWorker {
     }
 
     public void run() {
-        if (cancelled || (panel.getFile() == null)) {
+        if (saveAsHandledInInit || cancelled || (panel.getFile() == null)) {
             return;
         }
 
