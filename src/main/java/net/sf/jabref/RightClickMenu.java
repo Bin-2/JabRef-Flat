@@ -191,9 +191,12 @@ public class RightClickMenu extends JPopupMenu
         }
 
         if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SPECIALFIELDSENABLED)) {
+            boolean specialFieldAdded = false;
+
             if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_RANKING)) {
                 populateSpecialFieldMenu(this.rankingMenu, Rank.getInstance(), panel.frame);
                 add(this.rankingMenu);
+                specialFieldAdded = true;
             }
 
             // TODO: multiple handling for relevance and quality-assurance
@@ -201,25 +204,32 @@ public class RightClickMenu extends JPopupMenu
             // if one value is selected either set or clear should be offered
             if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_RELEVANCE)) {
                 add(Relevance.getInstance().getValues().get(0).getMenuAction(panel.frame));
+                specialFieldAdded = true;
             }
             if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_QUALITY)) {
                 add(Quality.getInstance().getValues().get(0).getMenuAction(panel.frame));
+                specialFieldAdded = true;
             }
             if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRINTED)) {
                 add(Printed.getInstance().getValues().get(0).getMenuAction(panel.frame));
+                specialFieldAdded = true;
             }
 
             if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_PRIORITY)) {
                 populateSpecialFieldMenu(this.priorityMenu, Priority.getInstance(), panel.frame);
                 add(this.priorityMenu);
+                specialFieldAdded = true;
             }
 
             if (Globals.prefs.getBoolean(SpecialFieldsUtils.PREF_SHOWCOLUMN_READ)) {
                 populateSpecialFieldMenu(this.readStatusMenu, ReadStatus.getInstance(), panel.frame);
                 add(this.readStatusMenu);
+                specialFieldAdded = true;
             }
 
-            addSeparator();
+            if (specialFieldAdded) {
+                addSeparator();
+            }
         }
 
         add(new AbstractAction(Globals.lang("Open folder"), GUIGlobals.getImage("openFolder")) {
