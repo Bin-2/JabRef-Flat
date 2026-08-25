@@ -138,27 +138,49 @@ public class RightClickMenu extends JPopupMenu
         }
 
         if (multiple) {
-            add(new AbstractAction(Globals.lang("Mark entries"), GUIGlobals.getIcon("markEntries")) {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        panel.runCommand("markEntries");
-                    } catch (Throwable ex) {
-                        logger.warning(ex.getMessage());
-                    }
+            boolean anyMarked = false;
+            boolean anyUnmarked = false;
+
+            for (BibtexEntry entry : panel.mainTable.getSelected()) {
+                if (Util.isMarked(entry) > 0) {
+                    anyMarked = true;
+                } else {
+                    anyUnmarked = true;
                 }
-            });
+
+                if (anyMarked && anyUnmarked) {
+                    break;
+                }
+            }
+
+            if (anyUnmarked) {
+                add(new AbstractAction(Globals.lang("Mark entries"), GUIGlobals.getIcon("markEntries")) {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            panel.runCommand("markEntries");
+                        } catch (Throwable ex) {
+                            logger.warning(ex.getMessage());
+                        }
+                    }
+                });
+            }
 
             add(markSpecific);
 
-            add(new AbstractAction(Globals.lang("Unmark entries"), GUIGlobals.getIcon("unmarkEntries")) {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        panel.runCommand("unmarkEntries");
-                    } catch (Throwable ex) {
-                        logger.warning(ex.getMessage());
+            if (anyMarked) {
+                add(new AbstractAction(Globals.lang("Unmark entries"), GUIGlobals.getIcon("unmarkEntries")) {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        try {
+                            panel.runCommand("unmarkEntries");
+                        } catch (Throwable ex) {
+                            logger.warning(ex.getMessage());
+                        }
                     }
-                }
-            });
+                });
+            }
+
             addSeparator();
         } else if (be != null) {
             String marked = be.getField(BibtexFields.MARKED);
