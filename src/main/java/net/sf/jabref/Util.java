@@ -2149,18 +2149,7 @@ public class Util {
                     try {
                         int prevMarkLevel = Integer.parseInt(m.group(1));
                         if (!onlyMaxLevel || (prevMarkLevel == MARK_COLOR_LEVELS)) {
-                            if (prevMarkLevel > 1) {
-                                newValue = s.substring(0, m.start(1))
-                                        + s.substring(m.end(1));
-                            } else {
-                                String toRemove = Globals.prefs.WRAPPED_USERNAME.substring(0,
-                                        Globals.prefs.WRAPPED_USERNAME.length() - 1) + ":1]";
-                                index = s.indexOf(toRemove);
-                                if (index >= 0) {
-                                    newValue = s.substring(0, index)
-                                            + s.substring(index + toRemove.length());
-                                }
-                            }
+                            newValue = s.substring(0, m.start()) + s.substring(m.end());
                         } else {
                             return;
                         }
