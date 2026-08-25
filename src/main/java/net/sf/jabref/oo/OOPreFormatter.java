@@ -120,7 +120,7 @@ public class OOPreFormatter implements LayoutFormatter {
 		CHARS.put("vC", "Č"); // "Ccaron"
 		CHARS.put("vc", "č"); // "ccaron"
 		CHARS.put("vD", "Ď"); // "Dcaron"
-		// Symbol #271 (d�) has no special Latex command
+		// Symbol #271 (ď) has no special Latex command
 		CHARS.put("DJ", "Đ"); // "Dstrok"
 		CHARS.put("dj", "đ"); // "dstrok"
 		CHARS.put("=E", "Ē"); // "Emacr"
@@ -166,8 +166,8 @@ public class OOPreFormatter implements LayoutFormatter {
 		CHARS.put("'l", "ĺ"); // "lacute"
 		CHARS.put("cL", "Ļ"); // "Lcedil"
 		CHARS.put("cl", "ļ"); // "lcedil"
-		// Symbol #317 (L�) has no special Latex command
-		// Symbol #318 (l�) has no special Latex command
+		// Symbol #317 (Ľ) has no special Latex command
+		// Symbol #318 (ľ) has no special Latex command
 		CHARS.put("Lmidot", "Ŀ"); // "Lmidot"
 		CHARS.put("lmidot", "ŀ"); // "lmidot"
 		CHARS.put("L", "Ł"); // "Lstrok"
@@ -178,7 +178,7 @@ public class OOPreFormatter implements LayoutFormatter {
 		CHARS.put("cn", "ņ"); // "ncedil"
 		CHARS.put("vN", "Ň"); // "Ncaron"
 		CHARS.put("vn", "ň"); // "ncaron"
-		// Symbol #329 (�n) has no special Latex command
+		// Symbol #329 (ŉ) has no special Latex command
 		CHARS.put("NG", "Ŋ"); // "ENG"
 		CHARS.put("ng", "ŋ"); // "eng"
 		CHARS.put("=O", "Ō"); // "Omacr"
@@ -206,7 +206,7 @@ public class OOPreFormatter implements LayoutFormatter {
 		CHARS.put("cT", "Ţ"); // "Tcedil"
 		CHARS.put("ct", "ţ"); // "tcedil"
 		CHARS.put("vT", "Ť"); // "Tcaron"
-		// Symbol #357 (t�) has no special Latex command
+		// Symbol #357 (ť) has no special Latex command
 		CHARS.put("Tstrok", "Ŧ"); // "Tstrok"
 		CHARS.put("tstrok", "ŧ"); // "tstrok"
 		CHARS.put("~U", "Ũ"); // "Utilde"
