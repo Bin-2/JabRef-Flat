@@ -1619,18 +1619,36 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         output(Globals.lang("No entries selected."));
                         return;
                     }
+
+                    int markedCount = 0;
+                    for (BibtexEntry be : bes) {
+                        if (Util.isMarked(be) > 0) {
+                            markedCount++;
+                        }
+                    }
+
+                    if (markedCount == 0) {
+                        return;
+                    }
+
                     NamedCompound ce = new NamedCompound(Globals.lang("Unmark entries"));
                     for (BibtexEntry be : bes) {
-                        Util.unmarkEntry(be, false, database, ce);
+                        if (Util.isMarked(be) > 0) {
+                            Util.unmarkEntry(be, false, database, ce);
+                        }
                     }
+
                     ce.end();
                     undoManager.addEdit(ce);
                     markBaseChanged();
+
                     String outputStr;
-                    if (bes.length == 1) {
+                    if (markedCount == 1) {
                         outputStr = Globals.lang("Unmarked selected entry");
                     } else {
-                        outputStr = Globals.lang("Unmarked all %0 selected entries", Integer.toString(bes.length));
+                        outputStr = Globals.lang(
+                                "Unmarked all %0 selected entries",
+                                Integer.toString(markedCount));
                     }
                     output(outputStr);
                 } catch (Throwable ex) {
@@ -1642,11 +1660,27 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         actions.put("unmarkAll", new BaseAction() {
             @Override
             public void action() {
+                boolean hasMarkedEntries = false;
+
+                for (BibtexEntry be : database.getEntries()) {
+                    if (Util.isMarked(be) > 0) {
+                        hasMarkedEntries = true;
+                        break;
+                    }
+                }
+
+                if (!hasMarkedEntries) {
+                    return;
+                }
+
                 NamedCompound ce = new NamedCompound(Globals.lang("Unmark all"));
 
                 for (BibtexEntry be : database.getEntries()) {
-                    Util.unmarkEntry(be, false, database, ce);
+                    if (Util.isMarked(be) > 0) {
+                        Util.unmarkEntry(be, false, database, ce);
+                    }
                 }
+
                 ce.end();
                 undoManager.addEdit(ce);
                 markBaseChanged();
