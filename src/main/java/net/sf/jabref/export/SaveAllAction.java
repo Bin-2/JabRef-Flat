@@ -12,24 +12,29 @@
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+ */
 package net.sf.jabref.export;
 
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
 
-import net.sf.jabref.*;
-import spin.Spin;
+import net.sf.jabref.BasePanel;
+import net.sf.jabref.GUIGlobals;
+import net.sf.jabref.Globals;
+import net.sf.jabref.JabRefFrame;
+import net.sf.jabref.MnemonicAwareAction;
 
 /**
- *
- * @author alver
+ * Saves all open databases.
  */
-public class SaveAllAction extends MnemonicAwareAction implements Worker {
-    
-    private JabRefFrame frame;
-    private int databases=0, saved=0;
-    
-    /** Creates a new instance of SaveAllAction */
+public class SaveAllAction extends MnemonicAwareAction {
+
+    private final JabRefFrame frame;
+
+    /**
+     * Creates a new instance of SaveAllAction.
+     */
     public SaveAllAction(JabRefFrame frame) {
         super(GUIGlobals.getImage("saveAllClean"));
         this.frame = frame;
@@ -38,31 +43,50 @@ public class SaveAllAction extends MnemonicAwareAction implements Worker {
         putValue(NAME, "Save all");
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
-        databases = frame.getTabbedPane().getTabCount();
-        saved = 0;
-        frame.output(Globals.lang("Saving all databases..."));
-        Spin.off(this);
-        run();
-        frame.output(Globals.lang("Save all finished."));
-    }
+        List<BasePanel> panels = new ArrayList<>();
+        for (int i = 0; i < frame.getTabbedPane().getTabCount(); i++) {
+            panels.add(frame.baseAt(i));
+        }
 
-    public void run() {
-        for (int i=0; i<databases; i++) {
-            if (i < frame.getTabbedPane().getTabCount()) {
-                //System.out.println("Base "+i);
-                BasePanel panel = frame.baseAt(i);
-                if (panel.getFile() == null) {
-                    frame.showBaseAt(i);
-                }
-                panel.runCommand("save");
-                // TODO: can we find out whether the save was actually done or not?
+        frame.output(Globals.lang("Saving all databases..."));
+
+        int saved = 0;
+        int cancelled = 0;
+        int failed = 0;
+
+        for (BasePanel panel : panels) {
+            if (panel.getFile() == null) {
+                frame.showBasePanel(panel);
+            }
+
+            SaveDatabaseAction saveAction = new SaveDatabaseAction(panel);
+            try {
+                saveAction.runCommand();
+            } catch (Throwable ex) {
+                failed++;
+                ex.printStackTrace();
+                continue;
+            }
+
+            if (saveAction.isSuccess()) {
                 saved++;
+            } else if (saveAction.isCancelled()) {
+                cancelled++;
+            } else {
+                failed++;
             }
         }
-    }
 
-    
-    
-    
+        frame.updateSaveIconState();
+
+        if (failed == 0 && cancelled == 0) {
+            frame.output(Globals.lang("Save all finished."));
+        } else {
+            frame.output(Globals.lang("Save all finished.")
+                    + " " + saved + "/" + panels.size()
+                    + " saved, " + cancelled + " cancelled, " + failed + " failed.");
+        }
+    }
 }
