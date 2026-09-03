@@ -207,7 +207,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
     TabListener tabListener = new TabListener();
 
     String currentTheme = Globals.prefs.get("Theme", "FlatLight");
-    private ThemeAwareComponent sourceTabIconRefresher;
     private final LatexFieldFormatter sourceFormatter = LatexFieldFormatter.buildIgnoreHashes();
     private final LatexFieldFormatter validatingFormatter = new LatexFieldFormatter();
 
@@ -252,56 +251,9 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
     }
 
     ////////////////////////////////////////////////////////////////////////////
-//    private final Globals.PreferenceChangeListener themePrefListener = (key, newValue) -> {
-//        if ("Theme".equals(key)) {
-//            SwingUtilities.invokeLater(() -> applyThemeFromPref(newValue));
-//            ThemeWatcher.notifyThemeChanged();
-//            GUIGlobals.setUpIconTheme();
-//            SwingUtilities.invokeLater(this::updateTabIcons);
-//        }
-//    };
-//
-//    @Override
-//    public void addNotify() {
-//        super.addNotify();
-//        Globals.addPreferenceChangeListener(themePrefListener);
-//        currentTheme = Globals.prefs.get("Theme", "FlatLight");
-//        SwingUtilities.invokeLater(() -> applyThemeFromPref(currentTheme));
-//    }
-//
-//    @Override
-//    public void removeNotify() {
-//        Globals.removePreferenceChangeListener(themePrefListener);
-//        super.removeNotify();
-//    }
-//
-//    private void applyThemeFromPref(String prefValue) {
-//        // not working for now
-//        //String theme = (prefValue == null) ? "FlatLight" : prefValue.trim();
-//        //boolean dark = theme.equalsIgnoreCase("FlatDark") || theme.toLowerCase().contains("dark");
-//
-//        // Propagate LAF metrics (borders, font sizes) and repaint
-//        SwingUtilities.updateComponentTreeUI(this);
-//        revalidate();
-//        repaint();
-//    }
-//
-//    private void updateTabIcons() {
-//        for (int i = 0; i < tabbed.getTabCount(); i++) {
-//            Component tabComponent = tabbed.getComponentAt(i);
-//            String iconKey = tabIconKeys.get(tabComponent);
-//            if (iconKey != null) {
-//                tabbed.setIconAt(i, GUIGlobals.getImage(iconKey));
-//            }
-//        }
-//    }
-    ////////////////////////////////////////////////////////////////////////////
     private void setupFieldPanels() {
-        if (sourceTabIconRefresher != null) {
-            unregisterThemeAwareComponent(sourceTabIconRefresher);
-            sourceTabIconRefresher = null;
-        }
         tabbed.removeAll();
+        tabIconKeys.clear();
         tabs.clear();
         contentSelectors.clear();
         fileListEditor = null;
@@ -318,6 +270,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         }
         tabbed.addTab(Globals.lang("Required fields"), GUIGlobals.getIcon("required"), reqPan
                 .getPane(), Globals.lang("Show required fields"));
+        tabIconKeys.put(reqPan.getPane(), "required");
         tabs.add(reqPan);
 
         if ((entry.getOptionalFields() != null) && (entry.getOptionalFields().length >= 1)) {
@@ -329,6 +282,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 }
                 tabbed.addTab(Globals.lang("Optional fields"), GUIGlobals.getIcon("optional"), optPan
                         .getPane(), Globals.lang("Show optional fields"));
+                tabIconKeys.put(optPan.getPane(), "optional");
                 tabs.add(optPan);
             } else {
                 optPan = new EntryEditorTab(frame, panel,
@@ -339,6 +293,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 }
                 tabbed.addTab(Globals.lang("Optional fields"), GUIGlobals.getIcon("optional"), optPan
                         .getPane(), Globals.lang("Show optional fields"));
+                tabIconKeys.put(optPan.getPane(), "optional");
                 tabs.add(optPan);
 
                 Set<String> deprecatedFields = new HashSet<>(BibtexEntry.FieldAliasesOldToNew.keySet());
@@ -371,6 +326,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 }
                 tabbed.addTab(Globals.lang("Optional fields 2"), GUIGlobals.getIcon("optional"), optPan
                         .getPane(), Globals.lang("Show optional fields"));
+                tabIconKeys.put(optPan.getPane(), "optional");
                 tabs.add(optPan);
 
                 if (!usedOptionalFieldsDeprecated.isEmpty()) {
@@ -382,6 +338,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                     }
                     tabbed.addTab(Globals.lang("Deprecated fields"), GUIGlobals.getIcon("optional"), optPan
                             .getPane(), Globals.lang("Show deprecated bibtex fields"));
+                    tabIconKeys.put(optPan.getPane(), "optional");
                     tabs.add(optPan);
                 }
             }
@@ -395,6 +352,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 fileListEditor = newTab.fileListEditor;
             }
             tabbed.addTab(tabList.getTabName(i), GUIGlobals.getImage("general"), newTab.getPane());
+            tabIconKeys.put(newTab.getPane(), "general");
             tabs.add(newTab);
         }
 
@@ -409,33 +367,9 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             tabs.add(srcPanel);
             tabIconKeys.put(srcPanel, "source"); // Save icon key for later update
 
-            // Register icon refresher for this tab
-            sourceTabIconRefresher = new TabIconRefresher(tabbed, srcPanel, "source");
-            ThemeWatcher.register(sourceTabIconRefresher);
             sourceIndex = tabbed.getTabCount() - 1;
         }
 //        srcPanel.setFocusCycleRoot(true);
-    }
-
-    public class TabIconRefresher implements ThemeAwareComponent {
-
-        private final JTabbedPane tabbedPane;
-        private final Component tabComponent;
-        private final String iconKey;
-
-        public TabIconRefresher(JTabbedPane tabbedPane, Component tabComponent, String iconKey) {
-            this.tabbedPane = tabbedPane;
-            this.tabComponent = tabComponent;
-            this.iconKey = iconKey;
-        }
-
-        @Override
-        public void onThemeChanged() {
-            int index = tabbedPane.indexOfComponent(tabComponent);
-            if (index >= 0) {
-                tabbedPane.setIconAt(index, GUIGlobals.getIcon(iconKey));
-            }
-        }
     }
 
     public BibtexEntryType getType() {
@@ -479,7 +413,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         };
 
         //tlb.putClientProperty(Options.HEADER_STYLE_KEY, HeaderStyle.BOTH);
-        tlb.setBorder(null);
+        //tlb.setBorder(null);
         tlb.setRollover(true);
 
         tlb.setMargin(new Insets(5, 0, 0, 0));
@@ -515,8 +449,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 setIcon(GUIGlobals.getImage("close"));
                 super.updateUI();
                 // Re-apply custom styling after theme change
-                setText(null);
-                setBorder(null);
+                //setText(null);
+                //setBorder(null);
                 setOpaque(false);
                 setBackground(UIManager.getColor("SplitPane.background"));
                 setMargin(new Insets(0, 0, 0, 0));
@@ -537,8 +471,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             @Override
             public void updateUI() {
                 super.updateUI();
-                setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0)); // top gap
-
+                
                 for (Component comp : getComponents()) {
                     if (comp instanceof JComponent) {
                         ((JComponent) comp).updateUI(); // force update if needed
@@ -617,6 +550,33 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 //            }
 //        }
 //    }
+
+    /**
+     * Refreshes this editor after a Look & Feel change without rebuilding its
+     * field tabs. Rebuilding the tabs would discard transient UI state such as
+     * the currently selected tab.
+     */
+    public void updateUIForThemeChange() {
+        // Editors cached by BasePanel are not necessarily attached to the frame,
+        // so update their UI delegates explicitly when they are not in the
+        // frame hierarchy. Attached editors were already updated with the frame.
+        if (!SwingUtilities.isDescendingFrom(this, frame)) {
+            SwingUtilities.updateComponentTreeUI(this);
+        }
+
+        // Icons explicitly assigned to JTabbedPane tabs are not replaced by
+        // updateComponentTreeUI(), so reload them from the current theme.
+        for (Map.Entry<Component, String> entry : tabIconKeys.entrySet()) {
+            int index = tabbed.indexOfComponent(entry.getKey());
+            if (index >= 0) {
+                tabbed.setIconAt(index, GUIGlobals.getIcon(entry.getValue()));
+            }
+        }
+
+        revalidate();
+        repaint();
+    }
+
     /**
      * Rebuild the field tabs. This is called e.g. when a new content selector
      * has been added.
@@ -967,17 +927,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 }
             }
         });
-    }
-
-    private void unregisterThemeAwareComponent(ThemeAwareComponent component) {
-        if (component == null) {
-            return;
-        }
-        try {
-            ThemeWatcher.class.getMethod("unregister", ThemeAwareComponent.class).invoke(null, component);
-        } catch (ReflectiveOperationException ex) {
-            logger.log(Level.FINE, "ThemeWatcher unregister not available.", ex);
-        }
     }
 
     /**
@@ -1989,10 +1938,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
     @Override
     public void removeNotify() {
         detachEntryListeners(entry);
-        if (sourceTabIconRefresher != null) {
-            unregisterThemeAwareComponent(sourceTabIconRefresher);
-            sourceTabIconRefresher = null;
-        }
         super.removeNotify();
     }
 

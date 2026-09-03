@@ -26,17 +26,11 @@ public class ReadStatus extends SpecialField {
 
     private static ReadStatus INSTANCE = null;
 
-    private ImageIcon icon = GUIGlobals.getImageIcon("readstatus");
-
     public ReadStatus() {
         ArrayList<SpecialFieldValue> values = new ArrayList<SpecialFieldValue>();
         values.add(new SpecialFieldValue(this, Globals.lang("null"), "clearReadStatus", Globals.lang("Clear read status"), null, Globals.lang("No read status information")));
-        ImageIcon icon;
-        icon = GUIGlobals.getImageIcon("readStatusRead");
-        values.add(new SpecialFieldValue(this, Globals.lang("read"), "setReadStatusToRead", Globals.lang("Set read status to read"), icon, Globals.lang("Read status read")));
-        // icon = GUIGlobals.getImageIcon("readStatusSkimmed");
-        icon = null;
-        values.add(new SpecialFieldValue(this, Globals.lang("skimmed"), "setReadStatusToSkimmed", Globals.lang("Set read status to skimmed"), icon, Globals.lang("Read status skimmed")));
+        values.add(SpecialFieldValue.withThemeIcon(this, Globals.lang("read"), "setReadStatusToRead", Globals.lang("Set read status to read"), "readStatusRead", Globals.lang("Read status read")));
+        values.add(new SpecialFieldValue(this, Globals.lang("skimmed"), "setReadStatusToSkimmed", Globals.lang("Set read status to skimmed"), null, Globals.lang("Read status skimmed")));
         this.setValues(values);
         TEXT_DONE_PATTERN = "Set read status to '%0' for %1 entries";
     }
@@ -53,7 +47,7 @@ public class ReadStatus extends SpecialField {
     }
 
     public ImageIcon getRepresentingIcon() {
-        return this.icon;
+        return GUIGlobals.getImageIcon("readstatus");
     }
 
     public String getToolTip() {

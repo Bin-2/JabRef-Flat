@@ -46,7 +46,7 @@ import net.sf.jabref.gui.ThemeAwareComponent;
 /**
  * Displays an BibtexEntry using the given layout format.
  */
-public final class PreviewPanel extends JPanel implements VetoableChangeListener, SearchTextListener, EntryContainer {
+public final class PreviewPanel extends JPanel implements VetoableChangeListener, SearchTextListener, EntryContainer, ThemeAwareComponent {
 
     /**
      * The bibtex entry currently shown
@@ -153,7 +153,7 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
         scrollPane = new JScrollPane(previewPane,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(null);
+        // scrollPane.setBorder(null);
 
         /*
 		 * If we have been given a panel and the preference option
@@ -184,6 +184,50 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
             add(scrollPane, BorderLayout.CENTER);
         }
 
+        applyThemeColors();
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        ThemeWatcher.register(this);
+        applyThemeColors();
+    }
+
+    @Override
+    public void removeNotify() {
+        ThemeWatcher.unregister(this);
+        super.removeNotify();
+    }
+
+    @Override
+    public void onThemeChanged() {
+        applyThemeColors();
+    }
+
+    private void applyThemeColors() {
+        Color background = UIManager.getColor("EditorPane.background");
+        if (background == null) {
+            background = UIManager.getColor("Panel.background");
+        }
+
+        Color foreground = UIManager.getColor("EditorPane.foreground");
+
+        if (background != null) {
+            setBackground(background);
+            previewPane.setBackground(background);
+            scrollPane.setBackground(background);
+            scrollPane.getViewport().setBackground(background);
+        }
+
+        if (foreground != null) {
+            previewPane.setForeground(foreground);
+        }
+
+        previewPane.revalidate();
+        previewPane.repaint();
+        revalidate();
+        repaint();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -345,12 +389,15 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
         // Set explicit background colors
         // previewPane.setBackground(new Color(249, 250, 251));
         // previewPane.setOpaque(true);
-        // previewPane.setMargin(new Insets(3, 3, 3, 3));
+        //
         previewPane.setComponentPopupMenu(createPopupMenu());
 
         previewPane.setEditable(false);
         previewPane.setDragEnabled(true); // this has an effect only, if no custom transfer handler is registered. We keep the statement if the transfer handler is removed.
         previewPane.setContentType("text/html");
+        //
+        previewPane.setMargin(new Insets(4, 6, 4, 6));
+        //
         previewPane.addHyperlinkListener(new HyperlinkListener() {
             public void hyperlinkUpdate(HyperlinkEvent hyperlinkEvent) {
                 if (hyperlinkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {

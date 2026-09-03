@@ -17,11 +17,6 @@ package net.sf.jabref;
 
 // import com.jgoodies.looks.plastic.Plastic3DLookAndFeel;
 // import com.jgoodies.looks.plastic.theme.SkyBluer;
-import com.formdev.flatlaf.FlatLightLaf;
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.intellijthemes.FlatSolarizedLightIJTheme;
-import com.formdev.flatlaf.intellijthemes.FlatCarbonIJTheme;
-
 import java.awt.Font;
 import java.awt.Frame;
 import java.io.File;
@@ -202,7 +197,6 @@ public final class JabRef {
 
         List<ParserResult> loaded = processArguments(args, true);
         //System.out.println("loaded = processArguments(args, true): " + loaded);
-        //List<String> loaded = new ArrayList<>();
 
         if (graphicFailure || cli.isDisableGui() || cli.isShowVersion()) {
             System.exit(0);
@@ -301,9 +295,19 @@ public final class JabRef {
                 Util.pr(ex.getMessage());
             }
         }
-        // Set up custom or default icon theme
-        // Has to be done here as openBibFile requires an initialized icon theme (due to the implementation of special fields)
-        GUIGlobals.setUpIconTheme();
+        // openBibFile() can initialize special-field icons, so the icon theme
+        // must match the active Look & Feel before any input file is opened.
+        boolean initializeGuiTheme = initialStartup
+                && !commandmode
+                && !cli.isShowVersion()
+                && !graphicFailure;
+        if (initializeGuiTheme) {
+            setLookAndFeel();
+        } else {
+            // Non-GUI and later remote invocations still require an initialized
+            // icon map for code paths that create special-field values.
+            GUIGlobals.setUpIconTheme();
+        }
 
         List<ParserResult> loaded = new ArrayList<>();
         List<String> toImport = new ArrayList<>();
@@ -636,26 +640,6 @@ public final class JabRef {
             UIManager.put("Component.innerFocusWidth", 0);
             UIManager.put("Component.focusColor", new Color(0, 0, 0, 0)); // Transparent
 
-//            UIManager.put("Viewport.background", UIManager.getColor("SplitPane.background"));
-//            UIManager.put("EditorPane.background", UIManager.getColor("SplitPane.background"));
-//            UIManager.put("TextPane.background", UIManager.getColor("SplitPane.background"));
-//            UIManager.put("EditorPane.background", UIManager.getColor("SplitPane.background"));
-//            UIManager.put("EditorPane.inactiveBackground", UIManager.getColor("SplitPane.background"));
-//UIManager.put("Viewport.background", UIManager.getColor("Viewport.background"));
-//UIManager.put("ScrollPane.background", UIManager.getColor("ScrollPane.background"));
-//UIManager.put("EditorPane.background", UIManager.getColor("EditorPane.background"));
-//UIManager.put("TextPane.background", UIManager.getColor("TextPane.background"));
-//UIManager.put("TextArea.background", UIManager.getColor("TextArea.background"));
-//UIManager.put("TextField.background", UIManager.getColor("TextField.background"));
-//UIManager.put("FormattedTextField.background", UIManager.getColor("FormattedTextField.background"));
-//UIManager.put("PasswordField.background", UIManager.getColor("PasswordField.background"));
-            // Set font - either specific or system default
-            //UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 12));
-            // Optional: Set specific component fonts
-//            UIManager.put("Label.font", UIManager.getFont("defaultFont"));
-//            UIManager.put("Button.font", UIManager.getFont("defaultFont"));
-//            UIManager.put("TextField.font", UIManager.getFont("defaultFont"));
-            // Remove default table cell margins
             UIManager.put("Table.cellMargins", new Insets(0, 0, 0, 0));
             // UIManager.put("TableHeader.background", new Color(220, 240, 255));
 
@@ -670,81 +654,25 @@ public final class JabRef {
             UIManager.put("TabbedPane.tabHeight", 22);
             UIManager.put("TabbedPane.showTabSeparators", true);
             UIManager.put("TabbedPane.tabAreaInsets", new Insets(0, 0, 0, 0));
-//            UIManager.put("ToolBar.iconSize", 24);
-//            UIManager.put("TabbedPane.underlineColor", new Color(0x4285F4)); // blue stripe like Firefox
-//            UIManager.put("TabbedPane.underlineHeight", 3);                  // stripe thickness
 
-            // What the user requested (via prefs) or the system default:
-//            String prefLnF = Globals.prefs.getBoolean("useDefaultLookAndFeel")
-//                    ? systemLnF
-//                    : Globals.prefs.get("lookAndFeel");
-            String prefLnF = Globals.prefs.get("Theme");
+            String requestedTheme = ThemeManager.normalizeThemeName(
+                    Globals.prefs.get("Theme"));
 
-            System.out.println(prefLnF);
-            if (prefLnF == null || prefLnF.trim().isEmpty()) {
-                prefLnF = "FlatLight"; // sensible default for experiments
-            }
-
-//            prefLnF = "FlatCarbonIJTheme";/////////*************************************
-            Globals.prefs.put("Theme", prefLnF.trim());
-
-            String iconTheme = prefLnF.toLowerCase().contains("dark")
-                    || prefLnF.toLowerCase().contains("carbon") ? "dark" : "light";
-
-            // Theme list
-            boolean applied = false;
-            switch (prefLnF.trim()) {
-                case "FlatLight":
-                case "com.formdev.flatlaf.FlatLightLaf":
-                    FlatLightLaf.setup();
-                    applied = true;
-                    break;
-
-                case "FlatSolarizedLightIJTheme":
-                case "com.formdev.flatlaf.intellijthemes.FlatSolarizedLightIJTheme":
-                    FlatSolarizedLightIJTheme.setup();
-                    applied = true;
-                    break;
-
-                case "FlatDark":
-                case "com.formdev.flatlaf.FlatDarkLaf":
-                    FlatDarkLaf.setup();
-                    applied = true;
-                    break;
-
-                case "FlatCarbonIJTheme":
-                case "com.formdev.flatlaf.intellijthemes.FlatCarbonIJTheme":
-                    FlatCarbonIJTheme.setup();
-                    applied = true;
-                    break;
-
-//                case "javax.swing.plaf.metal.MetalLookAndFeel":
-//                    // Instead of Plastic3D, use FlatLaf to avoid Metal
-//                    FlatLightLaf.setup();
-//                    applied = true;
-//                    break;
-                default:
             try {
-                    UIManager.setLookAndFeel(prefLnF); // e.g., Windows L&F class name
-                    applied = true;
-                } catch (Exception ignored) {
-                    // fall through to system/FlatLaf fallback below
-                }
-            }
+                ThemeManager.applyTheme(requestedTheme);
+                Globals.prefs.put("Theme", requestedTheme);
+            } catch (Exception requestedThemeException) {
+                String fallbackTheme = ThemeManager.DEFAULT_THEME;
 
-            GUIGlobals.setUpIconTheme(iconTheme);
-
-            if (!applied) {
-                // First fallback: system LnF
                 try {
-                    UIManager.setLookAndFeel(systemLnF);
-                    Globals.prefs.put("lookAndFeel", systemLnF);
-                    applied = true;
-                } catch (Exception ignored) {
-                    // Last resort: FlatLight
-                    FlatLightLaf.setup();
-                    applied = true;
+                    ThemeManager.applyTheme(fallbackTheme);
+                } catch (Exception defaultThemeException) {
+                    fallbackTheme = systemLnF;
+                    ThemeManager.applyTheme(fallbackTheme);
                 }
+
+                Globals.prefs.put("Theme", fallbackTheme);
+                Globals.prefs.flush();
 
                 JOptionPane.showMessageDialog(
                         jrf,
@@ -754,129 +682,13 @@ public final class JabRef {
                 );
             }
 
+            GUIGlobals.setUpIconTheme();
         } catch (Exception e) {
             e.printStackTrace();
             try {
-                FlatLightLaf.setup();
-                GUIGlobals.setUpIconTheme("light");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-
-        // In JabRef v2.8, we did it only on NON-Mac. Now, we try on all platforms
-        boolean overrideDefaultFonts = Globals.prefs.getBoolean("overrideDefaultFonts");
-        if (overrideDefaultFonts) {
-            int fontSize = Globals.prefs.getInt("menuFontSize");
-            UIDefaults defaults = UIManager.getDefaults();
-            Enumeration<Object> keys = defaults.keys();
-            Double zoomLevel = null;
-            while (keys.hasMoreElements()) {
-                Object key = keys.nextElement();
-                if ((key instanceof String) && (((String) key).endsWith(".font"))) {
-                    FontUIResource font = (FontUIResource) UIManager.get(key);
-                    if (zoomLevel == null) {
-                        // zoomLevel not yet set, calculate it based on the first found font
-                        zoomLevel = (double) fontSize / (double) font.getSize();
-                    }
-                    font = new FontUIResource(font.getName(), font.getStyle(), fontSize);
-                    defaults.put(key, font);
-                    System.out.println(font.getFontName());//*******************
-                }
-            }
-            if (zoomLevel != null) {
-                GUIGlobals.zoomLevel = zoomLevel;
-            }
-        }
-    }
-
-    private void setLookAndFeel(String prefLnF) {
-        try {
-
-            // --- GLOBAL OVERRIDES ---
-            UIManager.put("TextArea.opaque", false);
-            UIManager.put("TextArea.background", null); // Use parent background
-
-            UIManager.put("Component.focusWidth", 0);
-            UIManager.put("Component.innerFocusWidth", 0);
-            UIManager.put("Component.focusColor", new Color(0, 0, 0, 0)); // Transparent
-
-            UIManager.put("Viewport.background", UIManager.getColor("SplitPane.background"));
-            UIManager.put("ScrollPane.background", UIManager.getColor("ScrollPane.background"));
-//            UIManager.put("TextPane.background", UIManager.getColor("SplitPane.background"));
-//            UIManager.put("EditorPane.background", UIManager.getColor("SplitPane.background"));
-//            UIManager.put("EditorPane.inactiveBackground", UIManager.getColor("SplitPane.background"));
-//UIManager.put("Viewport.background", UIManager.getColor("Viewport.background"));
-//UIManager.put("ScrollPane.background", UIManager.getColor("ScrollPane.background"));
-//UIManager.put("EditorPane.background", UIManager.getColor("EditorPane.background"));
-//UIManager.put("TextPane.background", UIManager.getColor("TextPane.background"));
-//UIManager.put("TextArea.background", UIManager.getColor("TextArea.background"));
-//UIManager.put("TextField.background", UIManager.getColor("TextField.background"));
-//UIManager.put("FormattedTextField.background", UIManager.getColor("FormattedTextField.background"));
-//UIManager.put("PasswordField.background", UIManager.getColor("PasswordField.background"));
-            // Set font - either specific or system default
-            //UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 12));
-            // Optional: Set specific component fonts
-//            UIManager.put("Label.font", UIManager.getFont("defaultFont"));
-//            UIManager.put("Button.font", UIManager.getFont("defaultFont"));
-//            UIManager.put("TextField.font", UIManager.getFont("defaultFont"));
-            // Remove default table cell margins
-            UIManager.put("Table.cellMargins", new Insets(0, 0, 0, 0));
-            // UIManager.put("TableHeader.background", new Color(220, 240, 255));
-
-            // Remove default margins from text components
-            UIManager.put("TextField.margin", new Insets(0, 0, 0, 0));
-            UIManager.put("FormattedTextField.margin", new Insets(0, 0, 0, 0));
-            UIManager.put("PasswordField.margin", new Insets(0, 0, 0, 0));
-            UIManager.put("EditorPane.margin", new Insets(0, 0, 0, 0));
-            UIManager.put("TextArea.margin", new Insets(0, 0, 0, 0));
-            UIManager.put("TextPane.margin", new Insets(0, 0, 0, 0));
-
-            UIManager.put("TabbedPane.tabHeight", 22);
-            UIManager.put("TabbedPane.showTabSeparators", true);
-            UIManager.put("TabbedPane.tabAreaInsets", new Insets(0, 0, 0, 0));
-
-            Globals.prefs.put("Theme", prefLnF.trim());
-
-            String iconTheme = prefLnF.toLowerCase().contains("dark")
-                    || prefLnF.toLowerCase().contains("carbon") ? "dark" : "light";
-
-            // Theme list
-            boolean applied = false;
-            switch (prefLnF.trim()) {
-
-                case "FlatSolarizedLightIJTheme":
-                case "com.formdev.flatlaf.intellijthemes.FlatSolarizedLightIJTheme":
-                    FlatSolarizedLightIJTheme.setup();
-                    applied = true;
-                    break;
-
-                case "FlatDark":
-                case "com.formdev.flatlaf.FlatDarkLaf":
-                    FlatDarkLaf.setup();
-                    applied = true;
-                    break;
-
-                case "FlatCarbonIJTheme":
-                case "com.formdev.flatlaf.intellijthemes.FlatCarbonIJTheme":
-                    FlatCarbonIJTheme.setup();
-                    applied = true;
-                    break;
-
-                case "FlatLight":
-                case "com.formdev.flatlaf.FlatLightLaf":
-                default:
-                    FlatLightLaf.setup();
-                    applied = true;
-                    break;
-            }
-            GUIGlobals.setUpIconTheme(iconTheme);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            try {
-                FlatLightLaf.setup();
-                GUIGlobals.setUpIconTheme("light");
+                ThemeManager.applyTheme(ThemeManager.DEFAULT_THEME);
+                GUIGlobals.setUpIconTheme(
+                        ThemeManager.isDarkTheme() ? "dark" : "light");
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -927,18 +739,14 @@ public final class JabRef {
         // Set antialiasin.g on everywhere. This only works in JRE >= 1.5.
         // Or... it doesn't work, period.
         //System.setProperty("swing.aatext", "true");
-        // TODO test and maybe remove this! I found this commented out with no additional info ( payload@lavabit.com )
-        // Set the Look & Feel for Swing.
-        try {
-            setLookAndFeel();
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+        //
+        // The Look & Feel and matching icon theme were initialized in
+        // processArguments() before any input files were opened.
+        //
         // Global Mouse Listener for Click Events
         // setupSimpleClickLogger(); // ****************************************
         // tracking all objects tree
         // SwingTracing.install(); //*******************************************
-
         // If the option is enabled, open the last edited databases, if any.
         if (!cli.isBlank() && Globals.prefs.getBoolean("openLastEdited") && (Globals.prefs.get("lastEdited") != null)) {
             // How to handle errors in the databases to open?

@@ -104,13 +104,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     // The sidepane manager takes care of populating the sidepane. 
     public SidePaneManager sidePaneManager;
 
-//    private String theme = Globals.prefs.get("Theme");
-//    public void setTheme(String theme) {
-//        theme = theme;
-//    }
-//    public String getTheme() {
-//        return theme;
-//    }
     // tabbed pane color
     Color active = UIManager.getColor("TabbedPane.selectedForeground");
     Color inactive = UIManager.getColor("TabbedPane.foreground");
@@ -819,6 +812,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         } else {
             prefsDialog.setValues();
         }
+        prefsDialog.beginPreferenceSession();
         prefsDialog.setVisible(true);
         output("");
     }
@@ -1159,14 +1153,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     private void markActiveBasePanel() {
         int now = tabbedPane.getSelectedIndex();
         int len = tabbedPane.getTabCount();
-//        if ((lastTabbedPanelSelectionIndex > -1) && (lastTabbedPanelSelectionIndex < len)) {
-//            tabbedPane.setBackgroundAt(lastTabbedPanelSelectionIndex, UIManager.getColor("TabbedPane.background"));
-//            tabbedPane.setForegroundAt(lastTabbedPanelSelectionIndex, UIManager.getColor("TabbedPane.foreground"));
-//        }
-//        if ((now > -1) && (now < len)) {
-//            tabbedPane.setBackgroundAt(now, UIManager.getColor("TabbedPane.selectedBackground"));
-//            tabbedPane.setForegroundAt(now, UIManager.getColor("TabbedPane.selectedForeground"));
-//        }
         lastTabbedPanelSelectionIndex = now;
     }
 
@@ -1874,6 +1860,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
     private void refreshToolbarIcons() {
         clearToolbarIconCaches();
+        menuIconOnlyCache.clear();
 
         String currentApp = null;
         if (pushExternalButton != null
@@ -2345,8 +2332,30 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      * called from PrefsDialog3, this updates to the new settings.
      */
     public void setupAllTables() {
+        setupAllTables(false);
+    }
+
+    public long setupAllTablesWithTiming() {
+        return setupAllTables(true);
+    }
+
+    /**
+     * Apply appearance preferences to existing tables without rebuilding their
+     * GlazedLists models or autocomplete indexes.
+     */
+    public void updateAllTableAppearancePreferences() {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            BasePanel basePanel = baseAt(i);
+            if ((basePanel != null) && (basePanel.mainTable != null)) {
+                basePanel.mainTable.updateAppearancePreferences();
+            }
+        }
+    }
+
+    private long setupAllTables(boolean logTiming) {
+        long totalStart = System.nanoTime();
         if (tabbedPane.getTabCount() == 0) {
-            return;
+            return 0L;
         }
 
         Component selected = tabbedPane.getSelectedComponent();
@@ -2356,7 +2365,14 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 BasePanel bf = baseAt(i);
                 if (bf.database != null) {
-                    bf.setupMainPanel();
+                    if (logTiming) {
+                        BasePanel.SetupMainPanelTiming timing = bf.setupMainPanelWithTiming();
+                        System.out.println("[Preferences table timer] tab=" + (i + 1)
+                                + " title=\"" + tabbedPane.getTitleAt(i) + "\" "
+                                + timing.toCompactString());
+                    } else {
+                        bf.setupMainPanel();
+                    }
                 }
             }
         } finally {
@@ -2365,6 +2381,13 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             }
             setCursor(oldCursor);
         }
+
+        long totalMs = (System.nanoTime() - totalStart) / 1000000L;
+        if (logTiming) {
+            System.out.println("[Preferences table timer] allTabs=" + tabbedPane.getTabCount()
+                    + ", total=" + totalMs + " ms");
+        }
+        return totalMs;
     }
 
     public BasePanel addTab(BibtexDatabase db, File file, MetaData metaData, String encoding, boolean raisePanel) {
@@ -3391,23 +3414,19 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         // Update tabbed pane
         if (tabbedPane != null) {
-            tabbedPane.updateUI();
+            // tabbedPane.updateUI();
             tabbedPane.setBorder(null);
             // SwingUtilities.updateComponentTreeUI(tabbedPane);
         }
 
-        // Update toolbar
-        if (tlb != null) {
-            SwingUtilities.updateComponentTreeUI(tlb);
-            // Recreate toolbar icons to match new theme
-            refreshToolbarIcons();
+        // Explicitly assigned icons are not replaced by updateComponentTreeUI().
+        // Refresh menu icons first because the toolbar can use them as fallbacks.
+        if (mb != null) {
+            refreshMenuIcons();
         }
 
-        // Update menu icons first because menuIconOnlyCache can also be used
-        // as a toolbar icon fallback.
-        if (mb != null) {
-            SwingUtilities.updateComponentTreeUI(mb);
-            refreshMenuIcons();
+        if (tlb != null) {
+            refreshToolbarIcons();
         }
 
         // Update side pane
@@ -3415,27 +3434,19 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             sidePaneManager.updateUIForThemeChange();
         }
 
-        // Update status components
-        if (statusLine != null) {
-            SwingUtilities.updateComponentTreeUI(statusLine);
-        }
-        if (statusLabel != null) {
-            SwingUtilities.updateComponentTreeUI(statusLabel);
-        }
-        if (progressBar != null) {
-            SwingUtilities.updateComponentTreeUI(progressBar);
-        }
-
-        // Update all open base panels (tabs)
+        // Refresh cached entry editors without rebuilding their field tabs.
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             BasePanel bp = baseAt(i);
             if (bp != null) {
-                bp.rebuildAllEntryEditors();
+                bp.updateEntryEditorsForThemeChange(); // bp.rebuildAllEntryEditors();
             }
         }
-        // Update help dialog if open
+        //
+        // HelpContent has theme-specific colors that Swing UI delegates do
+        // not restore on their own. Let HelpDialog refresh both its Swing
+        // tree and that application-specific state.
         if (helpDiag != null && helpDiag.isVisible()) {
-            SwingUtilities.updateComponentTreeUI(helpDiag);
+            helpDiag.updateUIForThemeChange();
         }
 
         // Update preferences dialog if open

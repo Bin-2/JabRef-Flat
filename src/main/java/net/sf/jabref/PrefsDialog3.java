@@ -23,7 +23,15 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -40,9 +48,11 @@ import javax.swing.event.ListSelectionListener;
 import net.sf.jabref.export.ExportFormats;
 import net.sf.jabref.groups.GroupsPrefsTab;
 import net.sf.jabref.gui.FileDialogs;
-import net.sf.jabref.gui.MainTable;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import javax.swing.WindowConstants;
 
 /**
  * Preferences dialog. Contains a TabbedPane, and tabs will be defined in
@@ -55,9 +65,57 @@ import com.jgoodies.forms.builder.ButtonBarBuilder;
  */
 public class PrefsDialog3 extends JDialog {
 
+    private static long elapsedMillis(long startNanos) {
+        return (System.nanoTime() - startNanos) / 1000000L;
+    }
+
     JPanel main;
 
     JabRefFrame frame;
+
+    private static final Set<String> APPEARANCE_ONLY_PREFERENCE_KEYS
+            = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+                    "Theme",
+                    "tableColorCodesOn",
+                    "fontFamily",
+                    "fontStyle",
+                    "fontSize",
+                    "overrideDefaultFonts",
+                    "tableShowGrid",
+                    JabRefPreferences.USE_THEME_SEMANTIC_COLORS,
+                    "menuFontSize",
+                    "tableRowPadding",
+                    "tableBackground",
+                    "tableReqFieldBackground",
+                    "tableOptFieldBackground",
+                    "incompleteEntryBackground",
+                    "gridColor",
+                    "fieldEditorTextColor",
+                    "validFieldBackgroundColor",
+                    "activeFieldEditorBackgroundColor",
+                    "invalidFieldBackgroundColor",
+                    "markedEntryBackground0",
+                    "markedEntryBackground1",
+                    "markedEntryBackground2",
+                    "markedEntryBackground3",
+                    "markedEntryBackground4",
+                    "markedEntryBackground5"
+            )));
+
+    private static final Set<String> GROUP_ONLY_PREFERENCE_KEYS
+            = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+                    "groupShowIcons",
+                    "groupShowDynamic",
+                    "groupExpandTree",
+                    "groupsDefaultField",
+                    "groupAutoShow",
+                    "groupAutoHide",
+                    "autoAssignGroup",
+                    "groupKeywordSeparator"
+            )));
+
+    private Map<String, String> openingPreferencesSnapshot;
+    private final AppearancePrefsTab appearancePrefsTab;
 
     public PrefsDialog3(JabRefFrame parent) {
         super(parent, Globals.lang("JabRef preferences"), false);
@@ -90,7 +148,10 @@ public class PrefsDialog3 extends JDialog {
         tabs.add(new FileSortTab(frame, prefs));
         tabs.add(new EntryEditorPrefsTab(frame, prefs));
         tabs.add(new GroupsPrefsTab(prefs));
-        tabs.add(new AppearancePrefsTab(frame, prefs));
+        // tabs.add(new AppearancePrefsTab(frame, prefs));
+        appearancePrefsTab = new AppearancePrefsTab(frame, prefs);
+        tabs.add(appearancePrefsTab);
+
         tabs.add(new ExternalTab(frame, this, prefs, parent.helpDiag));
         tabs.add(new TablePrefsTab(prefs, parent));
         tabs.add(new TableColumnsTab(prefs, parent));
@@ -155,8 +216,15 @@ public class PrefsDialog3 extends JDialog {
         bb.addButton(cancel);
         bb.addGlue();
 
-        // Key bindings:
+        // Route every dialog-close path through the same preview rollback.
         Util.bindCloseDialogKeyToCancelAction(this.getRootPane(), cancelAction);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                cancelAndHide();
+            }
+        });
 
         // Import and export actions:
         exportPrefs.setToolTipText(Globals.lang("Export preferences to file"));
@@ -199,6 +267,7 @@ public class PrefsDialog3 extends JDialog {
                 try {
                     prefs.importPreferences(filename);
                     setValues();
+                    appearancePrefsTab.applyImportedTheme(frame);
                     BibtexEntryType.loadCustomEntryTypes(prefs);
                     ExportFormats.initAllExports();
                     frame.removeCachedEntryEditors();
@@ -225,6 +294,113 @@ public class PrefsDialog3 extends JDialog {
          */
     }
 
+    /**
+     * Capture the persisted preference state at the moment the dialog is
+     * opened. This must be called for every opening of the reused preferences
+     * dialog.
+     */
+    public void beginPreferenceSession() {
+        openingPreferencesSnapshot = capturePreferencesSnapshot();
+        appearancePrefsTab.beginThemePreviewSession();
+    }
+
+    private Map<String, String> capturePreferencesSnapshot() {
+        Map<String, String> snapshot = new HashMap<String, String>();
+        try {
+            capturePreferencesNode(Globals.prefs.prefs, snapshot);
+            return snapshot;
+        } catch (BackingStoreException ex) {
+            Globals.logger("Could not snapshot preferences: " + ex.getLocalizedMessage());
+            return null;
+        }
+    }
+
+    private void capturePreferencesNode(Preferences node, Map<String, String> snapshot)
+            throws BackingStoreException {
+        String path = node.absolutePath();
+        snapshot.put("node:" + path, "");
+
+        for (String key : node.keys()) {
+            snapshot.put("key:" + path + "\u0000" + key, node.get(key, null));
+        }
+
+        for (String child : node.childrenNames()) {
+            capturePreferencesNode(node.node(child), snapshot);
+        }
+    }
+
+    private Set<String> changedPreferenceEntriesSinceOpen() {
+        if (openingPreferencesSnapshot == null) {
+            return null;
+        }
+
+        Map<String, String> currentSnapshot = capturePreferencesSnapshot();
+        if (currentSnapshot == null) {
+            return null;
+        }
+
+        Set<String> allEntries = new HashSet<String>();
+        allEntries.addAll(openingPreferencesSnapshot.keySet());
+        allEntries.addAll(currentSnapshot.keySet());
+
+        Set<String> changedEntries = new HashSet<String>();
+        for (String entry : allEntries) {
+            String oldValue = openingPreferencesSnapshot.get(entry);
+            String newValue = currentSnapshot.get(entry);
+            if (oldValue == null ? newValue != null : !oldValue.equals(newValue)) {
+                changedEntries.add(entry);
+            }
+        }
+        return changedEntries;
+    }
+
+    private boolean isOnlyPreferenceChange(Set<String> changedEntries, Set<String> allowedKeys) {
+        if ((changedEntries == null) || changedEntries.isEmpty()) {
+            return false;
+        }
+
+        String rootKeyPrefix = "key:" + Globals.prefs.prefs.absolutePath() + "\u0000";
+        for (String entry : changedEntries) {
+            if (!entry.startsWith(rootKeyPrefix)) {
+                return false;
+            }
+            String key = entry.substring(rootKeyPrefix.length());
+            if (!allowedKeys.contains(key)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isAppearanceOnlyPreferenceChange(Set<String> changedEntries) {
+        return isOnlyPreferenceChange(changedEntries, APPEARANCE_ONLY_PREFERENCE_KEYS);
+    }
+
+    private boolean isGroupOnlyPreferenceChange(Set<String> changedEntries) {
+        return isOnlyPreferenceChange(changedEntries, GROUP_ONLY_PREFERENCE_KEYS);
+    }
+
+    private String changedPreferenceKeySummary(Set<String> changedEntries) {
+        if (changedEntries == null) {
+            return "unknown";
+        }
+        if (changedEntries.isEmpty()) {
+            return "[]";
+        }
+
+        String rootKeyPrefix = "key:" + Globals.prefs.prefs.absolutePath() + "\u0000";
+        ArrayList<String> keys = new ArrayList<String>();
+        for (String entry : changedEntries) {
+            if (entry.startsWith(rootKeyPrefix)) {
+                keys.add(entry.substring(rootKeyPrefix.length()));
+            } else {
+                keys.add(entry);
+            }
+        }
+        Collections.sort(keys);
+        return keys.toString();
+    }
+
     class OkAction extends AbstractAction {
 
         public OkAction() {
@@ -232,39 +408,134 @@ public class PrefsDialog3 extends JDialog {
         }
 
         public void actionPerformed(ActionEvent e) {
+            final long preferencesStartNanos = System.nanoTime();
 
             AbstractWorker worker = new AbstractWorker() {
                 boolean ready = true;
+                long readyToCloseMs;
+                long storeSettingsMs;
+                long flushMs;
+                boolean preferencesChanged = true;
+                boolean appearanceOnlyChange = false;
+                boolean groupOnlyChange = false;
+                Set<String> changedPreferenceEntries;
 
                 public void run() {
                     // First check that all tabs are ready to close:
                     int count = main.getComponentCount();
                     Component[] comps = main.getComponents();
+                    long readyStart = System.nanoTime();
                     for (int i = 0; i < count; i++) {
                         if (!((PrefsTab) comps[i]).readyToClose()) {
                             ready = false;
+                            readyToCloseMs = elapsedMillis(readyStart);
                             return; // If not, break off.
                         }
                     }
+                    readyToCloseMs = elapsedMillis(readyStart);
+
                     // Then store settings and close:
+                    long storeStart = System.nanoTime();
                     for (int i = 0; i < count; i++) {
                         ((PrefsTab) comps[i]).storeSettings();
                     }
+                    storeSettingsMs = elapsedMillis(storeStart);
+
+                    changedPreferenceEntries = changedPreferenceEntriesSinceOpen();
+                    preferencesChanged = changedPreferenceEntries == null
+                            || !changedPreferenceEntries.isEmpty();
+                    appearanceOnlyChange = preferencesChanged
+                            && isAppearanceOnlyPreferenceChange(changedPreferenceEntries);
+                    groupOnlyChange = preferencesChanged
+                            && isGroupOnlyPreferenceChange(changedPreferenceEntries);
+
+                    long flushStart = System.nanoTime();
                     Globals.prefs.flush();
+                    flushMs = elapsedMillis(flushStart);
                 }
 
                 public void update() {
                     if (!ready) {
                         return;
                     }
-                    setVisible(false);
-                    MainTable.updateRenderers();
-                    GUIGlobals.updateEntryEditorColors();
-                    frame.setupAllTables();
-                    frame.groupSelector.revalidateGroups(); // icons may have
-                    // changed
 
-                    frame.updateAlternatePdfViewerAction();
+                    long updateStart = System.nanoTime();
+                    setVisible(false);
+
+                    if (!preferencesChanged) {
+                        long updateMs = elapsedMillis(updateStart);
+                        long totalMs = elapsedMillis(preferencesStartNanos);
+                        System.out.println("[Preferences timer] changed=false"
+                                + ", ready=" + readyToCloseMs + " ms"
+                                + ", store=" + storeSettingsMs + " ms"
+                                + ", flush=" + flushMs + " ms"
+                                + ", uiApply=" + updateMs + " ms"
+                                + ", total=" + totalMs + " ms");
+                        frame.output(Globals.lang("Preferences recorded."));
+                        return;
+                    }
+
+//                    long renderersMs = 0L;
+                    long themeMs = 0L;
+                    long editorColorsMs = 0L;
+                    long setupAllTablesMs = 0L;
+                    long tableAppearanceMs = 0L;
+                    long groupsMs = 0L;
+                    long alternateViewerMs = 0L;
+
+                    if (groupOnlyChange) {
+                        long groupsStart = System.nanoTime();
+                        frame.groupSelector.revalidateGroups();
+                        groupsMs = elapsedMillis(groupsStart);
+                    } else {
+                        long renderersStart = System.nanoTime();
+//                        MainTable.updateRenderers();
+//                        renderersMs = elapsedMillis(renderersStart);
+
+                        long themeStart = System.nanoTime();
+                        ThemeWatcher.notifyThemeChanged();
+                        themeMs = elapsedMillis(themeStart);
+
+                        long editorColorsStart = System.nanoTime();
+                        GUIGlobals.updateEntryEditorColors();
+                        editorColorsMs = elapsedMillis(editorColorsStart);
+
+                        if (appearanceOnlyChange) {
+                            long tableAppearanceStart = System.nanoTime();
+                            frame.updateAllTableAppearancePreferences();
+                            tableAppearanceMs = elapsedMillis(tableAppearanceStart);
+                        } else {
+                            setupAllTablesMs = frame.setupAllTablesWithTiming();
+                        }
+
+                        long groupsStart = System.nanoTime();
+                        frame.groupSelector.revalidateGroups(); // icons may have
+                        // changed
+                        groupsMs = elapsedMillis(groupsStart);
+
+                        long alternateViewerStart = System.nanoTime();
+                        frame.updateAlternatePdfViewerAction();
+                        alternateViewerMs = elapsedMillis(alternateViewerStart);
+                    }
+
+                    long updateMs = elapsedMillis(updateStart);
+                    long totalMs = elapsedMillis(preferencesStartNanos);
+                    System.out.println("[Preferences timer] changed=true"
+                            + ", refresh=" + (appearanceOnlyChange ? "appearance"
+                                    : (groupOnlyChange ? "groups" : "full"))
+                            + ", keys=" + changedPreferenceKeySummary(changedPreferenceEntries)
+                            + ", ready=" + readyToCloseMs + " ms"
+                            + ", store=" + storeSettingsMs + " ms"
+                            + ", flush=" + flushMs + " ms"
+                            //                            + ", renderers=" + renderersMs + " ms"
+                            + ", themeNotify=" + themeMs + " ms"
+                            + ", editorColors=" + editorColorsMs + " ms"
+                            + ", tableAppearance=" + tableAppearanceMs + " ms"
+                            + ", tables=" + setupAllTablesMs + " ms"
+                            + ", groups=" + groupsMs + " ms"
+                            + ", alternateViewer=" + alternateViewerMs + " ms"
+                            + ", uiApply=" + updateMs + " ms"
+                            + ", total=" + totalMs + " ms");
 
                     frame.output(Globals.lang("Preferences recorded."));
                 }
@@ -284,6 +555,15 @@ public class PrefsDialog3 extends JDialog {
         }
     }
 
+    private void cancelAndHide() {
+        ThemeColorPalette.clearSemanticColorsPreview();
+        boolean themeRestored = appearancePrefsTab.cancelThemePreview(frame);
+        if (!themeRestored) {
+            ThemeWatcher.notifyThemeChanged();
+        }
+        setVisible(false);
+    }
+
     class CancelAction extends AbstractAction {
 
         public CancelAction() {
@@ -291,7 +571,7 @@ public class PrefsDialog3 extends JDialog {
         }
 
         public void actionPerformed(ActionEvent e) {
-            setVisible(false);
+            cancelAndHide();
         }
     }
 

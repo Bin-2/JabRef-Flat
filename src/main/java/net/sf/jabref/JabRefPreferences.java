@@ -430,6 +430,8 @@ public final class JabRefPreferences {
 
         defaults.put("incompleteEntryBackground", "250:175:175");
 
+        defaults.put(USE_THEME_SEMANTIC_COLORS, Boolean.FALSE);
+
         defaults.put("antialias", Boolean.FALSE);
         defaults.put("ctrlClick", Boolean.FALSE);
         defaults.put("disableOnMultipleSelection", Boolean.FALSE);
@@ -664,6 +666,8 @@ public final class JabRefPreferences {
 
     public static final String GROUP_SHOW_NUMBER_OF_ELEMENTS = "groupShowNumberOfElements";
 
+    public static final String USE_THEME_SEMANTIC_COLORS = "useThemeSemanticColors";
+
     public boolean putBracesAroundCapitals(String fieldName) {
         return putBracesAroundCapitalsFields.contains(fieldName);
     }
@@ -846,6 +850,76 @@ public final class JabRefPreferences {
         String value = (String) defaults.get(key);
         int[] rgb = getRgb(value);
         return new Color(rgb[0], rgb[1], rgb[2]);
+    }
+
+    private String getThemeColorKey(String key, ThemeManager.ThemeType themeType) {
+        String suffix = themeType == ThemeManager.ThemeType.DARK
+                ? ".dark"
+                : ".light";
+
+        return key + suffix;
+    }
+
+    /**
+     * Returns the color for the currently active theme.
+     *
+     * If no theme-specific value exists, the legacy unsuffixed preference is
+     * used.
+     */
+    public Color getThemeColor(String key) {
+        return getThemeColor(key, ThemeManager.getThemeType());
+    }
+
+    /**
+     * Returns the color for the specified theme.
+     *
+     * If no theme-specific value exists, the legacy unsuffixed preference is
+     * used.
+     */
+    public Color getThemeColor(String key, ThemeManager.ThemeType themeType) {
+        String themeKey = getThemeColorKey(key, themeType);
+
+        if (hasKey(themeKey)) {
+            return getColor(themeKey);
+        }
+
+        return getColor(key);
+    }
+
+    /**
+     * Returns the default color for the specified theme.
+     *
+     * If no theme-specific default exists, the legacy default is used.
+     */
+    public Color getDefaultThemeColor(String key, ThemeManager.ThemeType themeType) {
+        String themeKey = getThemeColorKey(key, themeType);
+
+        if (defaults.containsKey(themeKey)) {
+            return getDefaultColor(themeKey);
+        }
+
+        return getDefaultColor(key);
+    }
+
+    /**
+     * Stores a color for the specified theme.
+     */
+    public void putThemeColor(String key, ThemeManager.ThemeType themeType, Color color) {
+        putColor(getThemeColorKey(key, themeType), color);
+    }
+
+    /**
+     * Returns whether a theme-specific color has explicitly been stored.
+     */
+    public boolean hasThemeColor(String key, ThemeManager.ThemeType themeType) {
+        return hasKey(getThemeColorKey(key, themeType));
+    }
+
+    /**
+     * Removes a theme-specific color override.
+     */
+    public void removeThemeColor(String key, ThemeManager.ThemeType themeType) {
+        remove(getThemeColorKey(key, themeType));
     }
 
     /**

@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 import javax.swing.ImageIcon;
 
-import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.Globals;
 
 public class Relevance extends SpecialField {
@@ -30,9 +29,9 @@ public class Relevance extends SpecialField {
         ArrayList<SpecialFieldValue> values = new ArrayList<SpecialFieldValue>();
         // action directly set by JabRefFrame
 //        values.add(new SpecialFieldValue(this, "relevant", "toggleRelevance", Globals.lang("Toggle relevance"), GUIGlobals.getImage("relevant"), Globals.lang("Toggle relevance")));
-        values.add(new SpecialFieldValue(this, "relevant", "toggleRelevance",
+        values.add(SpecialFieldValue.withThemeIcon(this, "relevant", "toggleRelevance",
                 Globals.lang("Toggle relevance"),
-                GUIGlobals.getImageIcon("relevant"), // Changed to getImageIcon()
+                "relevant",
                 Globals.lang("Toggle relevance")));
 
         this.setValues(values);

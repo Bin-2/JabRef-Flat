@@ -45,6 +45,7 @@ import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
 import static com.formdev.flatlaf.util.ColorFunctions.lighten;
 import java.awt.Component;
+import net.sf.jabref.ThemeManager;
 
 /**
  * The central table which displays the bibtex entries.
@@ -774,6 +775,22 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         setRowHeight(Globals.prefs.getInt("tableRowPadding") + GUIGlobals.CURRENTFONT.getSize());
     }
 
+    /**
+     * Reload appearance preferences that are cached by an existing table.
+     * This avoids reconstructing the table model for appearance-only changes.
+     */
+    public void updateAppearancePreferences() {
+        tableColorCodes = Globals.prefs.getBoolean("tableColorCodesOn");
+
+        boolean showGrid = Globals.prefs.getBoolean("tableShowGrid");
+        setShowGrid(showGrid);
+        setIntercellSpacing(showGrid ? new Dimension(1, 1) : new Dimension(0, 0));
+
+        updateFont();
+        revalidate();
+        repaint();
+    }
+
     public void ensureVisible(int row) {
         JScrollBar vert = pane.getVerticalScrollBar();
         int y = row * getRowHeight();
@@ -835,73 +852,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     private static CompleteRenderer[] markedNumberRenderers;
 
-//    public static void updateRenderers() {
-//        defRenderer = new GeneralRenderer(
-//                Globals.prefs.getColor("tableBackground"),
-//                Globals.prefs.getColor("tableText"));
-//
-//        // --- Get selection colors from the LAF (FlatLaf supplies both keys) ---
-//        Color selActive = UIManager.getColor("Table.selectionBackground");
-//        Color selInactive = UIManager.getColor("Table.selectionInactiveBackground");
-//
-//        // Fallbacks for old LAFs
-//        if (selActive == null) {
-//            selActive = new JTable().getSelectionBackground();
-//        }
-//        if (selInactive == null) {
-//            // make inactive slightly lighter than active
-//            selInactive = lighten(selActive, 0.30f);
-//        }
-//
-//        // Base table background (what your highlights are painted over)
-//        Color tableBg = Globals.prefs.getColor("tableBackground");
-//        if (tableBg == null) {
-//            tableBg = UIManager.getColor("Table.background");
-//        }
-//
-//        // --- Soften the selection used for mixing highlights ---
-//        // Blend 50% selection into the table bg.
-//        Color selSoft = blend(tableBg, selActive, 0.90f);
-//        Color selInactiveSoft = blend(tableBg, selInactive, 0.90f);
-//
-//        // Now build the renderers using the softened selection color instead of raw `sel`
-//        reqRenderer = new GeneralRenderer(
-//                Globals.prefs.getColor("tableReqFieldBackground"),
-//                Globals.prefs.getColor("tableText"));
-//
-//        optRenderer = new GeneralRenderer(
-//                Globals.prefs.getColor("tableOptFieldBackground"),
-//                Globals.prefs.getColor("tableText"));
-//
-//        incRenderer = new IncompleteRenderer();
-//
-//        compRenderer = new CompleteRenderer(Globals.prefs.getColor("tableBackground"));
-//        grayedOutNumberRenderer = new CompleteRenderer(Globals.prefs.getColor("grayedOutBackground"));
-//        veryGrayedOutNumberRenderer = new CompleteRenderer(Globals.prefs.getColor("veryGrayedOutBackground"));
-//
-//        // Use selSoft for the selected highlight mix
-//        grayedOutRenderer = new GeneralRenderer(
-//                Globals.prefs.getColor("grayedOutBackground"),
-//                Globals.prefs.getColor("grayedOutText"),
-//                mixColors(Globals.prefs.getColor("grayedOutBackground"), selSoft));
-//
-//        veryGrayedOutRenderer = new GeneralRenderer(
-//                Globals.prefs.getColor("veryGrayedOutBackground"),
-//                Globals.prefs.getColor("veryGrayedOutText"),
-//                mixColors(Globals.prefs.getColor("veryGrayedOutBackground"), selSoft));
-//
-//        markedRenderers = new GeneralRenderer[Util.MARK_COLOR_LEVELS];
-//        markedNumberRenderers = new CompleteRenderer[Util.MARK_COLOR_LEVELS];
-//        for (int i = 0; i < Util.MARK_COLOR_LEVELS; i++) {
-//            Color c = Globals.prefs.getColor("markedEntryBackground" + i);
-//            markedRenderers[i] = new GeneralRenderer(
-//                    c,
-//                    Globals.prefs.getColor("tableText"),
-//                    mixColors(c, selSoft)); // <--- softened, not raw selection blue
-//            markedNumberRenderers[i] = new CompleteRenderer(c);
-//        }
-//    }
-    //////////////////////////////////////////////////////////////////////////////
     public static void updateRenderers() {
         long startNs = perfStart();
         // Always use FlatLaf's current theme colors as base
@@ -944,19 +894,31 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         // MARKED RENDERERS - Keep as they are (custom user colors)
         // MARKED RENDERERS - Use the original colors but don't modify preferences
+        boolean useThemeSemanticColors
+                = ThemeColorPalette.isSemanticColorsEnabled();
+
         markedRenderers = new GeneralRenderer[Util.MARK_COLOR_LEVELS];
         markedNumberRenderers = new CompleteRenderer[Util.MARK_COLOR_LEVELS];
-        for (int i = 0; i < Util.MARK_COLOR_LEVELS; i++) {
-            Color originalColor = Globals.prefs.getColor("markedEntryBackground" + i);
 
-            // For table rendering, we might adjust the color for theme compatibility
-            Color tableColor = adjustColorForTheme(originalColor);
+        for (int i = 0; i < Util.MARK_COLOR_LEVELS; i++) {
+            Color tableColor;
+
+            if (useThemeSemanticColors) {
+                tableColor = ThemeColorPalette.getMarkColor(i);
+            } else {
+                Color originalColor
+                        = Globals.prefs.getColor("markedEntryBackground" + i);
+
+                tableColor = adjustColorForTheme(originalColor);
+            }
 
             markedRenderers[i] = new GeneralRenderer(
-                    tableColor, // Use adjusted color for table
+                    tableColor,
                     tableForeground,
                     blend(tableColor, selectionBackground, 0.3f));
-            markedNumberRenderers[i] = new CompleteRenderer(tableColor);
+
+            markedNumberRenderers[i]
+                    = new CompleteRenderer(tableColor);
         }
 
         perfLog("updateRenderers total", startNs);
@@ -966,7 +928,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         // Adjust the original marking color to work better with current theme
         // but don't modify the original preference
         Color tableBg = UIManager.getColor("Table.background");
-        if (tableBg != null && isDarkTheme()) {
+        if (tableBg != null && ThemeManager.isDarkTheme()) {
             // Lighten colors for dark theme, darken for light theme
             return blend(original, tableBg, 0.3f);
         }
@@ -980,36 +942,26 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     // Helper methods for calculating theme-appropriate colors
     private static Color calculateRequiredFieldColor(Color base) {
         // Light red tint for light theme, dark red for dark theme
-        return isDarkTheme()
+        return ThemeManager.isDarkTheme()
                 ? blend(base, new Color(255, 100, 100), 0.15f)
                 : blend(base, new Color(255, 200, 200), 0.3f);
     }
 
     private static Color calculateOptionalFieldColor(Color base) {
         // Light yellow tint for light theme, dark yellow for dark theme
-        return isDarkTheme()
+        return ThemeManager.isDarkTheme()
                 ? blend(base, new Color(255, 255, 100), 0.1f)
                 : blend(base, new Color(255, 255, 200), 0.3f);
     }
 
     private static Color calculateIncompleteColor(Color base) {
         // More pronounced color for incomplete entries
-        return isDarkTheme()
+        return ThemeManager.isDarkTheme()
                 ? blend(base, new Color(255, 100, 100), 0.25f)
                 : blend(base, new Color(255, 150, 150), 0.4f);
     }
 
-    private static boolean isDarkTheme() {
-        Color bg = UIManager.getColor("Table.background");
-        if (bg == null) {
-            return false;
-        }
-        // Simple luminance calculation
-        double luminance = (0.299 * bg.getRed() + 0.587 * bg.getGreen() + 0.114 * bg.getBlue()) / 255;
-        return luminance < 0.5;
-    }
     //////////////////////////////////////////////////////////////////////////////
-
     private static Color blend(Color base, Color overlay, float alphaOverlay) {
         if (base == null) {
             base = Color.WHITE;
@@ -1185,15 +1137,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     @Override
     public void onThemeChanged() {
-        updateRenderers();
-
-        GUIGlobals.clearTableIconCache();
-        GUIGlobals.initTableIcons();
-
-        if (tableFormat != null) {
-            tableFormat.updateTableFormat();
-        }
-
         Color tableBackground = UIManager.getColor("Table.background");
         Color tableForeground = UIManager.getColor("Table.foreground");
         Color gridColor = UIManager.getColor("Table.gridColor");

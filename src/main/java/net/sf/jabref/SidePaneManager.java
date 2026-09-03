@@ -294,28 +294,29 @@ public class SidePaneManager {
      * Updates all side pane components for theme changes
      */
     public void updateUIForThemeChange() {
-        try {
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    // Update the main side pane container
-                    if (sidep != null) {
-                        SwingUtilities.updateComponentTreeUI(sidep);
-                    }
-
-                    // Update all registered components - handle JGoodies components properly
-                    updateAllComponents();
-
-                    // Revalidate to ensure proper layout
-                    revalidate();
-
-                } catch (Exception e) {
-                    System.err.println("Error during side pane theme update: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            });
-        } catch (Exception e) {
-            System.err.println("Failed to schedule side pane theme update: " + e.getMessage());
+        if (SwingUtilities.isEventDispatchThread()) {
+            updateUIForThemeChangeOnEdt();
+            return;
         }
+
+        try {
+            SwingUtilities.invokeAndWait(this::updateUIForThemeChangeOnEdt);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupted while updating side pane theme: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Failed to update side pane theme: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void updateUIForThemeChangeOnEdt() {
+        // Update registered components for custom icons and any
+        // detached component trees not reached from the frame.
+        updateAllComponents();
+
+        // Revalidate to ensure proper layout.
+        revalidate();
     }
 
     /**
@@ -329,14 +330,6 @@ public class SidePaneManager {
 
             if (component != null) {
                 updateComponentSafely(component, componentName);
-            }
-        }
-
-        // Also ensure visible components are updated
-        for (SidePaneComponent comp : visible) {
-            if (comp != null) {
-                String compName = componentNames.get(comp);
-                updateComponentSafely(comp, compName != null ? compName : "unknown");
             }
         }
     }

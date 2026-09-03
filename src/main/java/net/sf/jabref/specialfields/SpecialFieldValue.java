@@ -15,9 +15,11 @@
  */
 package net.sf.jabref.specialfields;
 
+import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
+import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.JabRefFrame;
 
 public class SpecialFieldValue {
@@ -37,7 +39,13 @@ public class SpecialFieldValue {
 
     private SpecialFieldMenuAction menuAction = null;
 
-    private ImageIcon icon;
+    private final ImageIcon icon;
+
+    private final String iconName;
+
+    private ImageIcon themeIcon;
+
+    private long iconThemeVersion = Long.MIN_VALUE;
 
     private String toolTipText;
 
@@ -59,12 +67,41 @@ public class SpecialFieldValue {
             String menuString,
             ImageIcon icon,
             String toolTipText) {
+        this(field, keyword, actionName, menuString, icon, null, toolTipText);
+    }
+
+    private SpecialFieldValue(
+            SpecialField field,
+            String keyword,
+            String actionName,
+            String menuString,
+            ImageIcon icon,
+            String iconName,
+            String toolTipText) {
         this.field = field;
         this.keyword = keyword;
         this.actionName = actionName;
         this.menuString = menuString;
         this.icon = icon;
+        this.iconName = iconName;
         this.toolTipText = toolTipText;
+    }
+
+    public static SpecialFieldValue withThemeIcon(
+            SpecialField field,
+            String keyword,
+            String actionName,
+            String menuString,
+            String iconName,
+            String toolTipText) {
+        return new SpecialFieldValue(
+                field,
+                keyword,
+                actionName,
+                menuString,
+                null,
+                iconName,
+                toolTipText);
     }
 
     public String getKeyword() {
@@ -80,7 +117,7 @@ public class SpecialFieldValue {
     }
 
     public JLabel createLabel() {
-        JLabel label = new JLabel(this.icon);
+        JLabel label = new JLabel(this.getIcon());
         label.setToolTipText(this.toolTipText);
         return label;
     }
@@ -90,7 +127,16 @@ public class SpecialFieldValue {
     }
 
     public ImageIcon getIcon() {
-        return this.icon;
+        if (this.iconName == null) {
+            return this.icon;
+        }
+
+        long currentIconThemeVersion = GUIGlobals.getIconThemeVersion();
+        if (this.iconThemeVersion != currentIconThemeVersion) {
+            this.themeIcon = GUIGlobals.getImageIcon(this.iconName);
+            this.iconThemeVersion = currentIconThemeVersion;
+        }
+        return this.themeIcon;
     }
 
     public String getToolTipText() {
@@ -115,6 +161,8 @@ public class SpecialFieldValue {
     public SpecialFieldMenuAction getMenuAction(JabRefFrame frame) {
         if (this.menuAction == null) {
             this.menuAction = new SpecialFieldMenuAction(this, frame);
+        } else {
+            this.menuAction.putValue(Action.SMALL_ICON, this.getIcon());
         }
         return this.menuAction;
     }

@@ -55,8 +55,12 @@ import net.sf.jabref.gui.ThemeAwareComponent;
 /**
  * Static variables for graphics files and keyboard shortcuts.
  */
-public class GUIGlobals implements ThemeAwareComponent {
-
+//public class GUIGlobals implements ThemeAwareComponent {
+//
+//    // keeps ThemeAwareComponent listeners
+//    private static final GUIGlobals THEME_LISTENER = new GUIGlobals();
+//
+public class GUIGlobals {
     // Frame titles.
     public static String frameTitle = "JabRef",
             version = Globals.VERSION,
@@ -109,6 +113,8 @@ public class GUIGlobals implements ThemeAwareComponent {
 //    public static Color activeEditor = new Color(230, 230, 255);
 
     static HashMap<String, String> iconMap;
+
+    private static long iconThemeVersion;
 
     public static JLabel getTableIcon(String fieldType) {
         // If tableIcons is null or doesn't contain the icon, reinitialize
@@ -401,16 +407,17 @@ public class GUIGlobals implements ThemeAwareComponent {
     //    public static final Color infoField = new Color(250, 252, 240);   // very light yellow-green tint
     //    public static final Color activeTabbedTitle = new Color(0, 0, 0);       // strong black text for selected tab
     //    public static final Color inactiveTabbedTitle = new Color(96, 110, 140);  // muted blue-gray text for other tabs
-//    public static final Color activeTabbedTitle = UIManager.getColor("TabbedPane.selectedForeground");
-//    public static final Color inactiveTabbedTitle = UIManager.getColor("TabbedPane.foreground");
-//    public static final Color gradientBlue = UIManager.getColor("Component.accentColor");
-//    public static final Color gradientGray = UIManager.getColor("Component.borderColor");
-//    public static final Color lightGray = UIManager.getColor("Panel.background");
-//    public static final Color entryEditorLabelColor = UIManager.getColor("Label.foreground");
-//    public static final Color nullFieldColor = UIManager.getColor("Component.accentColor"); // FlatLaf 3.2+
-//    public static final Color activeTabbed = UIManager.getColor("TabbedPane.selectedBackground");
-//    public static final Color inActiveTabbed = UIManager.getColor("TabbedPane.background");
-//    public static final Color infoField = UIManager.getColor("Component.innerFocusColor");
+    /////////////////////////////////////
+    //    public static final Color activeTabbedTitle = UIManager.getColor("TabbedPane.selectedForeground");
+    //    public static final Color inactiveTabbedTitle = UIManager.getColor("TabbedPane.foreground");
+    //    public static final Color gradientBlue = UIManager.getColor("Component.accentColor");
+    //    public static final Color gradientGray = UIManager.getColor("Component.borderColor");
+    //    public static final Color lightGray = UIManager.getColor("Panel.background");
+    //    public static final Color entryEditorLabelColor = UIManager.getColor("Label.foreground");
+    //    public static final Color nullFieldColor = UIManager.getColor("Component.accentColor"); // FlatLaf 3.2+
+    //    public static final Color activeTabbed = UIManager.getColor("TabbedPane.selectedBackground");
+    //    public static final Color inActiveTabbed = UIManager.getColor("TabbedPane.background");
+    //    public static final Color infoField = UIManager.getColor("Component.innerFocusColor");
     public static Color editorTextColor = null, validFieldBackgroundColor = null,
             activeBackground = null, invalidFieldBackgroundColor = null;
 
@@ -484,20 +491,6 @@ public class GUIGlobals implements ThemeAwareComponent {
         LANGUAGES.put("Bahasa Indonesia", "in");
         LANGUAGES.put("Brazilian Portugese", "pt_BR");
         LANGUAGES.put("Russian", "ru");
-
-        // Set up entry editor colors, first time:
-        // updateEntryEditorColors();
-        // Register for theme changes
-        ThemeWatcher.register(new GUIGlobals());
-    }
-
-    @Override
-    public void onThemeChanged() {
-        // Clear the icon cache so icons are reloaded with the new theme
-        clearTableIconCache();
-
-        // Reinitialize table icons with new theme
-        initTableIcons();
     }
 
     /**
@@ -609,12 +602,7 @@ public class GUIGlobals implements ThemeAwareComponent {
      * custom theme fails, try to fall back on the default theme.
      */
     public static void setUpIconTheme() {
-        String prefLnF = Globals.prefs.get("Theme");
-
-        String iconTheme = prefLnF.toLowerCase().contains("dark")
-                || prefLnF.toLowerCase().contains("carbon") ? "dark" : "light";
-
-        setUpIconTheme(iconTheme); // Default to basic if no input
+        setUpIconTheme(ThemeManager.isDarkTheme() ? "dark" : "light");
     }
 
     public static void setUpIconTheme(String iconTheme) {
@@ -662,6 +650,11 @@ public class GUIGlobals implements ThemeAwareComponent {
             }
         }
 
+        iconThemeVersion++;
+    }
+
+    public static long getIconThemeVersion() {
+        return iconThemeVersion;
     }
 
     /**

@@ -28,6 +28,8 @@ import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.Globals;
 import net.sf.jabref.JabRefPreferences;
 
+import net.sf.jabref.ThemeManager;
+
 /**
  * Created by IntelliJ IDEA. User: alver Date: Oct 10, 2005 Time: 4:29:35 PM To
  * change this template use File | Settings | File Templates.
@@ -39,6 +41,8 @@ public class ColorSetupPanel extends JPanel {
     private final ArrayList<ColorButton> buttons = new ArrayList<>();
 
     private JLabel infoLabel;
+
+    private boolean themeSemanticColorsEnabled;
 
     public ColorSetupPanel() {
 
@@ -67,6 +71,7 @@ public class ColorSetupPanel extends JPanel {
         buttons.add(new ColorButton("markedEntryBackground0", Globals.lang("Marking color %0", "1"), "mark"));
          */
         buttons.add(new ColorButton("tableBackground", Globals.lang("Table background color"), "table"));
+        buttons.add(new ColorButton("markedEntryBackground0", Globals.lang("Marking color %0", "1"), "mark"));
         buttons.add(new ColorButton("markedEntryBackground1", Globals.lang("Marking color %0", "2"), "mark"));
 
         buttons.add(new ColorButton("tableReqFieldBackground", Globals.lang("Background color for required fields"), "table"));
@@ -81,11 +86,11 @@ public class ColorSetupPanel extends JPanel {
         buttons.add(new ColorButton("gridColor", Globals.lang("Table grid color"), "table"));
         buttons.add(new ColorButton("markedEntryBackground5", Globals.lang("Import marking color"), "mark"));
 
-        buttons.add(new ColorButton("fieldEditorTextColor", Globals.lang("Entry editor font color"), "table"));
-        buttons.add(new ColorButton("validFieldBackgroundColor", Globals.lang("Entry editor background color"), "mark"));
+        buttons.add(new ColorButton("fieldEditorTextColor", Globals.lang("Entry editor font color"), "editor"));
+        buttons.add(new ColorButton("validFieldBackgroundColor", Globals.lang("Entry editor background color"), "editor"));
 
-        buttons.add(new ColorButton("activeFieldEditorBackgroundColor", Globals.lang("Entry editor active background color"), "table"));
-        buttons.add(new ColorButton("invalidFieldBackgroundColor", Globals.lang("Entry editor invalid field color"), "mark"));
+        buttons.add(new ColorButton("activeFieldEditorBackgroundColor", Globals.lang("Entry editor active background color"), "editor"));
+        buttons.add(new ColorButton("invalidFieldBackgroundColor", Globals.lang("Entry editor invalid field color"), "editor"));
 
         for (ColorButton but : buttons) {
             builder.append(but);
@@ -144,11 +149,16 @@ public class ColorSetupPanel extends JPanel {
         }
     }
 
+    public void setThemeSemanticColorsEnabled(boolean enabled) {
+        themeSemanticColorsEnabled = enabled;
+        updateUIForThemeChange();
+    }
+
     public void updateUIForThemeChange() {
         // Update all color buttons when theme changes
         for (ColorButton but : buttons) {
             but.applyButtonState();
-            // but.updateDefaultButtonState();
+            but.updateDefaultButtonState();
             but.disableAdjacentTableButton();
         }
 
@@ -162,17 +172,24 @@ public class ColorSetupPanel extends JPanel {
             return;
         }
 
-        String theme = JabRefPreferences.getInstance().get("Theme");
-        if (theme == null) {
-            theme = "";
+        boolean isLightTheme = !ThemeManager.isDarkTheme();
+
+        String newText;
+
+        if (themeSemanticColorsEnabled) {
+            newText = "<html><i>"
+                    + "Theme-aware marking colors are active. "
+                    + "Custom marking colors are preserved but not used."
+                    + "</i></html>";
+        } else if (isLightTheme) {
+            newText = "<html><i>"
+                    + "Custom table and marking colors are active."
+                    + "</i></html>";
+        } else {
+            newText = "<html><i>"
+                    + "Table color customization is only available in Light theme."
+                    + "</i></html>";
         }
-
-        boolean isLightTheme = !(theme.toLowerCase().contains("dark")
-                || theme.toLowerCase().contains("carbon"));
-
-        String newText = isLightTheme
-                ? "<html><i>Table color settings are currently enabled (Light mode).</i></html>"
-                : "<html><i>Table color customization is only available in Light theme mode.</i></html>";
 
         infoLabel.setText(newText);
     }
@@ -212,40 +229,60 @@ public class ColorSetupPanel extends JPanel {
         }
 
         public void applyButtonState() {
-            if ("table".equalsIgnoreCase(tableOrMark)) {
-                String theme = JabRefPreferences.getInstance().get("Theme");
-                if (theme == null) {
-                    theme = "";
-                }
+            if ("mark".equalsIgnoreCase(tableOrMark)) {
+                setEnabled(!themeSemanticColorsEnabled);
 
-                boolean shouldEnable = !(theme.toLowerCase().contains("dark")
-                        || theme.toLowerCase().contains("carbon"));
+                setToolTipText(themeSemanticColorsEnabled
+                        ? "Theme-aware marking colors are active"
+                        : null);
+
+                return;
+            }
+
+            if ("table".equalsIgnoreCase(tableOrMark)) {
+                boolean shouldEnable = !ThemeManager.isDarkTheme();
 
                 setEnabled(shouldEnable);
-                if (!shouldEnable) {
-                    setToolTipText("Table color customization is only available in Light theme");
-                } else {
-                    setToolTipText(null);
-                }
+
+                setToolTipText(shouldEnable
+                        ? null
+                        : "Table color customization is only available in Light theme");
+
+                return;
+            }
+
+            if ("editor".equalsIgnoreCase(tableOrMark)) {
+                setEnabled(true);
+                setToolTipText(null);
             }
         }
 
         private void applyDefaultButtonState(JButton defaultButton) {
-            if ("table".equalsIgnoreCase(tableOrMark)) {
-                String theme = JabRefPreferences.getInstance().get("Theme");
-                if (theme == null) {
-                    theme = "";
-                }
+            if ("mark".equalsIgnoreCase(tableOrMark)) {
+                defaultButton.setEnabled(!themeSemanticColorsEnabled);
 
-                boolean shouldEnable = !(theme.toLowerCase().contains("dark")
-                        || theme.toLowerCase().contains("carbon"));
+                defaultButton.setToolTipText(themeSemanticColorsEnabled
+                        ? "Theme-aware marking colors are active"
+                        : null);
+
+                return;
+            }
+
+            if ("table".equalsIgnoreCase(tableOrMark)) {
+                boolean shouldEnable = !ThemeManager.isDarkTheme();
 
                 defaultButton.setEnabled(shouldEnable);
-                if (!shouldEnable) {
-                    defaultButton.setToolTipText("Table color customization is only available in Light theme");
-                } else {
-                    defaultButton.setToolTipText(null);
-                }
+
+                defaultButton.setToolTipText(shouldEnable
+                        ? null
+                        : "Table color customization is only available in Light theme");
+
+                return;
+            }
+
+            if ("editor".equalsIgnoreCase(tableOrMark)) {
+                defaultButton.setEnabled(true);
+                defaultButton.setToolTipText(null);
             }
         }
 

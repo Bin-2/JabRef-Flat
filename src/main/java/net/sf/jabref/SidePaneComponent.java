@@ -234,11 +234,12 @@ public abstract class SidePaneComponent extends SimpleInternalFrame {
      */
     public void updateUIForThemeChange() {
         try {
-            // Update the SimpleInternalFrame (JGoodies component)
-            updateUI();
-
-            // Update all child components
-            SwingUtilities.updateComponentTreeUI(this);
+            // Visible side pane components were already refreshed by the frame's
+            // updateComponentTreeUI() call. Detached components still need their
+            // UI delegates refreshed before they are shown later.
+            if (SwingUtilities.getWindowAncestor(this) == null) {
+                SwingUtilities.updateComponentTreeUI(this);
+            }
 
             // Update toolbar buttons with new theme icons
             updateButtonIcons();

@@ -26,18 +26,12 @@ public class Priority extends SpecialField {
 
     private static Priority INSTANCE = null;
 
-    private ImageIcon icon = GUIGlobals.getImageIcon("priority");
-
     public Priority() {
         ArrayList<SpecialFieldValue> values = new ArrayList<SpecialFieldValue>();
         values.add(new SpecialFieldValue(this, Globals.lang("priority"), "clearPriority", Globals.lang("Clear priority"), null, Globals.lang("No priority information")));
-        ImageIcon icon;
-        icon = GUIGlobals.getImageIcon("priorityRed");
-        values.add(new SpecialFieldValue(this, Globals.lang("prio1"), "setPriority1", Globals.lang("Set priority to high"), icon, Globals.lang("Priority high")));
-        icon = GUIGlobals.getImageIcon("priorityOrange");
-        values.add(new SpecialFieldValue(this, Globals.lang("prio2"), "setPriority2", Globals.lang("Set priority to medium"), icon, Globals.lang("Priority medium")));
-        icon = GUIGlobals.getImageIcon("priorityGreen");
-        values.add(new SpecialFieldValue(this, Globals.lang("prio3"), "setPriority3", Globals.lang("Set priority to low"), icon, Globals.lang("Priority low")));
+        values.add(SpecialFieldValue.withThemeIcon(this, Globals.lang("prio1"), "setPriority1", Globals.lang("Set priority to high"), "priorityRed", Globals.lang("Priority high")));
+        values.add(SpecialFieldValue.withThemeIcon(this, Globals.lang("prio2"), "setPriority2", Globals.lang("Set priority to medium"), "priorityOrange", Globals.lang("Priority medium")));
+        values.add(SpecialFieldValue.withThemeIcon(this, Globals.lang("prio3"), "setPriority3", Globals.lang("Set priority to low"), "priorityGreen", Globals.lang("Priority low")));
         this.setValues(values);
         TEXT_DONE_PATTERN = "Set priority to '%0' for %1 entries";
     }
@@ -54,7 +48,7 @@ public class Priority extends SpecialField {
     }
 
     public ImageIcon getRepresentingIcon() {
-        return this.icon;
+        return GUIGlobals.getImageIcon("priority");
     }
 
     public String getToolTip() {

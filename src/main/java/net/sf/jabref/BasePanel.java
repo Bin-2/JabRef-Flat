@@ -144,6 +144,37 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         }
     }
 
+    private static long elapsedMillis(long startNanos) {
+        return (System.nanoTime() - startNanos) / 1000000L;
+    }
+
+    public static final class SetupMainPanelTiming {
+
+        private final int entryCount;
+        private long createMainTableMs;
+        private long validateFieldsMs;
+        private long layoutMs;
+        private long searchAutoCompleterMs;
+        private long autoCompleterMs;
+        private long repaintMs;
+        private long totalMs;
+
+        private SetupMainPanelTiming(int entryCount) {
+            this.entryCount = entryCount;
+        }
+
+        public String toCompactString() {
+            return "entries=" + entryCount
+                    + ", table=" + createMainTableMs + " ms"
+                    + ", validate=" + validateFieldsMs + " ms"
+                    + ", searchAC=" + searchAutoCompleterMs + " ms"
+                    + ", fieldAC=" + autoCompleterMs + " ms"
+                    + ", layout=" + layoutMs + " ms"
+                    + ", repaint=" + repaintMs + " ms"
+                    + ", total=" + totalMs + " ms";
+        }
+    }
+
     public final static int SHOWING_NOTHING = 0, SHOWING_PREVIEW = 1, SHOWING_EDITOR = 2, WILL_SHOW_EDITOR = 3;
 
     /* 
@@ -2281,18 +2312,25 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     public void setupMainPanel() {
+        setupMainPanelWithTiming();
+    }
+
+    public SetupMainPanelTiming setupMainPanelWithTiming() {
         long totalStart = perfStart();
+        SetupMainPanelTiming timing = new SetupMainPanelTiming(database.getEntryCount());
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setDividerSize(GUIGlobals.SPLIT_PANE_DIVIDER_SIZE);
 
         long tableStart = perfStart();
         createMainTable();
+        timing.createMainTableMs = elapsedMillis(tableStart);
         perfLog("setupMainPanel createMainTable", tableStart);
 
         long validateStart = perfStart();
         for (EntryEditor ee : entryEditors.values()) {
             ee.validateAllFields();
         }
+        timing.validateFieldsMs = elapsedMillis(validateStart);
         perfLog("setupMainPanel validateAllFields count=" + entryEditors.size(), validateStart);
 
         long layoutStart = perfStart();
@@ -2316,10 +2354,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         setLayout(new BorderLayout());
         removeAll();
         add(splitPane, BorderLayout.CENTER);
+        timing.layoutMs = elapsedMillis(layoutStart);
         perfLog("setupMainPanel splitPane/layout", layoutStart);
 
         long searchCompleterStart = perfStart();
         instantiateSearchAutoCompleter();
+        timing.searchAutoCompleterMs = elapsedMillis(searchCompleterStart);
         perfLog("setupMainPanel instantiateSearchAutoCompleter", searchCompleterStart);
         if (searchAutoCompleterUpdater == null) {
             searchAutoCompleterUpdater = new SearchAutoCompleterUpdater();
@@ -2329,6 +2369,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         if (Globals.prefs.getBoolean("autoComplete")) {
             long autoCompleterStart = perfStart();
             instantiateAutoCompleters();
+            timing.autoCompleterMs = elapsedMillis(autoCompleterStart);
             perfLog("setupMainPanel instantiateAutoCompleters", autoCompleterStart);
             if (autoCompletersUpdater == null) {
                 autoCompletersUpdater = new AutoCompletersUpdater();
@@ -2340,8 +2381,11 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         splitPane.revalidate();
         revalidate();
         repaint();
+        timing.repaintMs = elapsedMillis(repaintStart);
         perfLog("setupMainPanel revalidate/repaint", repaintStart);
+        timing.totalMs = elapsedMillis(totalStart);
         perfLog("setupMainPanel total", totalStart);
+        return timing;
     }
 
     public void updateSearchManager() {
@@ -2787,6 +2831,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         for (String s : entryEditors.keySet()) {
             EntryEditor ed = entryEditors.get(s);
             ed.updateAllContentSelectors();
+        }
+    }
+
+    public void updateEntryEditorsForThemeChange() {
+        for (EntryEditor editor : entryEditors.values()) {
+            editor.updateUIForThemeChange();
         }
     }
 

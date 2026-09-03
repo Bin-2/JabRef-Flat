@@ -108,8 +108,16 @@ public class MarkEntriesAction extends AbstractWorker implements ActionListener,
     }
 
     private void updateMenuColor() {
-        // Always use the original marking colors, don't let theme changes affect them
-        Color markColor = Globals.prefs.getColor("markedEntryBackground" + level);
+
+        Color markColor;
+
+        if (ThemeColorPalette.isSemanticColorsEnabled()) {
+            markColor = ThemeColorPalette.getMarkColor(level);
+        } else {
+            markColor
+                    = Globals.prefs.getColor("markedEntryBackground" + level);
+        }
+
         // System.out.println(markColor);
         if (markColor != null) {
             menuItem.setBackground(markColor);

@@ -15,10 +15,6 @@
  */
 package net.sf.jabref;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
-import com.formdev.flatlaf.intellijthemes.FlatCarbonIJTheme;
-import com.formdev.flatlaf.intellijthemes.FlatSolarizedLightIJTheme;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridBagLayout;
@@ -53,6 +49,13 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
     private final JTextField fontSize;//, customIconThemeFile;
     private final JTextField rowPadding;//, customIconThemeFile;
 
+    private final JCheckBox useThemeSemanticColors;
+    private final JComboBox<String> themeCombo;
+    private boolean updatingThemeCombo;
+    private String themeBeforePreview;
+    private String pendingTheme;
+    private boolean themePreviewChanged;
+
     /**
      * Customization of appearance parameters.
      *
@@ -77,8 +80,9 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
 
         showGrid = new JCheckBox(Globals.lang("Show gridlines"));
 
-        //useCustomIconTheme = new JCheckBox(Globals.lang("Use custom icon theme"));
-        //customIconThemeFile = new JTextField();
+        useThemeSemanticColors = new JCheckBox(
+                Globals.lang("Use theme-aware semantic colors"));
+
         FormLayout layout = new FormLayout("1dlu, 8dlu, left:pref, 4dlu, fill:pref, 4dlu, fill:60dlu, 4dlu, fill:pref",
                 "");
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
@@ -114,45 +118,43 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
         builder.appendSeparator(Globals.lang("Theme"));
 
         // Create theme selection combo box
-        String[] themes = {
-            "FlatLight",
-            "FlatDark",
-            "FlatSolarizedLightIJTheme",
-            "FlatCarbonIJTheme"
-        };
+        String[] themes = ThemeManager.getAvailableThemes();
 
-        String currentTheme = Globals.prefs.get("Theme", "FlatLight"); // Default to FlatLight
-        JComboBox<String> themeCombo = new JComboBox<>(themes);
+        // Default to FlatLight
+        String currentTheme = Globals.prefs.get(
+                "Theme", ThemeManager.DEFAULT_THEME);
+        pendingTheme = currentTheme;
+
+        themeCombo = new JComboBox<>(themes);
         themeCombo.setSelectedItem(currentTheme);
         builder.append(themeCombo);
         builder.nextLine();
 
-        // Add listener to save preference and apply theme
-        themeCombo.addActionListener(e -> {
-            String selectedTheme = (String) themeCombo.getSelectedItem();
-            Globals.prefs.put("Theme", selectedTheme);
-            GUIGlobals.setUpIconTheme();
-            GUIGlobals.clearTableIconCache();
-            GUIGlobals.initTableIcons();
-            ThemeWatcher.notifyThemeChanged();
+        builder.append(useThemeSemanticColors);
+        builder.nextLine();
 
-            // Defer theme application to next event cycle
-            SwingUtilities.invokeLater(() -> {
-                applyTheme(frame, selectedTheme);
-                colorPanel.updateUIForThemeChange();
-            });
+        useThemeSemanticColors.addActionListener(e -> {
+            boolean enabled = useThemeSemanticColors.isSelected();
+
+            colorPanel.setThemeSemanticColorsEnabled(enabled);
+            ThemeColorPalette.setSemanticColorsPreview(enabled);
+
+            ThemeWatcher.notifyThemeChanged();
         });
 
-        //builder.nextLine();
-        //JPanel p2 = new JPanel();
-        //lab = new JLabel(Globals.lang("Custom icon theme file")+":");
-        //p2.add(lab);
-        //p2.add(customIconThemeFile);
-        //BrowseAction browse = new BrowseAction(null, customIconThemeFile, false);
-        //JButton browseBut = new JButton(Globals.lang("Browse"));
-        //browseBut.addActionListener(browse);
-        //p2.add(browseBut);
-        //builder.append(p2);
+        // Apply the selected theme as a preview. It is persisted only on OK.
+        themeCombo.addActionListener(e -> {
+            if (updatingThemeCombo) {
+                return;
+            }
+
+            String selectedTheme = (String) themeCombo.getSelectedItem();
+            if (applyTheme(frame, selectedTheme)) {
+                pendingTheme = selectedTheme;
+                themePreviewChanged = true;
+            }
+        });
+
         JPanel upper = new JPanel(),
                 sort = new JPanel(),
                 namesp = new JPanel(),
@@ -177,104 +179,107 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
                 }
             }
         });
-        /*menuFontButton.addActionListener(new ActionListener() {
-         public void actionPerformed(ActionEvent e) {
-             Font f=new FontSelectorDialog
-                 (null, menuFont).getSelectedFont();
-             if(f==null)
-                 return;
-             else
-                 menuFont = f;
-         }
-         });*/
 
         JPanel pan = builder.getPanel();
         pan.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         add(pan, BorderLayout.CENTER);
     }
 
-    private void applyTheme(JabRefFrame frame, String themeName) {
+    private boolean applyTheme(JabRefFrame frame, String themeName) {
+        String theme = ThemeManager.normalizeThemeName(themeName);
+
         try {
-            // Store the theme preference immediately
-            _prefs.put("Theme", themeName);
-            _prefs.flush();
-
-            // Apply theme on EDT
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    // Set Look and Feel based on theme selection
-                    switch (themeName) {
-                        case "FlatLight":
-                            UIManager.setLookAndFeel(new FlatLightLaf());
-                            break;
-                        case "FlatDark":
-                            UIManager.setLookAndFeel(new FlatDarkLaf());
-                            break;
-                        case "FlatSolarizedLightIJTheme":
-                            UIManager.setLookAndFeel(new FlatSolarizedLightIJTheme());
-                            break;
-                        case "FlatCarbonIJTheme":
-                            UIManager.setLookAndFeel(new FlatCarbonIJTheme());
-                            break;
-                        default:
-                            UIManager.setLookAndFeel(new FlatLightLaf());
-                    }
-
-                    frame.updateUIForThemeChange();
-                    //forceMainTableIconUpdates(frame);
-                    MainTable.updateRenderers();
-
-                    // Update ALL UI components: debug only, duplicated reload
-                    // updateAllUI();
-                    // ThemeWatcher.notifyThemeChanged();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this,
-                            "Failed to apply theme: " + ex.getMessage(),
-                            "Theme Error", JOptionPane.ERROR_MESSAGE);
-                }
-            });
+            // Installing the Look & Feel is the success boundary for a theme
+            // preview. Once this succeeds, preview/cancel state must reflect
+            // that the active theme has changed even if a later UI refresh
+            // encounters a problem.
+            ThemeManager.applyTheme(theme);
         } catch (Exception ex) {
             ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to apply theme: " + ex.getMessage(),
+                    "Theme Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
         }
+
+        try {
+            // The Look & Feel is now authoritative, so load the matching icons.
+            GUIGlobals.setUpIconTheme();
+
+            // Refresh shared theme resources and notify theme-aware components.
+            ThemeWatcher.notifyThemeChanged();
+
+            // Refresh the application UI.
+            frame.updateUIForThemeChange();
+            colorPanel.updateUIForThemeChange();
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+            Globals.logger("Theme was applied, but the UI refresh failed: "
+                    + ex.getMessage());
+            JOptionPane.showMessageDialog(
+                    this,
+                    "The theme was applied, but some UI components could not "
+                    + "be refreshed. Restart JabRef if the interface looks inconsistent.",
+                    "Theme Refresh Error",
+                    JOptionPane.WARNING_MESSAGE);
+        }
+
+        return true;
     }
 
-    /**
-     * Force all MainTable instances to update their icons immediately
-     */
-    private void forceMainTableIconUpdates(JabRefFrame frame) {
-        if (frame != null) {
-            // Update the current panel's table
-            if (frame.basePanel() != null && frame.basePanel().mainTable != null) {
-                frame.basePanel().mainTable.forceIconUpdate();
-            }
-        }
-        System.out.println("All MainTable icons forced to update for theme: "
-                + UIManager.getLookAndFeel().getName());
+    void beginThemePreviewSession() {
+        LookAndFeel currentLookAndFeel = UIManager.getLookAndFeel();
+        themeBeforePreview = currentLookAndFeel == null
+                ? null
+                : currentLookAndFeel.getClass().getName();
+
+        pendingTheme = _prefs.get("Theme", ThemeManager.DEFAULT_THEME);
+        themePreviewChanged = false;
     }
 
-    private void updateAllUI() {
-        // Update all frames and windows
-        for (Frame frame : Frame.getFrames()) {
-            SwingUtilities.updateComponentTreeUI(frame);
-            for (Window window : frame.getOwnedWindows()) {
-                SwingUtilities.updateComponentTreeUI(window);
-            }
+    boolean cancelThemePreview(JabRefFrame frame) {
+        if (!themePreviewChanged || themeBeforePreview == null) {
+            return false;
         }
 
-        // Update all dialogs
-        for (Window window : Window.getWindows()) {
-            if (window instanceof Dialog) {
-                SwingUtilities.updateComponentTreeUI(window);
-            }
+        if (applyTheme(frame, themeBeforePreview)) {
+            themePreviewChanged = false;
+            return true;
+        }
+        return false;
+    }
+
+    boolean applyImportedTheme(JabRefFrame frame) {
+        String importedTheme = ThemeManager.normalizeThemeName(
+                _prefs.get("Theme", ThemeManager.DEFAULT_THEME));
+
+        if (!applyTheme(frame, importedTheme)) {
+            return false;
         }
 
-        // Force MainTable renderers to update
-        MainTable.updateRenderers();
+        // Importing preferences writes directly to the backing store, so the
+        // imported theme becomes the baseline for any later preview/cancel.
+        beginThemePreviewSession();
+        return true;
     }
 
     @Override
     public void setValues() {
+
+        ThemeColorPalette.clearSemanticColorsPreview();
+
+        String storedTheme = ThemeManager.normalizeThemeName(
+                _prefs.get("Theme", ThemeManager.DEFAULT_THEME));
+        pendingTheme = storedTheme;
+        updatingThemeCombo = true;
+        try {
+            themeCombo.setSelectedItem(storedTheme);
+        } finally {
+            updatingThemeCombo = false;
+        }
+
         colorCodes.setSelected(_prefs.getBoolean("tableColorCodesOn"));
         //antialias.setSelected(_prefs.getBoolean("antialias"));
         fontSize.setText("" + _prefs.getInt("menuFontSize"));
@@ -283,9 +288,14 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
         overrideFonts.setSelected(_prefs.getBoolean("overrideDefaultFonts"));
         oldOverrideFontSize = overrideFonts.isSelected();
         fontSize.setEnabled(overrideFonts.isSelected());
-        //useCustomIconTheme.setSelected(_prefs.getBoolean("useCustomIconTheme"));
-        //customIconThemeFile.setText(_prefs.get("customIconThemeFile"));
         showGrid.setSelected(_prefs.getBoolean("tableShowGrid"));
+
+        useThemeSemanticColors.setSelected(
+                _prefs.getBoolean(JabRefPreferences.USE_THEME_SEMANTIC_COLORS));
+
+        colorPanel.setThemeSemanticColorsEnabled(
+                useThemeSemanticColors.isSelected());
+
         colorPanel.setValues();
     }
 
@@ -296,6 +306,9 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
      */
     public void storeSettings() {
 
+        _prefs.put("Theme", ThemeManager.normalizeThemeName(pendingTheme));
+        themePreviewChanged = false;
+
         _prefs.putBoolean("tableColorCodesOn", colorCodes.isSelected());
         //_prefs.putBoolean("antialias", antialias.isSelected());
         _prefs.put("fontFamily", font.getFamily());
@@ -305,6 +318,12 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
         GUIGlobals.CURRENTFONT = font;
         colorPanel.storeSettings();
         _prefs.putBoolean("tableShowGrid", showGrid.isSelected());
+
+        _prefs.putBoolean(
+                JabRefPreferences.USE_THEME_SEMANTIC_COLORS,
+                useThemeSemanticColors.isSelected());
+        ThemeColorPalette.clearSemanticColorsPreview();
+
         try {
             int size = Integer.parseInt(fontSize.getText());
             if ((overrideFonts.isSelected() != oldOverrideFontSize)
@@ -349,4 +368,9 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
     public String getTabName() {
         return Globals.lang("Appearance");
     }
+
+    public void cancelPreview() {
+        ThemeColorPalette.clearSemanticColorsPreview();
+    }
+
 }

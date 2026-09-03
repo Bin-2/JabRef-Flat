@@ -108,6 +108,8 @@ public class VerticalLabelUI extends BasicLabelUI {
         return Component.BaselineResizeBehavior.OTHER;
     }
 
+    private static final int VERTICAL_TEXT_PADDING = 2;
+
     /**
      * Transposes the view rectangles as appropriate for a vertical view before
      * invoking the super method and copies them after they have been altered by {@link SwingUtilities#layoutCompoundLabel(FontMetrics, String,
@@ -122,13 +124,26 @@ public class VerticalLabelUI extends BasicLabelUI {
         verticalIconR = transposeRectangle(iconR, verticalIconR);
         verticalTextR = transposeRectangle(textR, verticalTextR);
 
+        // Keep rotated text away from the component's clipping edges.
+        verticalViewR.x += VERTICAL_TEXT_PADDING;
+        verticalViewR.width = Math.max(
+                0,
+                verticalViewR.width - 2 * VERTICAL_TEXT_PADDING);
+
         text = super.layoutCL(label, fontMetrics, text, icon,
                 verticalViewR, verticalIconR, verticalTextR);
 
         viewR = copyRectangle(verticalViewR, viewR);
         iconR = copyRectangle(verticalIconR, iconR);
         textR = copyRectangle(verticalTextR, textR);
+
         return text;
+    }
+
+    private Dimension transposeDimension(Dimension from) {
+        return new Dimension(
+                from.height,
+                from.width + 2 * VERTICAL_TEXT_PADDING);
     }
 
     /**
@@ -174,10 +189,6 @@ public class VerticalLabelUI extends BasicLabelUI {
     @Override
     public Dimension getMinimumSize(JComponent c) {
         return transposeDimension(super.getMinimumSize(c));
-    }
-
-    private Dimension transposeDimension(Dimension from) {
-        return new Dimension(from.height, from.width + 2);
     }
 
     private Rectangle transposeRectangle(Rectangle from, Rectangle to) {
