@@ -18,6 +18,7 @@ package net.sf.jabref;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.io.File;
 import java.text.SimpleDateFormat;
 
 import javax.swing.BorderFactory;
@@ -25,6 +26,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -40,15 +42,19 @@ public class GeneralTab extends JPanel implements PrefsTab {
 
     private JCheckBox defSort, ctrlClick, useOwner, overwriteOwner,
             keyDuplicateWarningDialog, keyEmptyWarningDialog, enforceLegalKeys,
-            confirmDelete, allowEditing, memoryStick, useImportInspector,
+            confirmDelete, allowEditing, useImportInspector,
             useImportInspectorForSingle, inspectionWarnDupli, useTimeStamp, updateTimeStamp, overwriteTimeStamp,
             markImportedEntries, unmarkAllEntriesBeforeImporting;
 
-    private JTextField defOwnerField, timeStampFormat, timeStampField;
+    private JTextField defOwnerField, timeStampFormat, timeStampField, xmlSettingsPath;
     JabRefPreferences _prefs;
     JabRefFrame _frame;
     private JComboBox<String> language = new JComboBox<>(GUIGlobals.LANGUAGES.keySet().toArray(new String[0]));
     private JComboBox<String> encodings = new JComboBox<>(Globals.ENCODINGS);
+    private JComboBox<String> settingsStorage = new JComboBox<>(new String[]{
+        Globals.lang("Windows Registry"), Globals.lang("XML file")
+    });
+    private JButton browseXmlSettings;
 
     public GeneralTab(JabRefFrame frame, JabRefPreferences prefs) {
         _prefs = prefs;
@@ -57,7 +63,9 @@ public class GeneralTab extends JPanel implements PrefsTab {
 
         allowEditing = new JCheckBox(Globals.lang("Allow editing in table cells"));
 
-        memoryStick = new JCheckBox(Globals.lang("Load and Save preferences from/to jabref.xml on start-up (memory stick mode)"));
+        xmlSettingsPath = new JTextField();
+        browseXmlSettings = new JButton(Globals.lang("Browse"));
+        browseXmlSettings.addActionListener(e -> chooseXmlSettingsFile());
         defSort = new JCheckBox(Globals.lang("Sort Automatically"));
         ctrlClick = new JCheckBox(Globals.lang("Open right-click menu with Ctrl+left button"));
         useOwner = new JCheckBox(Globals.lang("Mark new entries with owner name") + ":");
@@ -130,8 +138,19 @@ public class GeneralTab extends JPanel implements PrefsTab {
         builder.nextLine();
         builder.append(enforceLegalKeys, 13);
         builder.nextLine();
-        builder.append(memoryStick, 13);
 
+        builder.appendSeparator(Globals.lang("Settings storage"));
+        builder.nextLine();
+        builder.append(new JLabel(Globals.lang("Use") + ":"), 3);
+        builder.append(settingsStorage, 5);
+        builder.nextLine();
+        builder.append(new JLabel(Globals.lang("XML settings/backup file") + ":"), 3);
+        builder.append(xmlSettingsPath, 7);
+        builder.append(browseXmlSettings);
+        builder.nextLine();
+
+        builder.appendSeparator(Globals.lang("Entry metadata"));
+        builder.nextLine();
         // Create a new panel with its own FormLayout for the last items:
         builder.append(useOwner, 3);
         builder.append(defOwnerField);
@@ -179,6 +198,20 @@ public class GeneralTab extends JPanel implements PrefsTab {
 
     }
 
+    private void chooseXmlSettingsFile() {
+        File current = SettingsStorage.resolveXmlFile(xmlSettingsPath.getText());
+        JFileChooser chooser = new JFileChooser(current.getParentFile());
+        chooser.setSelectedFile(current);
+        if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File selected = chooser.getSelectedFile();
+            String path = selected.getAbsolutePath();
+            if (!path.toLowerCase().endsWith(".xml")) {
+                path += ".xml";
+            }
+            xmlSettingsPath.setText(path);
+        }
+    }
+
     public void setValues() {
         allowEditing.setSelected(_prefs.getBoolean("allowTableEditing"));
         defSort.setSelected(_prefs.getBoolean("defaultAutoSort"));
@@ -192,7 +225,9 @@ public class GeneralTab extends JPanel implements PrefsTab {
         keyDuplicateWarningDialog.setSelected(_prefs.getBoolean("dialogWarningForDuplicateKey"));
         keyEmptyWarningDialog.setSelected(_prefs.getBoolean("dialogWarningForEmptyKey"));
         enforceLegalKeys.setSelected(_prefs.getBoolean("enforceLegalBibtexKey"));
-        memoryStick.setSelected(_prefs.getBoolean("memoryStickMode"));
+        String storage = _prefs.get(JabRefPreferences.SETTINGS_STORAGE);
+        settingsStorage.setSelectedIndex(SettingsStorage.STORAGE_XML.equals(storage) ? 1 : 0);
+        xmlSettingsPath.setText(_prefs.get(JabRefPreferences.SETTINGS_XML_PATH));
         confirmDelete.setSelected(_prefs.getBoolean("confirmDelete"));
         defOwnerField.setText(_prefs.get("defaultOwner"));
         timeStampFormat.setText(_prefs.get("timeStampFormat"));
@@ -234,13 +269,28 @@ public class GeneralTab extends JPanel implements PrefsTab {
         _prefs.putBoolean("dialogWarningForDuplicateKey", keyDuplicateWarningDialog.isSelected());
         _prefs.putBoolean("dialogWarningForEmptyKey", keyEmptyWarningDialog.isSelected());
         _prefs.putBoolean("enforceLegalBibtexKey", enforceLegalKeys.isSelected());
-        if (_prefs.getBoolean("memoryStickMode") && !memoryStick.isSelected()) {
-            JOptionPane.showMessageDialog(null, Globals.lang("To disable the memory stick mode"
-                    + " rename or remove the jabref.xml file in the same folder as JabRef."),
-                    Globals.lang("Memory Stick Mode"),
+
+        String selectedStorage = settingsStorage.getSelectedIndex() == 1
+                ? SettingsStorage.STORAGE_XML : SettingsStorage.STORAGE_REGISTRY;
+        String selectedXmlPath = xmlSettingsPath.getText().trim();
+        if (selectedXmlPath.isEmpty()) {
+            selectedXmlPath = SettingsStorage.getDefaultXmlPath();
+            xmlSettingsPath.setText(selectedXmlPath);
+        }
+        String oldStorage = _prefs.get(JabRefPreferences.SETTINGS_STORAGE);
+        String oldXmlPath = _prefs.get(JabRefPreferences.SETTINGS_XML_PATH);
+        _prefs.put(JabRefPreferences.SETTINGS_STORAGE, selectedStorage);
+        _prefs.put(JabRefPreferences.SETTINGS_XML_PATH, selectedXmlPath);
+        // Keep the old key synchronized so older JabRef builds can still understand the intent.
+        _prefs.putBoolean("memoryStickMode", SettingsStorage.STORAGE_XML.equals(selectedStorage));
+
+        if (!selectedStorage.equals(oldStorage) || !selectedXmlPath.equals(oldXmlPath)) {
+            JOptionPane.showMessageDialog(null,
+                    Globals.lang("The settings storage change will take effect after JabRef is restarted."),
+                    Globals.lang("Settings storage"),
                     JOptionPane.INFORMATION_MESSAGE);
         }
-        _prefs.putBoolean("memoryStickMode", memoryStick.isSelected());
+
         _prefs.putBoolean("confirmDelete", confirmDelete.isSelected());
         _prefs.putBoolean("allowTableEditing", allowEditing.isSelected());
         _prefs.putBoolean("ctrlClick", ctrlClick.isSelected());
@@ -281,6 +331,27 @@ public class GeneralTab extends JPanel implements PrefsTab {
         } catch (IllegalArgumentException ex2) {
             JOptionPane.showMessageDialog(null, Globals.lang("The chosen date format for new entries is not valid"),
                     Globals.lang("Invalid date format"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        File xmlFile = SettingsStorage.resolveXmlFile(xmlSettingsPath.getText());
+        if (xmlFile.exists() && (!xmlFile.isFile() || !xmlFile.canWrite())) {
+            JOptionPane.showMessageDialog(null,
+                    Globals.lang("The XML settings file is not writable") + ": " + xmlFile.getAbsolutePath(),
+                    Globals.lang("Settings storage"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        File writableParent = xmlFile.getAbsoluteFile().getParentFile();
+        while ((writableParent != null) && !writableParent.exists()) {
+            writableParent = writableParent.getParentFile();
+        }
+        if ((writableParent == null) || !writableParent.canWrite()) {
+            JOptionPane.showMessageDialog(null,
+                    Globals.lang("The XML settings directory is not writable") + ": " + xmlFile.getAbsolutePath(),
+                    Globals.lang("Settings storage"),
                     JOptionPane.ERROR_MESSAGE);
             return false;
         }

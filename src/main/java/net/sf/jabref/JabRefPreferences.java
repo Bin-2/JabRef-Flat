@@ -25,6 +25,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.InvalidPreferencesFormatException;
@@ -108,6 +112,12 @@ public final class JabRefPreferences {
 
     public static final String NEWLINE = "newline";
 
+    public static final String SETTINGS_STORAGE = "settingsStorage";
+    public static final String SETTINGS_XML_PATH = "settingsXmlPath";
+    public static final String DEFAULT_SETTINGS_XML_PATH = "jabref.xml";
+
+    private static final int SETTINGS_BACKUP_COUNT = 20;
+
     public String WRAPPED_USERNAME, MARKING_WITH_NUMBER_PATTERN;
 
     public static final String ALTERNATE_PDF_VIEWER = "alternatePdfViewer";
@@ -163,6 +173,141 @@ public final class JabRefPreferences {
         return singleton;
     }
 
+    private void recoverRegistryPreferencesIfNeeded() {
+        if (!SettingsStorage.isRegistryActive() || hasStoredPreferences()) {
+            return;
+        }
+
+        File xmlFile = SettingsStorage.getConfiguredXmlFile();
+        if (!xmlFile.isFile()) {
+            return;
+        }
+
+        try {
+            importPreferences(xmlFile.getAbsolutePath());
+            prefs = Preferences.userNodeForPackage(JabRef.class);
+            Globals.logger("Recovered JabRef preferences from " + xmlFile.getAbsolutePath());
+        } catch (IOException ex) {
+            Globals.logger("Could not recover preferences from XML backup: " + ex.getLocalizedMessage());
+        }
+    }
+
+    private boolean hasStoredPreferences() {
+        try {
+            return (prefs.keys().length > 0) || (prefs.childrenNames().length > 0);
+        } catch (BackingStoreException ex) {
+            Globals.logger("Could not inspect preference store: " + ex.getLocalizedMessage());
+            return true;
+        }
+    }
+
+    private void migrateLegacyStoragePreferences() {
+        if (prefs.get(SETTINGS_STORAGE, null) == null) {
+            String storage = prefs.getBoolean("memoryStickMode", false)
+                    ? SettingsStorage.STORAGE_XML : SettingsStorage.getActiveStorage();
+            prefs.put(SETTINGS_STORAGE, storage);
+        }
+        if (prefs.get(SETTINGS_XML_PATH, null) == null) {
+            prefs.put(SETTINGS_XML_PATH, SettingsStorage.getConfiguredXmlPath());
+        }
+    }
+
+    private void createStartupSettingsBackup() {
+        if (!hasStoredPreferences()) {
+            return;
+        }
+
+        File xmlFile = SettingsStorage.getConfiguredXmlFile();
+        File parent = xmlFile.getParentFile();
+        if (parent == null) {
+            return;
+        }
+
+        File backupDirectory = new File(parent, "backups");
+        String filename = xmlFile.getName();
+        int extension = filename.toLowerCase(Locale.ENGLISH).endsWith(".xml")
+                ? filename.length() - 4 : filename.length();
+        String baseName = filename.substring(0, extension);
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd_HHmmss_SSS").format(new Date());
+        File backupFile = new File(backupDirectory, baseName + "-" + timestamp + ".xml");
+
+        try {
+            // Preserve the previous XML mirror before Registry mode can refresh it.
+            if (xmlFile.isFile()) {
+                copySettingsFile(xmlFile, backupFile);
+            } else if (SettingsStorage.isXmlActive()) {
+                exportUserPreferencesTree(backupFile.getAbsolutePath());
+            } else {
+                exportPreferences(backupFile.getAbsolutePath());
+            }
+            pruneSettingsBackups(backupDirectory, baseName);
+
+            if (SettingsStorage.isRegistryActive()) {
+                exportPreferences(xmlFile.getAbsolutePath());
+            }
+        } catch (IOException ex) {
+            Globals.logger("Could not create settings startup backup: " + ex.getLocalizedMessage());
+        }
+    }
+
+    private void copySettingsFile(File source, File target) throws IOException {
+        File parent = target.getParentFile();
+        if ((parent != null) && !parent.exists() && !parent.mkdirs() && !parent.isDirectory()) {
+            throw new IOException("Could not create directory: " + parent.getAbsolutePath());
+        }
+        Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private void preserveExistingSettingsFile(File file) throws IOException {
+        if (!file.isFile()) {
+            return;
+        }
+        File parent = file.getParentFile();
+        if (parent == null) {
+            return;
+        }
+        String filename = file.getName();
+        int extension = filename.toLowerCase(Locale.ENGLISH).endsWith(".xml")
+                ? filename.length() - 4 : filename.length();
+        String baseName = filename.substring(0, extension);
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd_HHmmss_SSS").format(new Date());
+        File backupDirectory = new File(parent, "backups");
+        File backupFile = new File(backupDirectory, baseName + "-preexisting-" + timestamp + ".xml");
+        copySettingsFile(file, backupFile);
+        pruneSettingsBackups(backupDirectory, baseName);
+    }
+
+    private void pruneSettingsBackups(File backupDirectory, final String baseName) {
+        File[] backups = backupDirectory.listFiles(new java.io.FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                String name = file.getName();
+                return file.isFile() && name.startsWith(baseName + "-") && name.endsWith(".xml");
+            }
+        });
+        if ((backups == null) || (backups.length <= SETTINGS_BACKUP_COUNT)) {
+            return;
+        }
+
+        Arrays.sort(backups, new Comparator<File>() {
+            @Override
+            public int compare(File first, File second) {
+                if (first.lastModified() < second.lastModified()) {
+                    return -1;
+                }
+                if (first.lastModified() > second.lastModified()) {
+                    return 1;
+                }
+                return first.getName().compareTo(second.getName());
+            }
+        });
+        for (int i = 0; i < backups.length - SETTINGS_BACKUP_COUNT; i++) {
+            if (!backups[i].delete()) {
+                Globals.logger("Could not delete old settings backup: " + backups[i].getAbsolutePath());
+            }
+        }
+    }
+
     // Upgrade the preferences for the current version
     // The old preference is kept in case an old version of JabRef is used with 
     // these preferences, but it is only used when the new preference does not 
@@ -214,17 +359,12 @@ public final class JabRefPreferences {
     // The constructor is made private to enforce this as a singleton class:
     private JabRefPreferences() {
 
-        try {
-            if (new File("jabref.xml").exists()) {
-                importPreferences("jabref.xml");
-            }
-        } catch (IOException e) {
-            Globals.logger("Could not import preferences from jabref.xml:" + e.getLocalizedMessage());
-        }
-
-        // load user preferences 
+        // The PreferencesFactory has already been selected in JabRef.main().
         prefs = Preferences.userNodeForPackage(JabRef.class);
+        recoverRegistryPreferencesIfNeeded();
         upgradeOldPreferences();
+        migrateLegacyStoragePreferences();
+        createStartupSettingsBackup();
 
         if (Globals.osName.equals(Globals.MAC)) {
             //defaults.put("pdfviewer", "/Applications/Preview.app");
@@ -388,6 +528,8 @@ public final class JabRefPreferences {
         defaults.put("defaultOwner", System.getProperty("user.name"));
         defaults.put("preserveFieldFormatting", Boolean.FALSE);
         defaults.put("memoryStickMode", Boolean.FALSE);
+        defaults.put(SETTINGS_STORAGE, SettingsStorage.getActiveStorage());
+        defaults.put(SETTINGS_XML_PATH, SettingsStorage.getConfiguredXmlPath());
         defaults.put("renameOnMoveFileToFileDir", Boolean.TRUE);
 
         // The general fields stuff is made obsolete by the CUSTOM_TAB_... entries.
@@ -1053,17 +1195,37 @@ public final class JabRefPreferences {
      * Calling this method will write all preferences into the preference store.
      */
     public void flush() {
-        if (getBoolean("memoryStickMode")) {
-            try {
-                exportPreferences("jabref.xml");
-            } catch (IOException e) {
-                Globals.logger("Could not save preferences for memory stick mode: " + e.getLocalizedMessage());
-            }
-        }
         try {
             prefs.flush();
         } catch (BackingStoreException ex) {
-            ex.printStackTrace();
+            Globals.logger("Could not flush preferences: " + ex.getLocalizedMessage());
+            return;
+        }
+
+        String requestedStorage = SettingsStorage.STORAGE_XML.equals(get(SETTINGS_STORAGE))
+                ? SettingsStorage.STORAGE_XML : SettingsStorage.STORAGE_REGISTRY;
+        String requestedXmlPath = get(SETTINGS_XML_PATH);
+        File xmlFile = SettingsStorage.resolveXmlFile(requestedXmlPath);
+        File activeXmlFile = SettingsStorage.getConfiguredXmlFile();
+
+        try {
+            if (!xmlFile.equals(activeXmlFile)) {
+                preserveExistingSettingsFile(xmlFile);
+            }
+            if (SettingsStorage.isRegistryActive()) {
+                // Registry mode keeps a current JabRef-only XML recovery mirror.
+                exportPreferences(xmlFile.getAbsolutePath());
+            } else if (!xmlFile.equals(activeXmlFile)) {
+                // The XML backend has already flushed its active file. If the user
+                // selected a new path, seed that file with the complete XML tree.
+                exportUserPreferencesTree(xmlFile.getAbsolutePath());
+            }
+
+            boolean migrateXmlToRegistry = SettingsStorage.isXmlActive()
+                    && SettingsStorage.STORAGE_REGISTRY.equals(requestedStorage);
+            SettingsStorage.commitConfiguration(requestedStorage, requestedXmlPath, migrateXmlToRegistry);
+        } catch (IOException ex) {
+            Globals.logger("Could not save XML preferences mirror: " + ex.getLocalizedMessage());
         }
     }
 
@@ -1642,29 +1804,72 @@ public final class JabRefPreferences {
      * @param filename String File to export to
      * @throws java.io.IOException
      */
-    public void exportPreferences(String filename) throws IOException {
-        File f = new File(filename);
-        OutputStream os = new FileOutputStream(f);
+    private void exportUserPreferencesTree(String filename) throws IOException {
+        exportPreferencesNode(Preferences.userRoot(), filename);
+    }
+
+    private void exportPreferencesNode(Preferences node, String filename) throws IOException {
+        File target = new File(filename).getAbsoluteFile();
+        File parent = target.getParentFile();
+        if ((parent != null) && !parent.exists() && !parent.mkdirs() && !parent.isDirectory()) {
+            throw new IOException("Could not create directory: " + parent.getAbsolutePath());
+        }
+
+        File temp = new File(target.getAbsolutePath() + ".tmp");
+        OutputStream os = null;
         try {
-            prefs.exportSubtree(os);
+            os = new FileOutputStream(temp);
+            node.exportSubtree(os);
         } catch (BackingStoreException ex) {
-            throw new IOException(ex.getMessage());
+            temp.delete();
+            throw new IOException(ex.getMessage(), ex);
+        } finally {
+            if (os != null) {
+                os.close();
+            }
+        }
+
+        try {
+            try {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException ex) {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException ex) {
+            temp.delete();
+            throw ex;
         }
     }
 
     /**
-     * Imports Preferences from an XML file.
+     * Exports JabRef preferences to an XML file.
+     *
+     * @param filename String File to export to
+     * @throws java.io.IOException
+     */
+    public void exportPreferences(String filename) throws IOException {
+        exportPreferencesNode(prefs, filename);
+    }
+
+    /**
+     * Imports Preferences from an XML file into the currently selected backend.
      *
      * @param filename String File to import from
      * @throws java.io.IOException
      */
     public void importPreferences(String filename) throws IOException {
         File f = new File(filename);
-        InputStream is = new FileInputStream(f);
+        InputStream is = null;
         try {
+            is = new FileInputStream(f);
             Preferences.importPreferences(is);
         } catch (InvalidPreferencesFormatException ex) {
-            throw new IOException(ex.getMessage());
+            throw new IOException(ex.getMessage(), ex);
+        } finally {
+            if (is != null) {
+                is.close();
+            }
         }
     }
 

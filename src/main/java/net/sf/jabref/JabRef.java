@@ -77,6 +77,7 @@ public final class JabRef {
     private JabRefCLI cli;
 
     public static void main(String[] args) {
+        SettingsStorage.initialize();
         JabRef jabRef = new JabRef(args);
     }
 
