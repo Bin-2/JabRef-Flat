@@ -82,6 +82,7 @@ public class BibtexEntry {
     private String _id;
     private BibtexEntryType _type;
     private Map<String, String> _fields = new HashMap<>();
+    private Collection<String> fieldValues = Collections.unmodifiableCollection(_fields.values());
     VetoableChangeSupport _changeSupport = new VetoableChangeSupport(this);
 
     // Search and grouping status is stored in boolean fields for quick reference:
@@ -135,6 +136,17 @@ public class BibtexEntry {
      */
     public Set<String> getAllFields() {
         return new TreeSet<>(_fields.keySet());
+    }
+
+    /**
+     * Returns a read-only live view of the values of all fields set for this
+     * entry. Unlike getAllFields(), this method does not allocate or sort a
+     * copy and is intended for code that only needs to inspect field values.
+     *
+     * @return read-only collection of field values
+     */
+    public Collection<String> getFieldValues() {
+        return fieldValues;
     }
 
     /**
@@ -530,6 +542,7 @@ public class BibtexEntry {
     public Object clone() {
         BibtexEntry clone = new BibtexEntry(_id, _type);
         clone._fields = new HashMap<>(_fields);
+        clone.fieldValues = Collections.unmodifiableCollection(clone._fields.values());
         return clone;
     }
 

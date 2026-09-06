@@ -31,9 +31,13 @@ import net.sf.jabref.export.layout.format.RemoveLatexCommands;
  */
 public class BasicSearch implements SearchRule {
 
-    private boolean caseSensitive;
-    private boolean regExp;
-    Pattern[] pattern;
+    private final boolean caseSensitive;
+    private final boolean regExp;
+    private String preparedQuery;
+    private boolean preparedQueryValid;
+    private ArrayList<String> preparedWords;
+    private Pattern[] pattern;
+    private boolean[] literalPattern;
     //static RemoveBrackets removeLatexCommands = new RemoveBrackets();
     static RemoveLatexCommands removeBrackets = new RemoveLatexCommands();
 
@@ -50,88 +54,145 @@ public class BasicSearch implements SearchRule {
     }
 
     public boolean validateSearchStrings(Map<String, String> searchStrings) {
-        if (regExp) {
-            int flags = 0;
-            String searchString = searchStrings.values().iterator().next();
-            if (!caseSensitive) {
-                searchString = searchString.toLowerCase();
-                flags = Pattern.CASE_INSENSITIVE;
-            }
-            ArrayList<String> words = parseQuery(searchString);
-            try {
-                pattern = new Pattern[words.size()];
-                for (int i = 0; i < pattern.length; i++) {
-                    pattern[i] = Pattern.compile(words.get(i), flags);
-                }
-            } catch (PatternSyntaxException ex) {
-                return false;
-            }
-        }
-        return true;
+        String searchString = searchStrings.values().iterator().next();
+        return prepareQuery(searchString);
     }
 
     public int applyRule(Map<String, String> searchStrings, BibtexEntry bibtexEntry) {
-
-        int flags = 0;
         String searchString = searchStrings.values().iterator().next();
+        if ((preparedQuery == null) || !preparedQuery.equals(searchString)) {
+            prepareQuery(searchString);
+        }
+        if (!preparedQueryValid) {
+            return 0;
+        }
+
+        if (preparedWords.isEmpty()) {
+            return 1;
+        }
+
+        // We need a match for all words.
+        boolean[] matchFound = new boolean[preparedWords.size()];
+        int remainingWords = preparedWords.size();
+
+        for (String fieldValue : bibtexEntry.getFieldValues()) {
+            if (fieldValue == null) {
+                continue;
+            }
+
+            String fieldContent = normalizeFieldContent(fieldValue);
+
+            for (int i = 0; i < preparedWords.size(); i++) {
+                if (matchFound[i]) {
+                    continue;
+                }
+
+                boolean matched;
+                if (regExp) {
+                    if (literalPattern[i]) {
+                        matched = fieldContent.contains(preparedWords.get(i));
+                    } else {
+                        Matcher matcher = pattern[i].matcher(fieldContent);
+                        matched = matcher.find();
+                    }
+                } else {
+                    matched = fieldContent.contains(preparedWords.get(i));
+                }
+
+                if (matched) {
+                    matchFound[i] = true;
+                    remainingWords--;
+                    if (remainingWords == 0) {
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    private String normalizeFieldContent(String fieldValue) {
+        String fieldContent = fieldValue;
+
+        // RemoveLatexCommands always creates a new buffer/string. Most fields
+        // contain no LaTeX command or braces, in which case formatting would
+        // return identical content. Avoid that scan and allocation.
+        if ((fieldValue.indexOf('\\') >= 0)
+                || (fieldValue.indexOf('{') >= 0)
+                || (fieldValue.indexOf('}') >= 0)) {
+            fieldContent = removeBrackets.format(fieldValue);
+        }
+
+        if (!caseSensitive) {
+            fieldContent = fieldContent.toLowerCase();
+        }
+        return fieldContent;
+    }
+
+    private boolean prepareQuery(String query) {
+        int flags = 0;
+        String searchString = query;
         if (!caseSensitive) {
             searchString = searchString.toLowerCase();
             flags = Pattern.CASE_INSENSITIVE;
         }
 
         ArrayList<String> words = parseQuery(searchString);
-
-        if (regExp)
+        Pattern[] compiledPatterns = null;
+        boolean[] literalPatterns = null;
+        if (regExp) {
             try {
-            pattern = new Pattern[words.size()];
-            for (int i = 0; i < pattern.length; i++) {
-                pattern[i] = Pattern.compile(words.get(i), flags);
-            }
-        } catch (PatternSyntaxException ex) {
-            return 0;
-        }
-
-        //print(words);
-        // We need match for all words:
-        boolean[] matchFound = new boolean[words.size()];
-
-        Object fieldContentAsObject;
-        String fieldContent;
-
-        for (String field : bibtexEntry.getAllFields()) {
-            fieldContentAsObject = bibtexEntry.getField(field);
-            if (fieldContentAsObject != null) {
-                fieldContent = removeBrackets.format(fieldContentAsObject.toString());
-                if (!caseSensitive) {
-                    fieldContent = fieldContent.toLowerCase();
-                }
-                int index = 0;
-                // Check if we have a match for each of the query words, ignoring
-                // those words for which we already have a match:
-                for (int j = 0; j < words.size(); j++) {
-                    if (!regExp) {
-                        String s = words.get(j);
-                        matchFound[index] = matchFound[index]
-                                || (fieldContent.contains(s));
-                    } else {
-                        if (fieldContent != null) {
-                            Matcher m = pattern[j].matcher(removeBrackets.format(fieldContent));
-                            matchFound[index] = matchFound[index]
-                                    || m.find();
-                        }
+                compiledPatterns = new Pattern[words.size()];
+                literalPatterns = new boolean[words.size()];
+                for (int i = 0; i < compiledPatterns.length; i++) {
+                    String word = words.get(i);
+                    literalPatterns[i] = isLiteralPattern(word);
+                    if (!literalPatterns[i]) {
+                        compiledPatterns[i] = Pattern.compile(word, flags);
                     }
-
-                    index++;
                 }
+            } catch (PatternSyntaxException ex) {
+                preparedQuery = query;
+                preparedQueryValid = false;
+                preparedWords = words;
+                pattern = null;
+                literalPattern = null;
+                return false;
             }
+        }
 
-        }
-        for (boolean aMatchFound : matchFound) {
-            if (!aMatchFound) {
-                return 0; // Didn't match all words.
+        preparedQuery = query;
+        preparedQueryValid = true;
+        preparedWords = words;
+        pattern = compiledPatterns;
+        literalPattern = literalPatterns;
+        return true;
+    }
+
+    private boolean isLiteralPattern(String word) {
+        for (int i = 0; i < word.length(); i++) {
+            switch (word.charAt(i)) {
+                case '\\':
+                case '.':
+                case '^':
+                case '$':
+                case '|':
+                case '?':
+                case '*':
+                case '+':
+                case '(':
+                case ')':
+                case '[':
+                case ']':
+                case '{':
+                case '}':
+                    return false;
+                default:
+                    break;
             }
         }
-        return 1; // Matched all words.
+        return true;
     }
 
     private ArrayList<String> parseQuery(String query) {

@@ -42,6 +42,35 @@ import net.sf.jabref.help.HelpAction;
 public class SearchManager2 extends SidePaneComponent
         implements ActionListener, KeyListener, ItemListener, CaretListener, ErrorMessageDisplay {
 
+    private static final boolean SEARCH_PERF_TIMERS = true;
+
+    private static long searchPerfStart() {
+        return System.nanoTime();
+    }
+
+    private static void searchPerfLog(String name, long startNanos) {
+        if (!SEARCH_PERF_TIMERS) {
+            return;
+        }
+        long elapsedNanos = System.nanoTime() - startNanos;
+        long elapsedMs = elapsedNanos / 1000000L;
+        System.out.println("[Search timer] " + name + " took " + elapsedMs
+                + " ms (" + elapsedNanos + " ns)");
+    }
+
+    private static void searchPerfLogScan(String ruleName, int entries, int hits, long elapsedNanos) {
+        if (!SEARCH_PERF_TIMERS) {
+            return;
+        }
+        long elapsedMs = elapsedNanos / 1000000L;
+        long averageNanos = entries == 0 ? 0L : elapsedNanos / entries;
+        System.out.println("[Search timer] scan rule=" + ruleName
+                + ", entries=" + entries
+                + ", hits=" + hits
+                + " took " + elapsedMs + " ms (" + elapsedNanos + " ns)"
+                + ", avg=" + averageNanos + " ns/entry");
+    }
+
     private JabRefFrame frame;
 
     GridBagLayout gbl = new GridBagLayout();
@@ -492,6 +521,8 @@ public class SearchManager2 extends SidePaneComponent
     @Override
     public void actionPerformed(ActionEvent e) {
 
+        long searchActionStart = searchPerfStart();
+
         if (e.getSource() == escape) {
             incSearch = false;
             clearSearchLater();
@@ -509,35 +540,55 @@ public class SearchManager2 extends SidePaneComponent
             fireSearchlistenerEvent(searchField.getText());
 
             // Setup search parameters common to both normal and float.
+            long setupStart = searchPerfStart();
             Hashtable<String, String> searchOptions = new Hashtable<>();
             searchOptions.put("option", searchField.getText());
             SearchRuleSet searchRules = new SearchRuleSet();
             SearchRule rule1;
 
-            rule1 = new BasicSearch(Globals.prefs.getBoolean("caseSensitiveSearch"),
-                    Globals.prefs.getBoolean("regExpSearch"));
+            boolean caseSensitiveSearch = Globals.prefs.getBoolean("caseSensitiveSearch");
+            boolean regularExpressionSearch = Globals.prefs.getBoolean("regExpSearch");
+            rule1 = new BasicSearch(caseSensitiveSearch, regularExpressionSearch);
 
+            long expressionParseStart = searchPerfStart();
+            boolean expressionParsed = false;
             try {
                 // this searches specified fields if specified,
                 // and all fields otherwise
                 rule1 = new SearchExpression(Globals.prefs, searchOptions);
+                expressionParsed = true;
             } catch (Exception ex) {
                 // we'll do a search in all fields
             }
+            searchPerfLog("query parse selectedRule=" + rule1.getClass().getSimpleName()
+                    + ", expressionParsed=" + expressionParsed
+                    + ", queryLength=" + searchField.getText().length()
+                    + ", caseSensitive=" + caseSensitiveSearch
+                    + ", regex=" + regularExpressionSearch, expressionParseStart);
 
             searchRules.addRule(rule1);
+            searchPerfLog("search setup rule=" + rule1.getClass().getSimpleName(), setupStart);
 
+            long validationStart = searchPerfStart();
             if (!searchRules.validateSearchStrings(searchOptions)) {
+                searchPerfLog("validation rule=" + rule1.getClass().getSimpleName() + ", valid=false", validationStart);
                 panel.output(Globals.lang("Search failed: illegal search expression"));
                 panel.stopShowingSearchResults();
                 return;
             }
-            SearchWorker worker = new SearchWorker(searchRules, searchOptions);
+            searchPerfLog("validation rule=" + rule1.getClass().getSimpleName() + ", valid=true", validationStart);
+
+            SearchWorker worker = new SearchWorker(searchRules, searchOptions,
+                    rule1.getClass().getSimpleName());
             worker.getWorker().run();
             worker.getCallBack().update();
             escape.setEnabled(true);
 
             frame.basePanel().mainTable.setSelected(0);
+            searchPerfLog("total rule=" + rule1.getClass().getSimpleName()
+                    + ", mode=" + getSearchModeName()
+                    + ", entries=" + worker.getScannedEntries()
+                    + ", hits=" + worker.hits, searchActionStart);
         }
     }
 
@@ -573,23 +624,45 @@ public class SearchManager2 extends SidePaneComponent
 //            return image != null ? new ImageIcon(image) : null;
 //        }
 //    }
+    private String getSearchModeName() {
+        if (searchAllBases.isSelected()) {
+            return "global";
+        }
+        if (showResultsInDialog.isSelected()) {
+            return "dialog";
+        }
+        if (hideSearch.isSelected()) {
+            return "filter";
+        }
+        return "float";
+    }
+
     class SearchWorker extends AbstractWorker {
 
         private final SearchRuleSet rules;
+        private final String ruleName;
         Hashtable<String, String> searchTerm;
         int hits = 0;
+        private int scannedEntries = 0;
 
-        public SearchWorker(SearchRuleSet rules, Hashtable<String, String> searchTerm) {
+        public SearchWorker(SearchRuleSet rules, Hashtable<String, String> searchTerm,
+                String ruleName) {
             this.rules = rules;
             this.searchTerm = searchTerm;
+            this.ruleName = ruleName;
+        }
+
+        public int getScannedEntries() {
+            return scannedEntries;
         }
 
         @Override
         public void run() {
+            long scanStart = searchPerfStart();
             if (!searchAllBases.isSelected()) {
                 // Search only the current database:
                 for (BibtexEntry entry : panel.getDatabase().getEntries()) {
-
+                    scannedEntries++;
                     boolean hit = rules.applyRule(searchTerm, entry) > 0;
                     entry.setSearchHit(hit);
                     if (hit) {
@@ -601,7 +674,7 @@ public class SearchManager2 extends SidePaneComponent
                 for (int i = 0; i < frame.getTabbedPane().getTabCount(); i++) {
                     BasePanel p = frame.baseAt(i);
                     for (BibtexEntry entry : p.getDatabase().getEntries()) {
-
+                        scannedEntries++;
                         boolean hit = rules.applyRule(searchTerm, entry) > 0;
                         entry.setSearchHit(hit);
                         if (hit) {
@@ -610,10 +683,13 @@ public class SearchManager2 extends SidePaneComponent
                     }
                 }
             }
+            long scanElapsedNanos = System.nanoTime() - scanStart;
+            searchPerfLogScan(ruleName, scannedEntries, hits, scanElapsedNanos);
         }
 
         @Override
         public void update() {
+            long updateStart = searchPerfStart();
             panel.output(Globals.lang("Searched database. Number of hits")
                     + ": " + hits);
 
@@ -684,6 +760,9 @@ public class SearchManager2 extends SidePaneComponent
 
             // Afterwards, select all text in the search field.
             searchField.select(0, searchField.getText().length());
+            searchPerfLog("result update mode=" + getSearchModeName()
+                    + ", entries=" + scannedEntries
+                    + ", hits=" + hits, updateStart);
 
         }
     }

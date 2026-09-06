@@ -35,11 +35,16 @@ import javax.swing.table.TableColumnModel;
 import net.sf.jabref.*;
 import net.sf.jabref.groups.EntryTableTransferHandler;
 import net.sf.jabref.search.HitOrMissComparator;
+import net.sf.jabref.search.NoSearchMatcher;
 import net.sf.jabref.specialfields.SpecialFieldsUtils;
+import ca.odell.glazedlists.CompositeList;
 import ca.odell.glazedlists.EventList;
+import ca.odell.glazedlists.FilterList;
 import ca.odell.glazedlists.SortedList;
+import ca.odell.glazedlists.TransactionList;
 import ca.odell.glazedlists.event.ListEventListener;
 import ca.odell.glazedlists.matchers.Matcher;
+import ca.odell.glazedlists.matchers.Matchers;
 import ca.odell.glazedlists.swing.EventSelectionModel;
 import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
@@ -57,17 +62,19 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     private MainTableFormat tableFormat;
     private BasePanel panel;
-    private SortedList<BibtexEntry> sortedForMarking, sortedForTable, sortedForSearch, sortedForGrouping;
+    private SortedList<BibtexEntry> sortedForMarking, sortedForTable, sortedForGrouping;
+    private FilterList<BibtexEntry> searchHits, searchMisses;
+    private CompositeList<BibtexEntry> searchPartition;
+    private TransactionList<BibtexEntry> sortedForSearch;
     private boolean tableColorCodes, showingFloatSearch = false, showingFloatGrouping = false;
     private EventSelectionModel<BibtexEntry> selectionModel;
     private TableComparatorChooser<BibtexEntry> comparatorChooser;
     private JScrollPane pane;
-    private Comparator<BibtexEntry> searchComparator, groupComparator,
+    private Comparator<BibtexEntry> groupComparator,
             markingComparator = new IsMarkedComparator();
     private Matcher<BibtexEntry> searchMatcher, groupMatcher;
     private boolean initializingSorting = false;
     private Comparator<BibtexEntry> currentMarkingComparator = null;
-    private Comparator<BibtexEntry> currentSearchComparator = null;
     private Comparator<BibtexEntry> currentGroupComparator = null;
 
     // needed to activate/deactivate the listener
@@ -95,6 +102,18 @@ public class MainTable extends JTable implements ThemeAwareComponent {
                     + " thread=" + Thread.currentThread().getName()
                     + " edt=" + SwingUtilities.isEventDispatchThread());
         }
+    }
+
+    private static void searchUiPerfLog(String label, long startNs) {
+        if (!PERF_TIMERS || startNs == 0L) {
+            return;
+        }
+        long elapsedNs = System.nanoTime() - startNs;
+        long elapsedMs = elapsedNs / 1000000L;
+        System.out.println("[Search UI timer] " + label
+                + " took " + elapsedMs + " ms (" + elapsedNs + " ns)"
+                + " thread=" + Thread.currentThread().getName()
+                + " edt=" + SwingUtilities.isEventDispatchThread());
     }
 
     private static void perfLogRenderer(long startNs) {
@@ -161,10 +180,19 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         sortedForMarking = new SortedList<BibtexEntry>(sortedForTable, null);
         perfLog("constructor new sortedForMarking size=" + safeEventListSize(sortedForMarking), blockStartNs);
 
-        // This SortedList applies afterwards, and can float search hits:
+        // Partition search results without sorting the entire table. The first
+        // member contains hits and the second contains misses; both preserve
+        // the order produced by sortedForMarking. TransactionList buffers the
+        // two matcher changes into one downstream event.
         blockStartNs = perfStart();
-        sortedForSearch = new SortedList<BibtexEntry>(sortedForMarking, null);
-        perfLog("constructor new sortedForSearch size=" + safeEventListSize(sortedForSearch), blockStartNs);
+        searchHits = new FilterList<BibtexEntry>(sortedForMarking, NoSearchMatcher.INSTANCE);
+        searchMisses = new FilterList<BibtexEntry>(sortedForMarking, Matchers.<BibtexEntry>falseMatcher());
+        searchPartition = new CompositeList<BibtexEntry>(sortedForMarking.getPublisher(),
+                sortedForMarking.getReadWriteLock());
+        searchPartition.addMemberList(searchHits);
+        searchPartition.addMemberList(searchMisses);
+        sortedForSearch = new TransactionList<BibtexEntry>(searchPartition);
+        perfLog("constructor new search partition size=" + safeEventListSize(sortedForSearch), blockStartNs);
 
         // This SortedList applies afterwards, and can float grouping hits:
         blockStartNs = perfStart();
@@ -173,7 +201,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         searchMatcher = null;
         groupMatcher = null;
-        searchComparator = null;//new HitOrMissComparator(searchMatcher);
         groupComparator = null;//new HitOrMissComparator(groupMatcher);
 
         blockStartNs = perfStart();
@@ -270,7 +297,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         Comparator<BibtexEntry> newMarkingComparator = Globals.prefs.getBoolean("floatMarkedEntries")
                 ? markingComparator : null;
-        Comparator<BibtexEntry> newSearchComparator = searchComparator;
         Comparator<BibtexEntry> newGroupComparator = groupComparator;
 
         if (currentMarkingComparator != newMarkingComparator) {
@@ -284,19 +310,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
             perfLog("refreshSorting set marking comparator active=" + (newMarkingComparator != null)
                     + ", rows=" + safeEventListSize(sortedForMarking), blockStartNs);
-        }
-
-        if (currentSearchComparator != newSearchComparator) {
-            blockStartNs = perfStart();
-            sortedForSearch.getReadWriteLock().writeLock().lock();
-            try {
-                sortedForSearch.setComparator(newSearchComparator);
-                currentSearchComparator = newSearchComparator;
-            } finally {
-                sortedForSearch.getReadWriteLock().writeLock().unlock();
-            }
-            perfLog("refreshSorting set search comparator active=" + (newSearchComparator != null)
-                    + ", rows=" + safeEventListSize(sortedForSearch), blockStartNs);
         }
 
         if (currentGroupComparator != newGroupComparator) {
@@ -325,9 +338,18 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         long startNs = perfStart();
         showingFloatSearch = true;
         searchMatcher = m;
-        searchComparator = (m == null) ? null : new HitOrMissComparator(m);
-        refreshSorting();
+
+        long partitionStartNs = perfStart();
+        updateSearchPartition(m);
+        searchUiPerfLog("showFloatSearch update partition hits=" + safeEventListSize(searchHits)
+                + ", misses=" + safeEventListSize(searchMisses), partitionStartNs);
+
+        long scrollStartNs = perfStart();
         scrollTo(0);
+        searchUiPerfLog("showFloatSearch scrollTo(0)", scrollStartNs);
+
+        searchUiPerfLog("showFloatSearch total matcher=" + (m != null)
+                + ", rows=" + safeEventListSize(sortedForGrouping), startNs);
         perfLog("showFloatSearch matcher=" + (m != null) + ", rows=" + safeEventListSize(sortedForGrouping), startNs);
     }
 
@@ -338,9 +360,37 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         long startNs = perfStart();
         showingFloatSearch = false;
         searchMatcher = null;
-        searchComparator = null;
-        refreshSorting();
+        updateSearchPartition(null);
         perfLog("stopShowingFloatSearch rows=" + safeEventListSize(sortedForGrouping), startNs);
+    }
+
+    private void updateSearchPartition(Matcher<BibtexEntry> matcher) {
+        Matcher<BibtexEntry> hitMatcher = matcher == null ? NoSearchMatcher.INSTANCE : matcher;
+        Matcher<BibtexEntry> missMatcher = matcher == null
+                ? Matchers.<BibtexEntry>falseMatcher()
+                : Matchers.invert(matcher);
+
+        long lockStartNs = perfStart();
+        sortedForSearch.getReadWriteLock().writeLock().lock();
+        searchUiPerfLog("updateSearchPartition lock wait", lockStartNs);
+        try {
+            sortedForSearch.beginEvent(true);
+            try {
+                long hitsStartNs = perfStart();
+                searchHits.setMatcher(hitMatcher);
+                searchUiPerfLog("updateSearchPartition hits filter", hitsStartNs);
+
+                long missesStartNs = perfStart();
+                searchMisses.setMatcher(missMatcher);
+                searchUiPerfLog("updateSearchPartition misses filter", missesStartNs);
+            } finally {
+                long commitStartNs = perfStart();
+                sortedForSearch.commitEvent();
+                searchUiPerfLog("updateSearchPartition commit", commitStartNs);
+            }
+        } finally {
+            sortedForSearch.getReadWriteLock().writeLock().unlock();
+        }
     }
 
     /**
