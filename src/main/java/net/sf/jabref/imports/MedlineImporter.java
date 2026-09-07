@@ -16,8 +16,6 @@
 package net.sf.jabref.imports;
 
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -83,15 +81,26 @@ public class MedlineImporter extends ImportFormat {
      * @return Will return an empty list on error.
      */
     public static List<BibtexEntry> fetchMedline(String id, OutputPrinter status) {
-        String baseUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=citation&id="
-                + id;
         try {
-            URL url = new URL(baseUrl);
-            URLConnection data = url.openConnection();
-            return new MedlineImporter().importEntries(data.getInputStream(), status);
+            return fetchMedlineChecked(id, status);
         } catch (IOException e) {
+            logger.log(Level.WARNING, e.getLocalizedMessage(), e);
+            if (status != null) {
+                status.showMessage(e.getLocalizedMessage());
+            }
             return new ArrayList<BibtexEntry>();
         }
+    }
+
+    /**
+     * Fetch and parse one or more PubMed records. Network failures are
+     * propagated so the Web Search UI can distinguish them from an empty
+     * result set.
+     */
+    public static List<BibtexEntry> fetchMedlineChecked(String id, OutputPrinter status) throws IOException {
+        String xml = NcbiEutils.efetch(id);
+        return new MedlineImporter().importEntries(
+                new ByteArrayInputStream(xml.getBytes("UTF-8")), status);
     }
 
     /**
@@ -105,11 +114,12 @@ public class MedlineImporter extends ImportFormat {
 
         // Configure the factory object to specify attributes of the parsers it
         // creates
-        parserFactory.setValidating(true);
+        parserFactory.setValidating(false);
         parserFactory.setNamespaceAware(true);
+        disableExternalEntities(parserFactory);
 
         // Now create a SAXParser object
-        ArrayList<BibtexEntry> bibItems = null;
+        ArrayList<BibtexEntry> bibItems = new ArrayList<BibtexEntry>();
         try {
             SAXParser parser = parserFactory.newSAXParser(); // May throw
             // exceptions
@@ -134,16 +144,36 @@ public class MedlineImporter extends ImportFormat {
             bibItems = handler.getItems();
         } catch (javax.xml.parsers.ParserConfigurationException e1) {
             logger.log(Level.SEVERE, e1.getLocalizedMessage(), e1);
-            status.showMessage(e1.getLocalizedMessage());
+            if (status != null) {
+                status.showMessage(e1.getLocalizedMessage());
+            }
         } catch (org.xml.sax.SAXException e2) {
             logger.log(Level.SEVERE, e2.getLocalizedMessage(), e2);
-            status.showMessage(e2.getLocalizedMessage());
+            if (status != null) {
+                status.showMessage(e2.getLocalizedMessage());
+            }
         } catch (java.io.IOException e3) {
             logger.log(Level.SEVERE, e3.getLocalizedMessage(), e3);
-            status.showMessage(e3.getLocalizedMessage());
+            if (status != null) {
+                status.showMessage(e3.getLocalizedMessage());
+            }
         }
 
         return bibItems;
+    }
+
+    private static void disableExternalEntities(SAXParserFactory parserFactory) {
+        setFeatureQuietly(parserFactory, "http://xml.org/sax/features/external-general-entities", false);
+        setFeatureQuietly(parserFactory, "http://xml.org/sax/features/external-parameter-entities", false);
+        setFeatureQuietly(parserFactory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+    }
+
+    private static void setFeatureQuietly(SAXParserFactory parserFactory, String feature, boolean value) {
+        try {
+            parserFactory.setFeature(feature, value);
+        } catch (Exception e) {
+            logger.log(Level.FINE, "XML parser does not support feature " + feature, e);
+        }
     }
 
 }

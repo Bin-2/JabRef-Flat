@@ -15,17 +15,21 @@
  */
 package net.sf.jabref.imports;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.GUIGlobals;
@@ -57,10 +61,11 @@ public class MedlineFetcher implements EntryFetcher {
         }
     }
 
-    /**
-     * How many entries to query in one request
-     */
-    public static final int PACING = 20;
+    /** Ask before importing more than this many references. */
+    public static final int PROMPT_THRESHOLD = 20;
+
+    /** Number of PubMed records requested per ESearch/EFetch batch. */
+    public static final int FETCH_BATCH_SIZE = 100;
 
     boolean shouldContinue;
 
@@ -69,69 +74,66 @@ public class MedlineFetcher implements EntryFetcher {
     ImportInspector dialog;
 
     public String toSearchTerm(String in) {
-        Pattern part1 = Pattern.compile(", ");
-        Pattern part2 = Pattern.compile(",");
-        Pattern part3 = Pattern.compile(" ");
-        Matcher matcher;
-        matcher = part1.matcher(in);
-        in = matcher.replaceAll("\\+AND\\+");
-        matcher = part2.matcher(in);
-        in = matcher.replaceAll("\\+AND\\+");
-        matcher = part3.matcher(in);
-        in = matcher.replaceAll("+");
-
-        return in;
+        // Preserve the old comma-as-AND behavior, but let URLEncoder handle
+        // whitespace and all other characters safely.
+        return in.trim().replaceAll("\\s*,\\s*", " AND ");
     }
 
     /**
      * Gets the initial list of ids
      */
-    public SearchResult getIds(String term, int start, int pacing) {
+    public SearchResult getIds(String term, int start, int pacing) throws IOException {
+        String xml = NcbiEutils.esearch(term, start, pacing);
+        return parseSearchResult(xml);
+    }
 
-        String baseUrl = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils";
-        String medlineUrl = baseUrl + "/esearch.fcgi?db=pubmed&retmax=" + Integer.toString(pacing)
-                + "&retstart=" + Integer.toString(start) + "&term=";
-
-        Pattern idPattern = Pattern.compile("<Id>(\\d+)</Id>");
-        Pattern countPattern = Pattern.compile("<Count>(\\d+)<\\/Count>");
-        Pattern retMaxPattern = Pattern.compile("<RetMax>(\\d+)<\\/RetMax>");
-        Pattern retStartPattern = Pattern.compile("<RetStart>(\\d+)<\\/RetStart>");
-
-        boolean doCount = true;
-        SearchResult result = new SearchResult();
+    private SearchResult parseSearchResult(String xml) throws IOException {
+        final SearchResult result = new SearchResult();
         try {
-            URL ncbi = new URL(medlineUrl + term);
-            // get the ids
-            BufferedReader in = new BufferedReader(new InputStreamReader(ncbi.openStream()));
-            String inLine;
-            while ((inLine = in.readLine()) != null) {
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            factory.setValidating(false);
+            factory.setNamespaceAware(false);
+            SAXParser parser = factory.newSAXParser();
+            parser.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")), new DefaultHandler() {
+                private final StringBuilder text = new StringBuilder();
 
-                // get the count
-                Matcher idMatcher = idPattern.matcher(inLine);
-                if (idMatcher.find()) {
-                    result.addID(idMatcher.group(1));
+                @Override
+                public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                    text.setLength(0);
                 }
-                Matcher retMaxMatcher = retMaxPattern.matcher(inLine);
-                if (retMaxMatcher.find()) {
-                    result.retmax = Integer.parseInt(retMaxMatcher.group(1));
-                }
-                Matcher retStartMatcher = retStartPattern.matcher(inLine);
-                if (retStartMatcher.find()) {
-                    result.retstart = Integer.parseInt(retStartMatcher.group(1));
-                }
-                Matcher countMatcher = countPattern.matcher(inLine);
-                if (doCount && countMatcher.find()) {
-                    result.count = Integer.parseInt(countMatcher.group(1));
-                    doCount = false;
-                }
-            }
-        } catch (MalformedURLException e) { // new URL() failed
-            System.out.println("bad url");
-            e.printStackTrace();
-        } catch (IOException e) { // openConnection() failed
-            System.out.println("connection failed");
-            e.printStackTrace();
 
+                @Override
+                public void characters(char[] ch, int start, int length) {
+                    text.append(ch, start, length);
+                }
+
+                @Override
+                public void endElement(String uri, String localName, String qName) {
+                    String value = text.toString().trim();
+                    if ("Id".equals(qName)) {
+                        result.addID(value);
+                    } else if ("Count".equals(qName)) {
+                        result.count = parseInteger(value);
+                    } else if ("RetMax".equals(qName)) {
+                        result.retmax = parseInteger(value);
+                    } else if ("RetStart".equals(qName)) {
+                        result.retstart = parseInteger(value);
+                    }
+                    text.setLength(0);
+                }
+
+                private int parseInteger(String value) {
+                    try {
+                        return Integer.parseInt(value);
+                    } catch (NumberFormatException e) {
+                        return 0;
+                    }
+                }
+            });
+        } catch (ParserConfigurationException e) {
+            throw new IOException("Could not configure PubMed response parser", e);
+        } catch (SAXException e) {
+            throw new IOException("Could not parse PubMed search response", e);
         }
         return result;
     }
@@ -167,10 +169,16 @@ public class MedlineFetcher implements EntryFetcher {
 
         query = query.trim().replace(';', ',');
 
-        if (query.matches("\\d+[,\\d+]*")) {
+        if (query.matches("\\d+(\\s*,\\s*\\d+)*")) {
             frame.setStatus(Globals.lang("Fetching Medline by id..."));
 
-            List<BibtexEntry> bibs = MedlineImporter.fetchMedline(query, frame);
+            List<BibtexEntry> bibs;
+            try {
+                bibs = MedlineImporter.fetchMedlineChecked(query.replaceAll("\\s+", ""), frame);
+            } catch (IOException e) {
+                frame.showMessage(Globals.lang("Could not connect to PubMed") + ": " + e.getMessage());
+                return false;
+            }
 
             if (bibs.size() == 0) {
                 frame.showMessage(Globals.lang("No references found"));
@@ -188,7 +196,13 @@ public class MedlineFetcher implements EntryFetcher {
             String searchTerm = toSearchTerm(query);
 
             // get the ids from entrez
-            SearchResult result = getIds(searchTerm, 0, 1);
+            SearchResult result;
+            try {
+                result = getIds(searchTerm, 0, 1);
+            } catch (IOException e) {
+                frame.showMessage(Globals.lang("Could not connect to PubMed") + ": " + e.getMessage());
+                return false;
+            }
 
             if (result.count == 0) {
                 frame.showMessage(Globals.lang("No references found"));
@@ -196,7 +210,7 @@ public class MedlineFetcher implements EntryFetcher {
             }
 
             int numberToFetch = result.count;
-            if (numberToFetch > PACING) {
+            if (numberToFetch > PROMPT_THRESHOLD) {
 
                 while (true) {
                     String strCount = JOptionPane.showInputDialog(Globals.lang("References found")
@@ -218,19 +232,23 @@ public class MedlineFetcher implements EntryFetcher {
                 }
             }
 
-            for (int i = 0; i < numberToFetch; i += PACING) {
+            for (int i = 0; i < numberToFetch; i += FETCH_BATCH_SIZE) {
                 if (!shouldContinue) {
                     break;
                 }
 
-                int noToFetch = Math.min(PACING, numberToFetch - i);
+                int noToFetch = Math.min(FETCH_BATCH_SIZE, numberToFetch - i);
 
                 // get the ids from entrez
-                result = getIds(searchTerm, i, noToFetch);
-
-                List<BibtexEntry> bibs = MedlineImporter.fetchMedline(result.ids, frame);
-                for (BibtexEntry entry : bibs) {
-                    dialog.addEntry(entry);
+                try {
+                    result = getIds(searchTerm, i, noToFetch);
+                    List<BibtexEntry> bibs = MedlineImporter.fetchMedlineChecked(result.ids, frame);
+                    for (BibtexEntry entry : bibs) {
+                        dialog.addEntry(entry);
+                    }
+                } catch (IOException e) {
+                    frame.showMessage(Globals.lang("Could not connect to PubMed") + ": " + e.getMessage());
+                    return false;
                 }
                 dialog.setProgress(i + noToFetch, numberToFetch);
             }

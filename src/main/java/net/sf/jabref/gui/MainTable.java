@@ -505,7 +505,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             renderer = markedRenderers[marking - 1];
         }
 
-        perfLogRenderer(rendererStartNs);
+        // perfLogRenderer(rendererStartNs);
         return renderer;
     }
 
