@@ -16,13 +16,11 @@
 package net.sf.jabref.imports;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
+import java.net.URLEncoder;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.JPanel;
 
@@ -30,16 +28,21 @@ import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.DuplicateCheck;
 import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.OutputPrinter;
+import net.sf.jabref.net.URLDownload;
 
+/**
+ * Fetches publication metadata from the DBLP publication search API.
+ *
+ * DBLP can return search results directly as BibTeX. Using that format keeps
+ * this legacy fetcher small and avoids the old multi-step HTML scraping path.
+ */
 public class DBLPFetcher implements EntryFetcher {
 
-    private final static String URL_START = "http://www.dblp.org/search/api/";
-    private final static String URL_PART1 = "?q=";
-    private final static String URL_END = "&h=1000&c=4&f=0&format=json";
+    private static final String SEARCH_URL = "https://dblp.org/search/publ/api";
+    private static final int MAX_RESULTS = 1000;
+    private static final String DBLP_UPDATED_FIELD = "dblp_updated";
 
     private volatile boolean shouldContinue = false;
-    private String query;
-    private final DBLPHelper helper = new DBLPHelper();
 
     @Override
     public void stopFetching() {
@@ -50,119 +53,97 @@ public class DBLPFetcher implements EntryFetcher {
     public boolean processQuery(String query, ImportInspector inspector,
             OutputPrinter status) {
 
-        final HashMap<String, Boolean> bibentryKnown = new HashMap<String, Boolean>();
-
-        boolean res = false;
-        this.query = query;
+        if ((query == null) || query.trim().isEmpty()) {
+            status.showMessage("Please enter a DBLP search query.");
+            return false;
+        }
 
         shouldContinue = true;
 
         try {
+            URL url = makeSearchURL(query);
+            String bibtex = new URLDownload(url)
+                    .setRequestProperty("Accept", "application/x-bibtex")
+                    .downloadToString();
 
-            String address = makeSearchURL();
-            //System.out.println(address);
-            URL url = new URL(address);
-            String page = readFromURL(url);
-
-            //System.out.println(page);
-            String[] lines = page.split("\n");
-            List<String> bibtexUrlList = new ArrayList<String>();
-            for (final String line : lines) {
-                if (line.startsWith("\"url\"")) {
-                    String addr = line.replace("\"url\":\"", "");
-                    addr = addr.substring(0, addr.length() - 2);
-                    //System.out.println("key address: " + addr);
-                    bibtexUrlList.add(addr);
-                }
+            if (!shouldContinue) {
+                return false;
             }
 
-            // we save the duplicate check threshold
-            // we need to overcome the "smart" approach of this heuristic
-            // and we will set it back afterwards, so maybe someone is happy again
-            double saveThreshold = DuplicateCheck.duplicateThreshold;
-            DuplicateCheck.duplicateThreshold = Double.MAX_VALUE;
+            Collection<BibtexEntry> entries = BibtexParser.fromString(bibtex);
+            if (entries == null) {
+                status.showMessage("Could not parse the response from DBLP.");
+                return false;
+            }
 
-            // 2014-11-08
-            // DBLP now shows the BibTeX entry using ugly HTML entities
-            // but they also offer the download of a bib file
-            // we find this in the page which we get from "url"
-            // and this bib file is then in "biburl"
-            int count = 1;
-            for (String urlStr : bibtexUrlList) {
+            addEntries(entries, inspector);
+            return true;
+
+        } catch (IOException e) {
+            status.showMessage("DBLP search failed: " + safeMessage(e));
+            return false;
+        }
+    }
+
+    private void addEntries(Collection<BibtexEntry> entries, ImportInspector inspector) {
+        Set<String> knownKeys = new HashSet<String>();
+        int total = entries.size();
+        int current = 0;
+
+        // Keep the historical DBLP behavior: results in the inspection dialog
+        // are not marked as duplicates solely by JabRef's similarity heuristic.
+        double savedThreshold = DuplicateCheck.duplicateThreshold;
+        DuplicateCheck.duplicateThreshold = Double.MAX_VALUE;
+        try {
+            for (BibtexEntry entry : entries) {
                 if (!shouldContinue) {
                     break;
                 }
 
-                final URL bibUrl = new URL(urlStr);
+                normalizeDblpMetadata(entry);
 
-                final String bibtexHTMLPage = readFromURL(bibUrl);
-
-                final String[] htmlLines = bibtexHTMLPage.split("\n");
-
-                for (final String line : htmlLines) {
-                    if (line.contains("biburl")) {
-                        int sidx = line.indexOf("{");
-                        int eidx = line.indexOf("}");
-                        // now we take everything within the curley braces
-                        String bibtexUrl = line.substring(sidx + 1, eidx);
-
-                        // we do not access dblp.uni-trier.de as they will complain
-                        bibtexUrl = bibtexUrl.replace("dblp.uni-trier.de", "www.dblp.org");
-
-                        final URL bibFileURL = new URL(bibtexUrl);
-                        //System.out.println("URL:|"+bibtexUrl+"|");
-                        final String bibtexPage = readFromURL(bibFileURL);
-
-                        Collection<BibtexEntry> bibtexEntries = BibtexParser.fromString(bibtexPage);
-
-                        for (BibtexEntry be : bibtexEntries) {
-
-                            if (!bibentryKnown.containsKey(be.getCiteKey())) {
-
-                                inspector.addEntry(be);
-                                bibentryKnown.put(be.getCiteKey(), true);
-                            }
-
-                        }
-                    }
+                String citeKey = entry.getCiteKey();
+                if ((citeKey == null) || knownKeys.add(citeKey)) {
+                    inspector.addEntry(entry);
                 }
 
-                inspector.setProgress(count, bibtexUrlList.size());
-                count++;
+                current++;
+                inspector.setProgress(current, total);
             }
-
-            DuplicateCheck.duplicateThreshold = saveThreshold;
-
-            // everything went smooth
-            res = true;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            status.showMessage(e.getMessage());
+        } finally {
+            DuplicateCheck.duplicateThreshold = savedThreshold;
         }
-
-        return res;
     }
 
-    private String readFromURL(final URL source) throws IOException {
-        final InputStream in = source.openStream();
-        final InputStreamReader ir = new InputStreamReader(in);
-        final StringBuffer sbuf = new StringBuffer();
-
-        char[] cbuf = new char[256];
-        int read;
-        while ((read = ir.read(cbuf)) != -1) {
-            sbuf.append(cbuf, 0, read);
+    /**
+     * DBLP exports its record metadata update time in the field named
+     * "timestamp". JabRef uses that field for the local time an entry was
+     * added to the bibliography, so keep the DBLP value under a provider-
+     * specific field and leave "timestamp" available for JabRef.
+     */
+    private void normalizeDblpMetadata(BibtexEntry entry) {
+        String dblpTimestamp = entry.getField("timestamp");
+        if ((dblpTimestamp == null) || dblpTimestamp.trim().isEmpty()) {
+            return;
         }
-        return sbuf.toString();
+
+        entry.setField(DBLP_UPDATED_FIELD, dblpTimestamp);
+        entry.clearField("timestamp");
     }
 
-    private String makeSearchURL() {
-        StringBuffer sb = new StringBuffer(URL_START).append(URL_PART1);
-        String cleanedQuery = helper.cleanDBLPQuery(query);
-        sb.append(cleanedQuery);
-        sb.append(URL_END);
-        return sb.toString();
+    private URL makeSearchURL(String query) throws IOException {
+        StringBuilder address = new StringBuilder(SEARCH_URL);
+        address.append("?q=").append(URLEncoder.encode(query.trim(), "UTF-8"));
+        address.append("&h=").append(MAX_RESULTS);
+        address.append("&f=0&c=0&format=bib");
+        return new URL(address.toString());
+    }
+
+    private static String safeMessage(IOException exception) {
+        String message = exception.getMessage();
+        return ((message == null) || message.trim().isEmpty())
+                ? exception.getClass().getSimpleName()
+                : message;
     }
 
     @Override
@@ -189,5 +170,4 @@ public class DBLPFetcher implements EntryFetcher {
     public JPanel getOptionsPanel() {
         return null;
     }
-
 }
