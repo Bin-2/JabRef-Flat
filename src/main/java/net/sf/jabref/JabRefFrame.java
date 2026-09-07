@@ -47,6 +47,7 @@ import net.sf.jabref.gui.*;
 import net.sf.jabref.gui.menus.help.ForkMeOnGitHubAction;
 import net.sf.jabref.help.HelpAction;
 import net.sf.jabref.help.HelpDialog;
+import net.sf.jabref.imports.CrossrefFetcher;
 import net.sf.jabref.imports.EntryFetcher;
 import net.sf.jabref.imports.GeneralFetcher;
 import net.sf.jabref.imports.ImportCustomizationDialog;
@@ -670,6 +671,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
 
         fetchersLoaded = true;
+
+        // Crossref is a built-in fetcher in this legacy branch. It is registered
+        // here because the original plugin descriptor predates Crossref support.
+        fetchers.add(new CrossrefFetcher());
+
         JabRefPlugin jabrefPlugin = JabRefPlugin.getInstance(PluginCore.getManager());
         if (jabrefPlugin != null) {
             for (EntryFetcherExtension ext : jabrefPlugin.getEntryFetcherExtensions()) {
