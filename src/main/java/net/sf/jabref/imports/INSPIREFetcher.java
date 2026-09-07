@@ -16,214 +16,158 @@
 package net.sf.jabref.imports;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Collection;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-import net.sf.jabref.BibtexDatabase;
 import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.Globals;
 import net.sf.jabref.OutputPrinter;
+import net.sf.jabref.net.URLDownload;
 
 /**
+ * Fetches literature metadata from the current INSPIRE REST API.
  *
- * This class allows to access the Slac INSPIRE database. It is just a port of
- * the original SPIRES Fetcher.
- *
- * It can either be a GeneralFetcher to pose requests to the database or fetch
- * individual entries.
- *
- * @author Fedor Bezrukov
- * @author Sheer El-Showk
- *
- * @version $Id$
- *
+ * INSPIRE can serialize search results directly as BibTeX, which lets this
+ * legacy fetcher reuse JabRef's existing BibTeX parser without HTML scraping
+ * or a JSON dependency.
  */
 public class INSPIREFetcher implements EntryFetcher {
 
-    private static final String INSPIRE_HOST = "inspirebeta.net";
+    private static final String SEARCH_URL = "https://inspirehep.net/api/literature";
+    private static final int MAX_RESULTS = 1000;
 
-    public INSPIREFetcher() {
-    }
+    // INSPIRE permits 15 requests per 5-second window. Stay slightly below
+    // that ceiling when several searches are triggered in quick succession.
+    private static final long MIN_REQUEST_INTERVAL_MS = 350L;
+    private static long lastRequestTime;
 
-    /**
-     * Construct the query URL
-     *
-     * NOTE: we truncate at 1000 returned entries but its likely INSPIRE returns
-     * fewer anyway. This shouldn't be a problem since users should probably do
-     * more specific searches.
-     *
-     * @param key The key of the OAI2 entry that the url should poitn to.
-     *
-     * @return a String denoting the query URL
-     */
-    public String constructUrl(String key) {
-        String identifier = "";
-        try {
-            identifier = URLEncoder.encode(key, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return "";
+    private volatile boolean shouldContinue;
+
+    @Override
+    public boolean processQuery(String query, ImportInspector inspector,
+            OutputPrinter status) {
+
+        if ((query == null) || query.trim().isEmpty()) {
+            status.showMessage("Please enter an INSPIRE search query.");
+            return false;
         }
-        StringBuffer sb = new StringBuffer("http://").append(INSPIRE_HOST)
-                .append("/");
-        sb.append("/search?ln=en&ln=en&p=find+");
-        //sb.append("spires/find/hep/www").append("?");
-        //sb.append("rawcmd=find+");
-        sb.append(identifier);
-        //sb.append("&action_search=Search&sf=&so=d&rm=&rg=25&sc=0&of=hx");
-        sb.append("&action_search=Search&sf=&so=d&rm=&rg=1000&sc=0&of=hx");
-        //sb.append("&FORMAT=WWWBRIEFBIBTEX&SEQUENCE=");
-        System.out.print("Inspire URL: " + sb.toString() + "\n");
-        return sb.toString();
-    }
 
-    /**
-     * Constructs a INSPIRE query url from slaccitation field
-     *
-     * @param slaccitation
-     * @return query string
-     *
-     * public static String constructUrlFromSlaccitation(String slaccitation) {
-     * String cmd = "j"; String key = slaccitation.replaceAll("^%%CITATION = ",
-     * "").replaceAll( ";%%$", ""); if (key.matches("^\\w*-\\w*[ /].*")) cmd =
-     * "eprint"; try { key = URLEncoder.encode(key, "UTF-8"); } catch
-     * (UnsupportedEncodingException e) { } StringBuffer sb = new
-     * StringBuffer("http://").append(INSPIRE_HOST) .append("/");
-     * sb.append("spires/find/hep/www").append("?");
-     * sb.append("rawcmd=find+").append(cmd).append("+"); sb.append(key); return
-     * sb.toString(); }
-     *
-     * /**
-     * Construct an INSPIRE query url from eprint field
-     *
-     * @param eprint
-     * @return query string
-     *
-     * public static String constructUrlFromEprint(String eprint) { String key =
-     * eprint.replaceAll(" [.*]$", ""); try { key = URLEncoder.encode(key,
-     * "UTF-8"); } catch (UnsupportedEncodingException e) { return ""; }
-     * StringBuffer sb = new StringBuffer("http://").append(INSPIRE_HOST)
-     * .append("/"); sb.append("spires/find/hep/www").append("?");
-     * sb.append("rawcmd=find+eprint+"); sb.append(key); return sb.toString();
-	}
-     */
-    /**
-     * Import an entry from an OAI2 archive. The BibtexEntry provided has to
-     * have the field OAI2_IDENTIFIER_FIELD set to the search string.
-     *
-     * @param key The OAI2 key to fetch from ArXiv.
-     * @return The imnported BibtexEntry or null if none.
-     */
-    private BibtexDatabase importInspireEntries(String key, OutputPrinter frame) {
-        String url = constructUrl(key);
+        shouldContinue = true;
+        status.setStatus("Fetching entries from INSPIRE");
+
         try {
-            HttpURLConnection conn = (HttpURLConnection) (new URL(url)).openConnection();
-            conn.setRequestProperty("User-Agent", "Jabref");
-            InputStream inputStream = conn.getInputStream();
+            paceRequest();
 
-            INSPIREBibtexFilterReader reader = new INSPIREBibtexFilterReader(
-                    new InputStreamReader(inputStream));
+            URL url = makeSearchURL(query);
+            String bibtex = new URLDownload(url)
+                    .setRequestProperty("Accept", "application/x-bibtex")
+                    .downloadToString("UTF-8");
 
-            ParserResult pr = BibtexParser.parse(reader);
+            if (!shouldContinue) {
+                return false;
+            }
 
-            return pr.getDatabase();
+            Collection<BibtexEntry> entries = BibtexParser.fromString(bibtex);
+            if (entries == null) {
+                status.showMessage("Could not parse the response from INSPIRE.");
+                return false;
+            }
+
+            status.setStatus("Adding fetched entries");
+            addEntries(entries, inspector);
+            return true;
+
         } catch (IOException e) {
-            frame.showMessage(Globals.lang(
-                    "An Exception ocurred while accessing '%0'", url)
-                    + "\n\n" + e.toString(), Globals.lang(getKeyName()),
-                    JOptionPane.ERROR_MESSAGE);
-        } catch (RuntimeException e) {
-            frame.showMessage(Globals.lang(
-                    "An Error occurred while fetching from INSPIRE source (%0):",
-                    new String[]{url})
-                    + "\n\n" + e.getMessage(), Globals.lang(getKeyName()),
-                    JOptionPane.ERROR_MESSAGE);
+            status.showMessage("INSPIRE search failed: " + safeMessage(e));
+            return false;
         }
+    }
+
+    private void addEntries(Collection<BibtexEntry> entries, ImportInspector inspector) {
+        int total = entries.size();
+        int current = 0;
+
+        for (BibtexEntry entry : entries) {
+            if (!shouldContinue) {
+                break;
+            }
+
+            inspector.addEntry(entry);
+            current++;
+            inspector.setProgress(current, total);
+        }
+    }
+
+    private URL makeSearchURL(String query) throws IOException {
+        StringBuilder address = new StringBuilder(SEARCH_URL);
+        address.append("?q=").append(urlEncode(query.trim()));
+        address.append("&size=").append(MAX_RESULTS);
+        address.append("&page=1&format=bibtex");
+        return new URL(address.toString());
+    }
+
+    private static synchronized void paceRequest() throws IOException {
+        long now = System.currentTimeMillis();
+        long wait = MIN_REQUEST_INTERVAL_MS - (now - lastRequestTime);
+        if (wait > 0L) {
+            try {
+                Thread.sleep(wait);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while waiting to contact INSPIRE", e);
+            }
+        }
+        lastRequestTime = System.currentTimeMillis();
+    }
+
+    private static String urlEncode(String value) throws IOException {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new IOException("UTF-8 is not available", e);
+        }
+    }
+
+    private static String safeMessage(IOException exception) {
+        String message = exception.getMessage();
+        return ((message == null) || message.trim().isEmpty())
+                ? exception.getClass().getSimpleName()
+                : message;
+    }
+
+    @Override
+    public void stopFetching() {
+        shouldContinue = false;
+    }
+
+
+    @Override
+    public String getHelpPage() {
         return null;
     }
 
-    // public void addSpiresURL(BibtexEntry entry) {
-    // String url = "http://"+spiresHost+"/spires/find/hep/www?texkey+";
-    // url = url+entry.getCiteKey();
-    // entry.setField("url", url);
-    // }
-    //
-    // public void addSpiresURLtoDatabase(BibtexDatabase db) {
-    // Iterator<BibtexEntry> iter = db.getEntries().iterator();
-    // while (iter.hasNext())
-    // addSpiresURL(iter.next());
-    // }
-
-    /*
-	 * @see net.sf.jabref.imports.EntryFetcher
-     */
-    public String getHelpPage() {
-        return "Spires.html";
-    }
-
+    @Override
     public URL getIcon() {
         return GUIGlobals.getIconUrl("www");
     }
 
+    @Override
     public String getKeyName() {
         return "INSPIRE";
     }
 
+    @Override
     public JPanel getOptionsPanel() {
-        // we have no additional options
         return null;
     }
 
+    @Override
     public String getTitle() {
         return Globals.menuTitle(getKeyName());
-    }
-
-    /*
-	 * @see net.sf.jabref.gui.ImportInspectionDialog.CallBack
-     */
-    public void cancelled() {
-    }
-
-    public void done(int entriesImported) {
-    }
-
-    public void stopFetching() {
-    }
-
-    /*
-	 * @see java.lang.Runnable
-     */
-    public boolean processQuery(String query, ImportInspector dialog,
-            OutputPrinter frame) {
-        try {
-            frame.setStatus("Fetching entries from Inspire");
-            /* query the archive and load the results into the BibtexEntry */
-            BibtexDatabase bd = importInspireEntries(query, frame);
-
-            /* addSpiresURLtoDatabase(bd); */
-            frame.setStatus("Adding fetched entries");
-            /* add the entry to the inspection dialog */
-            if (bd.getEntryCount() > 0) {
-                for (BibtexEntry entry : bd.getEntries()) {
-                    dialog.addEntry(entry);
-                }
-            }
-
-            /* update the dialogs progress bar */
-            // dialog.setProgress(i + 1, keys.length);
-            /* inform the inspection dialog, that we're done */
-        } catch (Exception e) {
-            frame.showMessage(Globals.lang("Error while fetching from Inspire: ")
-                    + e.getMessage());
-            e.printStackTrace();
-        }
-        return true;
     }
 }
