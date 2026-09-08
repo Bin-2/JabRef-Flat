@@ -48,12 +48,17 @@ import net.sf.jabref.gui.menus.help.ForkMeOnGitHubAction;
 import net.sf.jabref.help.HelpAction;
 import net.sf.jabref.help.HelpDialog;
 import net.sf.jabref.imports.CrossrefFetcher;
+import net.sf.jabref.imports.DBLPFetcher;
+import net.sf.jabref.imports.DOItoBibTeXFetcher;
 import net.sf.jabref.imports.EntryFetcher;
 import net.sf.jabref.imports.GeneralFetcher;
 import net.sf.jabref.imports.ImportCustomizationDialog;
 import net.sf.jabref.imports.ImportFormat;
 import net.sf.jabref.imports.ImportFormats;
 import net.sf.jabref.imports.ImportMenuItem;
+import net.sf.jabref.imports.INSPIREFetcher;
+import net.sf.jabref.imports.MedlineFetcher;
+import net.sf.jabref.imports.OAI2Fetcher;
 import net.sf.jabref.imports.OpenDatabaseAction;
 import net.sf.jabref.imports.ParserResult;
 import net.sf.jabref.journals.ManageJournalsAction;
@@ -681,7 +686,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             for (EntryFetcherExtension ext : jabrefPlugin.getEntryFetcherExtensions()) {
                 try {
                     EntryFetcher fetcher = ext.getEntryFetcher();
-                    if (fetcher != null) {
+                    if ((fetcher != null) && isSupportedWebSearchFetcher(fetcher)) {
                         fetchers.add(fetcher);
                     }
                 } catch (ClassCastException ex) {
@@ -690,6 +695,19 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 }
             }
         }
+    }
+
+    /**
+     * Keep the legacy Web Search panel limited to the providers maintained by
+     * this branch. Other historical fetchers may still be present for source
+     * compatibility, but are intentionally not exposed in the GUI.
+     */
+    private boolean isSupportedWebSearchFetcher(EntryFetcher fetcher) {
+        return (fetcher instanceof DOItoBibTeXFetcher)
+                || (fetcher instanceof OAI2Fetcher)
+                || (fetcher instanceof MedlineFetcher)
+                || (fetcher instanceof DBLPFetcher)
+                || (fetcher instanceof INSPIREFetcher);
     }
 
     private String getSaveIconName() {
