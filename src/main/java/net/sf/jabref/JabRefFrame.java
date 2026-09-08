@@ -46,6 +46,7 @@ import net.sf.jabref.gui.*;
 import net.sf.jabref.gui.menus.help.ForkMeOnGitHubAction;
 import net.sf.jabref.help.HelpAction;
 import net.sf.jabref.help.HelpDialog;
+import net.sf.jabref.imports.ArxivFetcher;
 import net.sf.jabref.imports.CrossrefFetcher;
 import net.sf.jabref.imports.DBLPFetcher;
 import net.sf.jabref.imports.DOItoBibTeXFetcher;
@@ -57,7 +58,6 @@ import net.sf.jabref.imports.ImportFormats;
 import net.sf.jabref.imports.ImportMenuItem;
 import net.sf.jabref.imports.INSPIREFetcher;
 import net.sf.jabref.imports.MedlineFetcher;
-import net.sf.jabref.imports.OAI2Fetcher;
 import net.sf.jabref.imports.OpenDatabaseAction;
 import net.sf.jabref.imports.ParserResult;
 import net.sf.jabref.journals.ManageJournalsAction;
@@ -674,9 +674,10 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         fetchersLoaded = true;
 
-        // Crossref is a built-in fetcher in this legacy branch. It is registered
-        // here because the original plugin descriptor predates Crossref support.
+        // Crossref and the modern arXiv search fetcher are built into this
+        // legacy branch because the original plugin descriptor predates them.
         fetchers.add(new CrossrefFetcher());
+        fetchers.add(new ArxivFetcher());
 
         JabRefPlugin jabrefPlugin = JabRefPlugin.getInstance(PluginCore.getManager());
         if (jabrefPlugin != null) {
@@ -701,7 +702,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
      */
     private boolean isSupportedWebSearchFetcher(EntryFetcher fetcher) {
         return (fetcher instanceof DOItoBibTeXFetcher)
-                || (fetcher instanceof OAI2Fetcher)
                 || (fetcher instanceof MedlineFetcher)
                 || (fetcher instanceof DBLPFetcher)
                 || (fetcher instanceof INSPIREFetcher);

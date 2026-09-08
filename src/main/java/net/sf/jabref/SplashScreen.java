@@ -67,13 +67,13 @@ public class SplashScreen extends Window {
         try {
             enableQualityRendering(g);
 
-            // Clean neutral-to-violet background.
+            // background.
             g.setPaint(new GradientPaint(
                     0, 0, new Color(252, 252, 255),
                     SPLASH_WIDTH, SPLASH_HEIGHT, new Color(225, 229, 250)));
             g.fillRect(0, 0, SPLASH_WIDTH, SPLASH_HEIGHT);
 
-            // Soft geometric waves near the bottom.
+            // geometric waves near the bottom.
             GeneralPath backWave = new GeneralPath();
             backWave.moveTo(0, 255);
             backWave.curveTo(160, 285, 285, 325, 640, 265);
@@ -92,10 +92,9 @@ public class SplashScreen extends Window {
             g.setColor(new Color(118, 126, 210, 34));
             g.fill(frontWave);
 
-            // Exact JabRef mark from the legacy SVG artwork.
+            // JabRef mark
             JabRefLogo.paint(g, 42, 72, 116, 116);
 
-            // Branding.
             g.setColor(TEXT);
             g.setFont(new Font("SansSerif", Font.BOLD, 46));
             g.drawString("JabRef", 178, 133);
@@ -128,10 +127,10 @@ public class SplashScreen extends Window {
             g.drawString("[1] Author, A.  Journal of Examples.", motifX, motifY + 118);
             g.drawString("    DOI: 10.1234/example.001", motifX, motifY + 138);
 
-            // Large watermark using the same exact JabRef mark.
+            // JabRef mark.
             JabRefLogo.paint(g, 480, 212, 145, 145, ACCENT_LIGHT, 0.08f);
 
-            // Small footer.
+            // Footer.
             g.setFont(new Font("SansSerif", Font.PLAIN, 11));
             g.setColor(new Color(73, 77, 121, 170));
             String footer = "jabref.org";
