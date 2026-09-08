@@ -69,7 +69,7 @@ public final class JabRef {
     public static JabRef singleton;
     public static RemoteListener remoteListener = null;
     public static JabRefFrame jrf;
-    public static Frame splashScreen = null;
+    public static SplashScreen splashScreen = null;
 
     boolean graphicFailure = false;
 
@@ -254,6 +254,7 @@ public final class JabRef {
         if (initialStartup && !commandmode && !cli.isDisableSplash()) {
             try {
                 splashScreen = SplashScreen.splash();
+                splashScreen.setStatus("Preparing interface...", 12);
             } catch (Throwable ex) {
                 graphicFailure = true;
                 System.err.println(Globals.lang("Unable to create graphical interface")
@@ -303,6 +304,9 @@ public final class JabRef {
                 && !cli.isShowVersion()
                 && !graphicFailure;
         if (initializeGuiTheme) {
+            if (splashScreen != null) {
+                splashScreen.setStatus("Applying interface theme...", 20);
+            }
             setLookAndFeel();
         } else {
             // Non-GUI and later remote invocations still require an initialized
@@ -315,6 +319,9 @@ public final class JabRef {
 
         if (!cli.isBlank()
                 && (cli.getLeftOver().length > 0)) {
+            if (splashScreen != null) {
+                splashScreen.setStatus("Opening bibliography...", 35);
+            }
             for (String aLeftOver : cli.getLeftOver()) {
                 // Leftover arguments that have a "bib" extension are interpreted as
                 // bib files to open. Other files, and files that could not be opened
@@ -750,6 +757,9 @@ public final class JabRef {
         // SwingTracing.install(); //*******************************************
         // If the option is enabled, open the last edited databases, if any.
         if (!cli.isBlank() && Globals.prefs.getBoolean("openLastEdited") && (Globals.prefs.get("lastEdited") != null)) {
+            if (splashScreen != null) {
+                splashScreen.setStatus("Opening recent bibliographies...", 48);
+            }
             // How to handle errors in the databases to open?
             String[] names = Globals.prefs.getStringArray("lastEdited");
             lastEdLoop:
@@ -780,15 +790,24 @@ public final class JabRef {
             }
         }
 
+        if (splashScreen != null) {
+            splashScreen.setStatus("Preparing interface...", 70);
+        }
         GUIGlobals.init();
         GUIGlobals.CURRENTFONT
                 = new Font(Globals.prefs.get("fontFamily"), Globals.prefs.getInt("fontStyle"),
                         Globals.prefs.getInt("fontSize"));
 
         //Util.pr(": Initializing frame");
+        if (splashScreen != null) {
+            splashScreen.setStatus("Creating main window...", 82);
+        }
         jrf = new JabRefFrame();
 
         // Add all loaded databases to the frame:
+        if (splashScreen != null) {
+            splashScreen.setStatus("Loading entries...", 90);
+        }
         boolean first = true;
         List<File> postponed = new ArrayList<>();
         List<ParserResult> failed = new ArrayList<>();
@@ -829,6 +848,7 @@ public final class JabRef {
 
         if (splashScreen
                 != null) {// do this only if splashscreen was actually created
+            splashScreen.setStatus("Ready", 100);
             splashScreen.dispose();
             splashScreen = null;
         }

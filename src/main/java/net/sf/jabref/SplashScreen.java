@@ -15,83 +15,212 @@
  */
 package net.sf.jabref;
 
-//import javax.swing.*;
+import java.awt.Color;
 import java.awt.EventQueue;
-import java.awt.Frame;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.MediaTracker;
-import java.awt.Toolkit;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.awt.Frame;
 import java.awt.Window;
-import java.net.URL;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
 
 /**
- * <p>
- * Title: </p>
- * <p>
- * Description: </p>
- * <p>
- * Copyright: Copyright (c) 2003</p>
- * <p>
- * Company: </p>
+ * Lightweight startup splash screen.
  *
- * @author not attributable
- * @version 1.0
+ * The background is painted directly with Java2D.
  */
 public class SplashScreen extends Window {
 
-    private Image splashImage;
-    private boolean paintCalled = false;
+    private static final int SPLASH_WIDTH = 640;
+    private static final int SPLASH_HEIGHT = 360;
 
-    public SplashScreen(Frame owner) {
-        super(owner);
-        URL imageURL = SplashScreen.class.getResource("/images/splash.png");
-        splashImage = Toolkit.getDefaultToolkit().createImage(imageURL);
+    private static final Color TEXT = new Color(28, 31, 54);
+    private static final Color MUTED_TEXT = new Color(91, 96, 125);
+    private static final Color ACCENT = new Color(77, 73, 150);
+    private static final Color ACCENT_LIGHT = new Color(112, 108, 193);
+    private final BufferedImage background;
 
-        // Load the image
-        MediaTracker mt = new MediaTracker(this);
-        mt.addImage(splashImage, 0);
+    private volatile String status = "Starting JabRef...";
+    private volatile int progress = 8;
+    private boolean paintCalled;
+
+    public SplashScreen() {
+        // No hidden owner Frame is required. Keeping the splash ownerless avoids
+        // recursive AWT disposal of an owner and its owned splash window.
+        super((Frame) null);
+
+        setSize(SPLASH_WIDTH, SPLASH_HEIGHT);
+        setLocationRelativeTo(null);
+        background = createBackground();
+    }
+
+    private BufferedImage createBackground() {
+        BufferedImage image = new BufferedImage(
+                SPLASH_WIDTH, SPLASH_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
         try {
-            mt.waitForID(0);
-        } catch (InterruptedException ignored) {
+            enableQualityRendering(g);
+
+            // Clean neutral-to-violet background.
+            g.setPaint(new GradientPaint(
+                    0, 0, new Color(252, 252, 255),
+                    SPLASH_WIDTH, SPLASH_HEIGHT, new Color(225, 229, 250)));
+            g.fillRect(0, 0, SPLASH_WIDTH, SPLASH_HEIGHT);
+
+            // Soft geometric waves near the bottom.
+            GeneralPath backWave = new GeneralPath();
+            backWave.moveTo(0, 255);
+            backWave.curveTo(160, 285, 285, 325, 640, 265);
+            backWave.lineTo(640, 360);
+            backWave.lineTo(0, 360);
+            backWave.closePath();
+            g.setColor(new Color(165, 173, 231, 48));
+            g.fill(backWave);
+
+            GeneralPath frontWave = new GeneralPath();
+            frontWave.moveTo(0, 300);
+            frontWave.curveTo(185, 330, 390, 348, 640, 305);
+            frontWave.lineTo(640, 360);
+            frontWave.lineTo(0, 360);
+            frontWave.closePath();
+            g.setColor(new Color(118, 126, 210, 34));
+            g.fill(frontWave);
+
+            // Exact JabRef mark from the legacy SVG artwork.
+            JabRefLogo.paint(g, 42, 72, 116, 116);
+
+            // Branding.
+            g.setColor(TEXT);
+            g.setFont(new Font("SansSerif", Font.BOLD, 46));
+            g.drawString("JabRef", 178, 133);
+
+            g.setColor(MUTED_TEXT);
+            g.setFont(new Font("SansSerif", Font.PLAIN, 20));
+            g.drawString("Reference Manager", 180, 163);
+
+            String version = getVersionLabel();
+            g.setFont(new Font("SansSerif", Font.BOLD, 14));
+            FontMetrics versionMetrics = g.getFontMetrics();
+            int versionWidth = versionMetrics.stringWidth(version) + 28;
+            Shape versionPill = new RoundRectangle2D.Double(
+                    180, 180, versionWidth, 30, 30, 30);
+            g.setColor(new Color(97, 91, 181, 28));
+            g.fill(versionPill);
+            g.setColor(TEXT);
+            g.drawString(version, 194, 201);
+
+            // Very subtle bibliography motif. Decorative only.
+            g.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            g.setColor(new Color(83, 92, 161, 30));
+            int motifX = 420;
+            int motifY = 70;
+            g.drawString("@article{", motifX, motifY);
+            g.drawString("  author = {Author, A.},", motifX + 8, motifY + 20);
+            g.drawString("  title  = {An Example Title},", motifX + 8, motifY + 40);
+            g.drawString("  year   = {2026}", motifX + 8, motifY + 60);
+            g.drawString("}", motifX, motifY + 80);
+            g.drawString("[1] Author, A.  Journal of Examples.", motifX, motifY + 118);
+            g.drawString("    DOI: 10.1234/example.001", motifX, motifY + 138);
+
+            // Large watermark using the same exact JabRef mark.
+            JabRefLogo.paint(g, 480, 212, 145, 145, ACCENT_LIGHT, 0.08f);
+
+            // Small footer.
+            g.setFont(new Font("SansSerif", Font.PLAIN, 11));
+            g.setColor(new Color(73, 77, 121, 170));
+            String footer = "jabref.org";
+            int footerWidth = g.getFontMetrics().stringWidth(footer);
+            g.drawString(footer, SPLASH_WIDTH - footerWidth - 22, SPLASH_HEIGHT - 24);
+        } finally {
+            g.dispose();
+        }
+        return image;
+    }
+
+    private static String getVersionLabel() {
+        String version = Globals.VERSION;
+        if ((version == null) || version.trim().isEmpty()) {
+            return "2.11 development";
+        }
+        return version.trim();
+    }
+
+    private static void enableQualityRendering(Graphics2D g) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+    }
+
+    /**
+     * Update the startup phase shown by the splash.
+     *
+     * @param text status text to display
+     * @param percentage approximate startup progress, 0..100
+     */
+    public void setStatus(String text, int percentage) {
+        if (text != null) {
+            status = text;
+        }
+        progress = Math.max(0, Math.min(100, percentage));
+
+        if (EventQueue.isDispatchThread()) {
+            repaint();
+        } else {
+            EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    repaint();
+                }
+            });
+        }
+    }
+
+    @Override
+    public void update(Graphics g) {
+        // Repaint the complete cached background and the small dynamic overlay.
+        // This avoids the default clear-before-paint flicker of AWT Window.
+        paint(g);
+    }
+
+    @Override
+    public void paint(Graphics graphics) {
+        Graphics2D g = (Graphics2D) graphics.create();
+        try {
+            enableQualityRendering(g);
+            g.drawImage(background, 0, 0, this);
+
+            // Dynamic startup status.
+            g.setFont(new Font("SansSerif", Font.PLAIN, 15));
+            g.setColor(TEXT);
+            g.drawString(status, 44, 287);
+
+            int barX = 44;
+            int barY = 303;
+            int barWidth = 310;
+            int barHeight = 6;
+
+            g.setColor(new Color(77, 73, 150, 28));
+            g.fillRoundRect(barX, barY, barWidth, barHeight, barHeight, barHeight);
+
+            int filledWidth = Math.max(0, (barWidth * progress) / 100);
+            if (filledWidth > 0) {
+                g.setColor(ACCENT);
+                g.fillRoundRect(barX, barY, filledWidth, barHeight,
+                        barHeight, barHeight);
+            }
+        } finally {
+            g.dispose();
         }
 
-        // Center the window on the screen.
-        int imgWidth = splashImage.getWidth(this);
-        int imgHeight = splashImage.getHeight(this);
-
-        setSize(imgWidth, imgHeight);
-        setLocationRelativeTo(null);
-
-        /* Dimension screenDim = Toolkit.getDefaultToolkit().getScreenSize();
-        setLocation(
-            (screenDim.width - imgWidth) / 2,
-            (screenDim.height - imgHeight) / 2
-        );
-         */
-    }
-
-    /**
-     * Updates the display area of the window.
-     */
-    public void update(Graphics g) {
-        // Note: Since the paint method is going to draw an
-        // image that covers the complete area of the component we
-        // do not fill the component with its background color
-        // here. This avoids flickering.
-
-//        g.setColor(getForeground());
-//        paint(g);
-    }
-
-    /**
-     * Paints the image on the window.
-     */
-    public void paint(Graphics g) {
-        g.drawImage(splashImage, 0, 0, this);
-
-        // Notify method splash that the window
-        // has been painted.
         if (!paintCalled) {
             paintCalled = true;
             synchronized (this) {
@@ -101,36 +230,29 @@ public class SplashScreen extends Window {
     }
 
     /**
-     * Constructs and displays a SplashWindow.<p>
-     * This method is useful for startup splashs. Dispose the returned frame to
-     * get rid of the splash window.<p>
+     * Constructs and displays the splash window.
      *
-     * @return Returns the frame that owns the SplashWindow.
+     * @return the splash window, which should be disposed when startup ends
      */
-    public static Frame splash() {
-        Frame f = new Frame();
-        SplashScreen w = new SplashScreen(f);
+    public static SplashScreen splash() {
+        SplashScreen splash = new SplashScreen();
 
-        // Show the window.
-        w.setVisible(true);
-        w.toFront();
+        splash.setVisible(true);
+        splash.toFront();
 
-        // Note: To make sure the user gets a chance to see the
-        // splash window we wait until its paint method has been
-        // called at least once by the AWT event dispatcher thread.
-        // sebwills adds: However, just in case the paint method never gets called
-        // (e.g. if the splashscreen is completely obscured by an 'always on top'
-        // window of some other application), we time-out after 5 seconds.
+        // Ensure the splash has been painted before startup continues. Keep the
+        // existing timeout so an obscured window cannot block startup forever.
         if (!EventQueue.isDispatchThread()) {
-            synchronized (w) {
-                if (!w.paintCalled) {
+            synchronized (splash) {
+                if (!splash.paintCalled) {
                     try {
-                        w.wait(3000);
+                        splash.wait(3000);
                     } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
                     }
                 }
             }
         }
-        return f;
+        return splash;
     }
 }

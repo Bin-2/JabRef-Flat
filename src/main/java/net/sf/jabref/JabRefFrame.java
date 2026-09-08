@@ -23,7 +23,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
@@ -179,9 +178,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             contents = new HelpAction("Help contents", helpDiag,
                     GUIGlobals.helpContents, Globals.lang("Help contents"),
                     GUIGlobals.getIconUrl("helpContents")),
-            about = new HelpAction("About JabRef", helpDiag,
-                    GUIGlobals.aboutPage, Globals.lang("About JabRef"),
-                    GUIGlobals.getIconUrl("about")),
+            about = new AboutAction(),
             editEntry = new GeneralAction("edit", "Edit entry",
                     Globals.lang("Edit entry"),
                     prefs.getKey("Edit entry")),
@@ -773,14 +770,13 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
     }
 
-    AboutAction aboutAction = new AboutAction();
-
     class AboutAction
             extends AbstractAction {
 
         public AboutAction() {
             super(Globals.lang("About JabRef"));
-
+            putValue(SMALL_ICON, GUIGlobals.getMenuIcon("about"));
+            putValue(SHORT_DESCRIPTION, Globals.lang("About JabRef"));
         }
 
         @Override
@@ -789,41 +785,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
     }
 
-    // General info dialog.  The MacAdapter calls this method when "About"
+    // General info dialog. The MacAdapter calls this method when "About"
     // is selected from the application menu.
     public void about() {
-        JDialog _about = new JDialog(JabRefFrame.this, Globals.lang("About JabRef"),
-                true);
-        JEditorPane jp = new JEditorPane();
-        JScrollPane sp = new JScrollPane(jp, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        jp.setEditable(false);
-        try {
-            jp.setPage(GUIGlobals.class.getResource("/help/About.html"));//GUIGlobals.aboutPage);
-            // We need a hyperlink listener to be able to switch to the license
-            // terms and back.
-            jp.addHyperlinkListener(new javax.swing.event.HyperlinkListener() {
-                @Override
-                public void hyperlinkUpdate(javax.swing.event.HyperlinkEvent e) {
-                    if (e.getEventType()
-                            == javax.swing.event.HyperlinkEvent.EventType.ACTIVATED) {
-                        try {
-                            ((JEditorPane) e.getSource()).setPage(e.getURL());
-                        } catch (IOException ignored) {
-                        }
-                    }
-                }
-            });
-            _about.getContentPane().add(sp);
-            _about.setSize(GUIGlobals.aboutSize);
-            Util.placeDialog(_about, JabRefFrame.this);
-            _about.setVisible(true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(JabRefFrame.this, "Could not load file 'About.html'",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
-
+        AboutDialog dialog = new AboutDialog(JabRefFrame.this);
+        dialog.setVisible(true);
     }
 
     // General preferences dialog.  The MacAdapter calls this method when "Preferences..."

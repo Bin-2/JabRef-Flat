@@ -40,7 +40,7 @@ import java.io.InputStreamReader;
 public class TBuildInfo {
 
     private String BUILD_DATE = "";
-    private String BUILD_VERSION = "devel - 1st edition family";
+    private String BUILD_VERSION = "2.11 development";
     private String BUILD_NUMBER = "1";
 
 //  private TBuilderInfo runtime = new TBuildInfo() ;
