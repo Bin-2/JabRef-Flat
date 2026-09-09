@@ -67,11 +67,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.Icon;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
@@ -584,7 +584,7 @@ public class TextInputDialog
             extends BasicAction {
 
         public PasteAction() {
-            super("Paste", "Paste from clipboard", GUIGlobals.getIconUrl("paste"));
+            super("Paste", "Paste from clipboard", GUIGlobals.getMenuIcon("paste"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -609,7 +609,7 @@ public class TextInputDialog
             extends BasicAction {
 
         public LoadAction() {
-            super("Open", "Open_file", GUIGlobals.getIconUrl("open"));
+            super("Open", "Open_file", GUIGlobals.getMenuIcon("open"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -636,7 +636,7 @@ public class TextInputDialog
             extends BasicAction {
 
         public ClearAction() {
-            super("Clear", "Clear_inputarea", GUIGlobals.getIconUrl("new"));
+            super("Clear", "Clear_inputarea", GUIGlobals.getMenuIcon("new"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -781,13 +781,13 @@ class PopupListener
 abstract class BasicAction
         extends AbstractAction {
 
-    public BasicAction(String text, String description, URL icon) {
-        super(Globals.lang(text), new ImageIcon(icon));
+    public BasicAction(String text, String description, Icon icon) {
+        super(Globals.lang(text), icon);
         putValue(SHORT_DESCRIPTION, Globals.lang(description));
     }
 
-    public BasicAction(String text, String description, URL icon, KeyStroke key) {
-        super(Globals.lang(text), new ImageIcon(icon));
+    public BasicAction(String text, String description, Icon icon, KeyStroke key) {
+        super(Globals.lang(text), icon);
         putValue(ACCELERATOR_KEY, key);
         putValue(SHORT_DESCRIPTION, Globals.lang(description));
     }

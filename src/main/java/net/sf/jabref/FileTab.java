@@ -72,7 +72,7 @@ public class FileTab extends JPanel implements PrefsTab {
         _frame = frame;
 
         HelpAction autosaveHelp = new HelpAction(frame.helpDiag, GUIGlobals.autosaveHelp, "Help",
-                GUIGlobals.getIconUrl("helpSmall"));
+                GUIGlobals.getMenuIcon("helpSmall"));
         openLast = new JCheckBox(Globals.lang("Open last edited databases at startup"));
         backup = new JCheckBox(Globals.lang("Backup old file when saving"));
         autoSave = new JCheckBox(Globals.lang("Autosave"));

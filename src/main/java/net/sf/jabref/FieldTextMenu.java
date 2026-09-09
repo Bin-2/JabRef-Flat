@@ -35,10 +35,9 @@ package net.sf.jabref;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.net.URL;
 
+import javax.swing.Icon;
 import javax.swing.AbstractAction;
-import javax.swing.ImageIcon;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.text.JTextComponent;
@@ -111,13 +110,13 @@ public class FieldTextMenu implements MouseListener {
 // ---------------------------------------------------------------------------
     abstract class BasicAction extends AbstractAction {
 
-        public BasicAction(String text, String description, URL icon) {
-            super(Globals.lang(text), new ImageIcon(icon));
+        public BasicAction(String text, String description, Icon icon) {
+            super(Globals.lang(text), icon);
             putValue(SHORT_DESCRIPTION, Globals.lang(description));
         }
 
-        public BasicAction(String text, String description, URL icon, KeyStroke key) {
-            super(Globals.lang(text), new ImageIcon(icon));
+        public BasicAction(String text, String description, Icon icon, KeyStroke key) {
+            super(Globals.lang(text), icon);
             putValue(ACCELERATOR_KEY, key);
             putValue(SHORT_DESCRIPTION, Globals.lang(description));
         }
@@ -151,7 +150,7 @@ public class FieldTextMenu implements MouseListener {
 
         public PasteAction() {
             super("Paste from clipboard", "Paste from clipboard",
-                    GUIGlobals.getIconUrl("paste"));
+                    GUIGlobals.getMenuIcon("paste"));
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -173,7 +172,7 @@ public class FieldTextMenu implements MouseListener {
     class CopyAction extends BasicAction {
 
         public CopyAction() {
-            super("Copy to clipboard", "Copy to clipboard", GUIGlobals.getIconUrl("copy"));
+            super("Copy to clipboard", "Copy to clipboard", GUIGlobals.getMenuIcon("copy"));
         }
 
         public void actionPerformed(ActionEvent e) {

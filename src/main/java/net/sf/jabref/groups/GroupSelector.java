@@ -136,7 +136,7 @@ public class GroupSelector extends SidePaneComponent implements
      *
      */
     public GroupSelector(JabRefFrame frame, SidePaneManager manager) {
-        super(manager, GUIGlobals.getIconUrl("toggleGroups"), Globals.lang("Groups"));
+        super(manager, GUIGlobals.getMenuIcon("toggleGroups"), Globals.lang("Groups"));
         this.groupsRoot = new GroupTreeNode(new AllEntriesGroup());
 
         this.manager = manager;

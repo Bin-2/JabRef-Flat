@@ -25,7 +25,6 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -162,8 +161,8 @@ public class DragDropPane extends JTabbedPane {
 
         public MarkerPane() {
             setOpaque(false);
-            markerImg = Toolkit.getDefaultToolkit().getImage(
-                    GUIGlobals.getIconUrl("dragNdropArrow")); // Sets the marker image
+            markerImg = GUIGlobals.iconToImage(
+                    GUIGlobals.getIcon("dragNdropArrow", 32, 32));
         }
 
         @Override

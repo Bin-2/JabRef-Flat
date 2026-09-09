@@ -177,7 +177,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     prefs.getKey("Help")),
             contents = new HelpAction("Help contents", helpDiag,
                     GUIGlobals.helpContents, Globals.lang("Help contents"),
-                    GUIGlobals.getIconUrl("helpContents")),
+                    GUIGlobals.getMenuIcon("helpContents")),
             about = new AboutAction(),
             editEntry = new GeneralAction("edit", "Edit entry",
                     Globals.lang("Edit entry"),
@@ -195,11 +195,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             saveSelectedAs = new GeneralAction("saveSelectedAs",
                     "Save selected as ...",
                     Globals.lang("Save selected as ..."),
-                    GUIGlobals.getIconUrl("saveSelectedAsClean")),
+                    GUIGlobals.getMenuIcon("saveSelectedAs")),
             saveSelectedAsPlain = new GeneralAction("saveSelectedAsPlain",
                     "Save selected as plain BibTeX ...",
                     Globals.lang("Save selected as plain BibTeX ..."),
-                    GUIGlobals.getIconUrl("saveSelectedAsPlainClean")),
+                    GUIGlobals.getMenuIcon("saveSelectedAsPlain")),
             exportAll = ExportFormats.getExportAction(this, false),
             exportSelected = ExportFormats.getExportAction(this, true),
             importCurrent = ImportFormats.getImportAction(this, false),
@@ -217,9 +217,9 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     "left", prefs.getKey("Back")),
             delete = new GeneralAction("delete", "Delete", Globals.lang("Delete"),
                     prefs.getKey("Delete")),
-            copy = new EditAction("copy", GUIGlobals.getIconUrl("copy")),
-            paste = new EditAction("paste", GUIGlobals.getIconUrl("paste")),
-            cut = new EditAction("cut", GUIGlobals.getIconUrl("cut")),
+            copy = new EditAction("copy", GUIGlobals.getMenuIcon("copy")),
+            paste = new EditAction("paste", GUIGlobals.getMenuIcon("paste")),
+            cut = new EditAction("cut", GUIGlobals.getMenuIcon("cut")),
             mark = new GeneralAction("markEntries", "Mark entries",
                     Globals.lang("Mark entries"),
                     prefs.getKey("Mark entries")),
@@ -262,7 +262,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             mergeDatabaseAction = new GeneralAction("mergeDatabase",
                     "Append database",
                     Globals.lang("Append contents from a BibTeX database into the currently viewed database"),
-                    GUIGlobals.getIconUrl("open")),
+                    GUIGlobals.getMenuIcon("open")),
             selectAll = new GeneralAction("selectAll", "Select all",
                     prefs.getKey("Select all")),
             replaceAll = new GeneralAction("replaceAll", "Replace string",
@@ -287,11 +287,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             toggleHighlightAny = new GeneralAction("toggleHighlightGroupsMatchingAny",
                     "Highlight groups matching any selected entry",
                     Globals.lang("Highlight groups matching any selected entry"),
-                    GUIGlobals.getIconUrl("groupsHighlightAny")),
+                    GUIGlobals.getMenuIcon("groupsHighlightAny")),
             toggleHighlightAll = new GeneralAction("toggleHighlightGroupsMatchingAll",
                     "Highlight groups matching all selected entries",
                     Globals.lang("Highlight groups matching all selected entries"),
-                    GUIGlobals.getIconUrl("groupsHighlightAll")),
+                    GUIGlobals.getMenuIcon("groupsHighlightAll")),
             switchPreview = new GeneralAction("switchPreview",
                     "Switch preview layout",
                     prefs.getKey("Switch preview layout")),
@@ -356,17 +356,17 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             test = new GeneralAction("test", "Test"),
             dbConnect = new GeneralAction("dbConnect", "Connect to external SQL database",
                     Globals.lang("Connect to external SQL database"),
-                    GUIGlobals.getIconUrl("dbConnect")),
+                    GUIGlobals.getMenuIcon("dbConnect")),
             dbExport = new GeneralAction("dbExport", "Export to external SQL database",
                     Globals.lang("Export to external SQL database"),
-                    GUIGlobals.getIconUrl("dbExport")),
+                    GUIGlobals.getMenuIcon("dbExport")),
             Cleanup = new GeneralAction("Cleanup", "Cleanup entries",
                     Globals.lang("Cleanup entries"),
                     prefs.getKey("Cleanup"),
                     ("cleanupentries")),
             mergeEntries = new GeneralAction("mergeEntries", "Merge entries",
                     Globals.lang("Merge entries"),
-                    GUIGlobals.getIconUrl("mergeentries")),
+                    GUIGlobals.getMenuIcon("mergeentries")),
             dbImport = new DbImportAction(this).getAction(),
             //downloadFullText = new GeneralAction("downloadFullText", "Look up full text document",
             //        Globals.lang("Follow DOI or URL link and try to locate PDF full text document")),
@@ -1178,9 +1178,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         private String command;
 
-        public GeneralAction(String command, String text, String description, URL icon) {
-            // Always call super() first with null icon
-            super((ImageIcon) null);
+        public GeneralAction(String command, String text, String description, Icon icon) {
+            super();
             this.command = command;
 
             // Set the icon afterwards
@@ -1188,7 +1187,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             if (actionIcon != null) {
                 putValue(Action.SMALL_ICON, actionIcon);
             } else if (icon != null) {
-                putValue(Action.SMALL_ICON, new ImageIcon(icon));
+                putValue(Action.SMALL_ICON, icon);
             }
 
             putValue(NAME, text);
@@ -3138,8 +3137,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         private final String command;
 
-        public EditAction(String command, URL icon) {
-            super(new ImageIcon(icon));
+        public EditAction(String command, Icon icon) {
+            super(icon);
             this.command = command;
             String nName = Util.nCase(command);
             putValue(NAME, nName);

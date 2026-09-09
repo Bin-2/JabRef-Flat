@@ -157,7 +157,7 @@ public class OpenOfficePanel extends AbstractWorker implements SidePanePlugin, P
     public void init(JabRefFrame frame, SidePaneManager manager) {
         OpenOfficePanel.frame = frame;
         this.manager = manager;
-        comp = new OOPanel(manager, GUIGlobals.getIconUrl("openoffice"), Globals.lang("OpenOffice"));
+        comp = new OOPanel(manager, GUIGlobals.getMenuIcon("openoffice"), Globals.lang("OpenOffice"));
         try {
             initPanel();
             manager.register(getName(), comp);
@@ -981,8 +981,8 @@ public class OpenOfficePanel extends AbstractWorker implements SidePanePlugin, P
 
     class OOPanel extends SidePaneComponent {
 
-        public OOPanel(SidePaneManager sidePaneManager, URL url, String s) {
-            super(sidePaneManager, url, s);
+        public OOPanel(SidePaneManager sidePaneManager, Icon icon, String s) {
+            super(sidePaneManager, icon, s);
         }
 
         public String getName() {

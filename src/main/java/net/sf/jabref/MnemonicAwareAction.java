@@ -17,6 +17,7 @@ package net.sf.jabref;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 /**
@@ -32,6 +33,10 @@ public abstract class MnemonicAwareAction extends AbstractAction {
     }
 
     public MnemonicAwareAction(ImageIcon icon) {
+        this((Icon) icon);
+    }
+
+    public MnemonicAwareAction(Icon icon) {
         initializeName();
         putValue(SMALL_ICON, icon);
     }

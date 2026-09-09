@@ -69,7 +69,7 @@ public class GenFieldsCustomizer extends JDialog {
         parent = frame;
         //this.diag = diag;
         help = new HelpAction(parent.helpDiag, GUIGlobals.generalFieldsHelp,
-                "Help", GUIGlobals.getIconUrl("helpSmall"));
+                "Help", GUIGlobals.getMenuIcon("helpSmall"));
         helpBut = new JButton(Globals.lang("Help"));
         helpBut.addActionListener(help);
         try {

@@ -20,7 +20,6 @@ import java.awt.event.ActionEvent;
 import java.net.URL;
 
 import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.KeyStroke;
 
@@ -41,14 +40,14 @@ public class HelpAction extends MnemonicAwareAction {
     private String helpFile;
 
     public HelpAction(HelpDialog diag, String helpFile) {
-        super(getHelpImageIcon());
+        super(getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
         putValue(NAME, "Help");
         this.diag = diag;
         this.helpFile = helpFile;
     }
 
     public HelpAction(HelpDialog diag, String helpFile, String tooltip) {
-        super(getHelpImageIcon());
+        super(getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
         putValue(NAME, "Help");
         putValue(SHORT_DESCRIPTION, Globals.lang(tooltip));
         this.diag = diag;
@@ -56,7 +55,11 @@ public class HelpAction extends MnemonicAwareAction {
     }
 
     public HelpAction(HelpDialog diag, String helpFile, String tooltip, URL iconFile) {
-        super(getHelpImageIcon()); // Use SVG icon converted to ImageIcon
+        this(diag, helpFile, tooltip, getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
+    }
+
+    public HelpAction(HelpDialog diag, String helpFile, String tooltip, Icon icon) {
+        super(icon != null ? icon : getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
         putValue(NAME, "Help");
         putValue(SHORT_DESCRIPTION, Globals.lang(tooltip));
         this.diag = diag;
@@ -64,7 +67,7 @@ public class HelpAction extends MnemonicAwareAction {
     }
 
     public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip) {
-        super(getHelpImageIcon());
+        super(getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
         putValue(NAME, title);
         putValue(SHORT_DESCRIPTION, Globals.lang(tooltip));
         this.diag = diag;
@@ -72,7 +75,7 @@ public class HelpAction extends MnemonicAwareAction {
     }
 
     public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip, KeyStroke key) {
-        super(getHelpImageIcon());
+        super(getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
         putValue(NAME, title);
         putValue(SHORT_DESCRIPTION, Globals.lang(tooltip));
         putValue(ACCELERATOR_KEY, key);
@@ -81,44 +84,15 @@ public class HelpAction extends MnemonicAwareAction {
     }
 
     public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip, URL iconFile) {
-        super(getHelpImageIcon()); // Use SVG icon converted to ImageIcon
+        this(title, diag, helpFile, tooltip, getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
+    }
+
+    public HelpAction(String title, HelpDialog diag, String helpFile, String tooltip, Icon icon) {
+        super(icon != null ? icon : getHelpIcon(GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE));
         putValue(NAME, title);
         putValue(SHORT_DESCRIPTION, Globals.lang(tooltip));
         this.diag = diag;
         this.helpFile = helpFile;
-    }
-
-    /**
-     * Get SVG help icon converted to ImageIcon for MnemonicAwareAction
-     * compatibility
-     */
-    private static ImageIcon getHelpImageIcon() {
-        // First try to get SVG icon and convert to ImageIcon
-        Icon svgIcon = GUIGlobals.getIcon("help", GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE);
-        if (svgIcon != null) {
-            return convertIconToImageIcon(svgIcon);
-        } else {
-            // Fallback to legacy PNG icon
-            System.err.println("Warning: SVG help icon not found, falling back to legacy icon");
-            return GUIGlobals.getImageIcon("help");
-        }
-    }
-
-    /**
-     * Convert any Icon to ImageIcon for compatibility with MnemonicAwareAction
-     */
-    private static ImageIcon convertIconToImageIcon(Icon icon) {
-        if (icon == null) {
-            return null;
-        }
-
-        if (icon instanceof ImageIcon) {
-            return (ImageIcon) icon;
-        } else {
-            // Convert generic Icon to ImageIcon
-            java.awt.Image image = GUIGlobals.iconToImage(icon);
-            return image != null ? new ImageIcon(image) : null;
-        }
     }
 
     /**
@@ -130,10 +104,9 @@ public class HelpAction extends MnemonicAwareAction {
             return svgIcon;
         } else {
             // Fallback to legacy method if SVG not available
-            ImageIcon legacyIcon = GUIGlobals.getImageIcon("help");
+            javax.swing.ImageIcon legacyIcon = GUIGlobals.getImageIcon("help");
             if (legacyIcon != null) {
-                // Scale the legacy icon to the requested size
-                return new ImageIcon(legacyIcon.getImage().getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH));
+                return new javax.swing.ImageIcon(legacyIcon.getImage().getScaledInstance(width, height, java.awt.Image.SCALE_SMOOTH));
             }
             return null;
         }

@@ -97,9 +97,9 @@ public class GeneralTab extends JPanel implements PrefsTab {
         timeStampFormat = new JTextField();
         timeStampField = new JTextField();
         HelpAction ownerHelp = new HelpAction(frame.helpDiag, GUIGlobals.ownerHelp,
-                "Help", GUIGlobals.getIconUrl("helpSmall"));
+                "Help", GUIGlobals.getMenuIcon("helpSmall"));
         HelpAction timeStampHelp = new HelpAction(frame.helpDiag, GUIGlobals.timeStampHelp, "Help",
-                GUIGlobals.getIconUrl("helpSmall"));
+                GUIGlobals.getMenuIcon("helpSmall"));
         inspectionWarnDupli = new JCheckBox(Globals.lang("Warn about unresolved duplicates when closing inspection window"));
 
         Insets marg = new Insets(0, 12, 3, 0);

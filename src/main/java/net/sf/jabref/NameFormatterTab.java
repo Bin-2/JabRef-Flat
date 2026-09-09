@@ -196,7 +196,7 @@ public class NameFormatterTab extends JPanel implements PrefsTab {
         tlb.add(new AddRowAction());
         tlb.add(new DeleteRowAction());
         tlb.add(new HelpAction(helpDialog, GUIGlobals.nameFormatterHelp,
-                "Help on Name Formatting", GUIGlobals.getIconUrl("helpSmall")));
+                "Help on Name Formatting", GUIGlobals.getMenuIcon("helpSmall")));
 
         tabPanel.add(tlb, BorderLayout.EAST);
 
