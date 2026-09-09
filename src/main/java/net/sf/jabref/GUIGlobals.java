@@ -150,7 +150,7 @@ public class GUIGlobals {
 
     /**
      * MAIN METHOD: Get Icon for general UI use (preferred for buttons, menus,
-     * etc.) Supports both SVG and legacy PNG/GIF icons
+     * etc.). Loads the resource format declared by the active icon theme.
      */
     /**
      * Get icon with automatic size detection based on context
@@ -188,35 +188,33 @@ public class GUIGlobals {
     }
 
     /**
-     * Get Icon with custom dimensions - FIXED PATH RESOLUTION Safe method to
-     * get Icon - handles missing SVG files properly
+     * Get an icon with custom dimensions. The resource type declared in
+     * Icons.properties is authoritative; SVG resources are never passed to
+     * ImageIcon as a fallback.
      */
     public static Icon getIcon(String name, int width, int height) {
-        // First, try to get the PNG path from the properties mapping
-        String pngPath = iconMap.get(name);
-        if (pngPath == null) {
-            // System.err.println("No mapping found for icon: " + name);
-            return getLegacyIcon(name);
+        String path = iconMap.get(name);
+        if (path == null) {
+            return null;
         }
 
-        // Try SVG: replace .png with .svg in the path
-        String svgPath = pngPath.replace(".png", ".svg");
-        URL svgUrl = GUIGlobals.class.getResource(svgPath);
+        URL iconUrl = getIconUrl(name);
+        if (iconUrl == null) {
+            return null;
+        }
 
-        if (svgUrl != null) {
+        if (path.toLowerCase(Locale.ENGLISH).endsWith(".svg")) {
             try {
-                FlatSVGIcon icon = new FlatSVGIcon(svgUrl);
-                // Test if the SVG can be loaded without throwing NPE
-                icon.getIconWidth(); // This will throw if SVG is invalid
+                FlatSVGIcon icon = new FlatSVGIcon(iconUrl);
+                icon.getIconWidth();
                 return icon.derive(width, height);
             } catch (Exception e) {
                 System.err.println("SVG icon loading failed for " + name + ": " + e.getMessage());
-                // Fall through to PNG
+                return null;
             }
         }
 
-        // SVG not available or failed, use PNG
-        return getLegacyIcon(name);
+        return new ImageIcon(iconUrl);
     }
 
     /**
@@ -239,15 +237,8 @@ public class GUIGlobals {
      * Safe method to get Image for window icons
      */
     public static Image getImageAsImage(String name) {
-        // For window icons, prefer PNG to avoid SVG conversion issues
-        ImageIcon pngIcon = getLegacyIcon(name);
-        if (pngIcon != null) {
-            return pngIcon.getImage();
-        }
-
-        // Fallback: try SVG if PNG not found
         try {
-            Icon icon = getIcon(name, 48, 48);
+            Icon icon = getIcon(name, WINDOW_ICON_SIZE, WINDOW_ICON_SIZE);
             if (icon != null) {
                 return iconToImage(icon);
             }
@@ -311,30 +302,6 @@ public class GUIGlobals {
             return image;
         } catch (Exception e) {
             System.err.println("Error converting icon to image: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Get legacy PNG/GIF icon with proper error handling
-     */
-    private static ImageIcon getLegacyIcon(String name) {
-        try {
-            String path = iconMap.get(name);
-            if (path == null) {
-                // System.err.println("No icon mapping for: " + name);
-                return null;
-            }
-
-            URL url = GUIGlobals.class.getResource(path);
-            if (url == null) {
-                // System.err.println("Icon resource not found: " + path);
-                return null;
-            }
-
-            return new ImageIcon(url);
-        } catch (Exception e) {
-            System.err.println("Error loading legacy icon " + name + ": " + e.getMessage());
             return null;
         }
     }
