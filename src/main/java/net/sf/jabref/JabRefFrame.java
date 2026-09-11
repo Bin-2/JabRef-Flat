@@ -715,14 +715,20 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 : "saveClean";
     }
 
-    private String getSaveAllIconName() {
+    private boolean hasChangedDatabase() {
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             if (baseAt(i).isBaseChanged()) {
-                return "saveAllDirty";
+                return true;
             }
         }
 
-        return "saveAllClean";
+        return false;
+    }
+
+    private String getSaveAllIconName() {
+        return hasChangedDatabase()
+                ? "saveAllDirty"
+                : "saveAllClean";
     }
 
     private void initSidePane() {
@@ -1906,6 +1912,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         updateToolbarActionIcon(saveToolbarAction, saveIconName);
         updateToolbarActionIcon(saveAllToolbarAction, saveAllIconName);
+
+        updateSaveActionState();
+    }
+
+    private void updateSaveActionState() {
+        BasePanel panel = basePanel();
+        save.setEnabled(panel != null
+                && (panel.isBaseChanged() || panel.getFile() == null));
+        saveAll.setEnabled(hasChangedDatabase());
     }
 
     private void updateMenuActionIcon(Action action, String iconName) {
@@ -2299,6 +2314,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
 
         updateUndoRedoActions();
+        updateSaveActionState();
         updateAlternatePdfViewerAction();
     }
 

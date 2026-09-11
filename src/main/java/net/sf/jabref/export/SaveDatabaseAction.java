@@ -149,6 +149,7 @@ public class SaveDatabaseAction extends AbstractWorker {
 
             frame.updateTabTitleAfterSave(panel);
             frame.setWindowTitle();
+            frame.updateSaveIconState();
 
             frame.output(Globals.lang("Saved database") + " '"
                     + panel.getFile().getPath() + "'.");
