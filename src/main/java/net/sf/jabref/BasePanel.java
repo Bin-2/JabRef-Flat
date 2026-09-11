@@ -394,6 +394,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         }
     }
 
+    public void updateUndoRedoActions() {
+        if (frame != null) {
+            frame.updateUndoRedoActions();
+        }
+    }
+
     private void setupActions() {
         saveAction = new SaveDatabaseAction(this);
         cleanUpAction = new CleanUpAction(this);
@@ -3128,19 +3134,28 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         storeCurrentEdit();
                     }
                 }
+
+                if (!undoManager.canUndo()) {
+                    frame.output(Globals.lang("Nothing to undo") + ".");
+                    return;
+                }
+
                 String name = undoManager.getUndoPresentationName();
                 undoManager.undo();
                 markBaseChanged();
                 frame.output(name);
             } catch (CannotUndoException ex) {
-                ex.printStackTrace();
+                // ex.printStackTrace();
                 frame.output(Globals.lang("Nothing to undo") + ".");
+            } finally {
+                updateUndoRedoActions();
+                markChangedOrUnChanged();
             }
             // After everything, enable/disable the undo/redo actions
             // appropriately.
             //updateUndoState();
             //redoAction.updateRedoState();
-            markChangedOrUnChanged();
+            // markChangedOrUnChanged();
         }
     }
 
@@ -3156,18 +3171,26 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                     storeCurrentEdit();
                 }
 
+                if (!undoManager.canRedo()) {
+                    frame.output(Globals.lang("Nothing to redo") + ".");
+                    return;
+                }
+
                 String name = undoManager.getRedoPresentationName();
                 undoManager.redo();
                 markBaseChanged();
                 frame.output(name);
             } catch (CannotRedoException ex) {
                 frame.output(Globals.lang("Nothing to redo") + ".");
+            } finally {
+                updateUndoRedoActions();
+                markChangedOrUnChanged();
             }
             // After everything, enable/disable the undo/redo actions
             // appropriately.
             //updateRedoState();
             //undoAction.updateUndoState();
-            markChangedOrUnChanged();
+            // markChangedOrUnChanged();
         }
     }
 

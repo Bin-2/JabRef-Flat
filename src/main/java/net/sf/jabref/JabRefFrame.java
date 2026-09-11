@@ -2298,7 +2298,19 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             forward.setEnabled(false);
         }
 
+        updateUndoRedoActions();
         updateAlternatePdfViewerAction();
+    }
+
+    public void updateUndoRedoActions() {
+        runOnEdt(new Runnable() {
+            @Override
+            public void run() {
+                BasePanel panel = basePanel();
+                undo.setEnabled(panel != null && panel.undoManager.canUndo());
+                redo.setEnabled(panel != null && panel.undoManager.canRedo());
+            }
+        });
     }
 
     void updateAlternatePdfViewerAction() {

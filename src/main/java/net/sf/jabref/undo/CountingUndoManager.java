@@ -15,6 +15,7 @@
  */
 package net.sf.jabref.undo;
 
+import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
@@ -25,6 +26,7 @@ public class CountingUndoManager extends UndoManager {
 
     private int unchangedPoint = 0,
             current = 0;
+    private boolean unchangedPointValid = true;
     private BasePanel panel = null;
 
     public CountingUndoManager(BasePanel basePanel) {
@@ -33,27 +35,39 @@ public class CountingUndoManager extends UndoManager {
     }
 
     public synchronized boolean addEdit(UndoableEdit edit) {
+        // Adding an edit after undoing past the saved state discards the redo
+        // branch containing that state. The old numeric depth must therefore
+        // no longer be considered a valid unchanged point.
+        if (unchangedPointValid && (current < unchangedPoint)) {
+            unchangedPointValid = false;
+        }
+
         current++;
-        return super.addEdit(edit);
+        boolean added = super.addEdit(edit);
+        panel.updateUndoRedoActions();
+        return added;
     }
 
     public synchronized void undo() throws CannotUndoException {
         super.undo();
         current--;
         panel.updateEntryEditorIfShowing();
+        panel.updateUndoRedoActions();
     }
 
-    public synchronized void redo() throws CannotUndoException {
+    public synchronized void redo() throws CannotRedoException {
         super.redo();
         current++;
         panel.updateEntryEditorIfShowing();
+        panel.updateUndoRedoActions();
     }
 
     public synchronized void markUnchanged() {
         unchangedPoint = current;
+        unchangedPointValid = true;
     }
 
-    public boolean hasChanged() {
-        return !(current == unchangedPoint);
+    public synchronized boolean hasChanged() {
+        return !unchangedPointValid || (current != unchangedPoint);
     }
 }
