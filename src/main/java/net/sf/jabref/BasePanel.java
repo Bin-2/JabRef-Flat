@@ -614,6 +614,9 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                             BibtexDatabase db = bp.parse().getDatabase();
                             Util.pr("Parsed " + db.getEntryCount() + " entries from clipboard text");
                             if (db.getEntryCount() > 0) {
+                                for (BibtexEntry entry : db.getEntries()) {
+                                    trimPastedFieldValues(entry);
+                                }
                                 bes = db.getEntries().toArray(new BibtexEntry[db.getEntryCount()]);
                             }
                         } catch (UnsupportedFlavorException ex) {
@@ -3191,6 +3194,22 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             //updateRedoState();
             //undoAction.updateUndoState();
             // markChangedOrUnChanged();
+        }
+    }
+
+    /**
+     * Trim leading and trailing whitespace from values parsed from textual
+     * BibTeX clipboard content. Internal whitespace is left unchanged.
+     */
+    private static void trimPastedFieldValues(BibtexEntry entry) {
+        for (String field : entry.getAllFields()) {
+            String value = entry.getField(field);
+            if (value != null) {
+                String trimmedValue = value.trim();
+                if (!trimmedValue.equals(value)) {
+                    entry.setField(field, trimmedValue);
+                }
+            }
         }
     }
 
