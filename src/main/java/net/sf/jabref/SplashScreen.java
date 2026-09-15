@@ -24,11 +24,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.Toolkit;
 import java.awt.Frame;
 import java.awt.Window;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.Map;
 
 /**
  * Lightweight startup splash screen.
@@ -62,7 +64,7 @@ public class SplashScreen extends Window {
 
     private BufferedImage createBackground() {
         BufferedImage image = new BufferedImage(
-                SPLASH_WIDTH, SPLASH_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+                SPLASH_WIDTH, SPLASH_HEIGHT, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
         try {
             enableQualityRendering(g);
@@ -153,10 +155,19 @@ public class SplashScreen extends Window {
     private static void enableQualityRendering(Graphics2D g) {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        // g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+        //        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
+
+        Object desktopHints = Toolkit.getDefaultToolkit()
+                .getDesktopProperty("awt.font.desktophints");
+        if (desktopHints instanceof Map) {
+            g.addRenderingHints((Map<?, ?>) desktopHints);
+        } else {
+            g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        }
     }
 
     /**

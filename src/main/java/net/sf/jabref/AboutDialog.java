@@ -22,10 +22,12 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.net.URI;
+import java.util.Map;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -174,10 +176,19 @@ public final class AboutDialog extends JDialog {
             try {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                         RenderingHints.VALUE_ANTIALIAS_ON);
-                g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                        RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                // g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                //         RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
                 g.setRenderingHint(RenderingHints.KEY_RENDERING,
                         RenderingHints.VALUE_RENDER_QUALITY);
+
+                Object desktopHints = Toolkit.getDefaultToolkit()
+                        .getDesktopProperty("awt.font.desktophints");
+                if (desktopHints instanceof Map) {
+                    g.addRenderingHints((Map<?, ?>) desktopHints);
+                } else {
+                    g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                            RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                }
 
                 JabRefLogo.paint(g, 28, 23, 84, 84);
 
