@@ -25,7 +25,7 @@ import javax.swing.table.DefaultTableCellRenderer;
  */
 public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ extends DefaultTableCellRenderer {
 
-    Color background, selBackground = null;
+    Color background, foreground, selBackground = null;
 
     public GeneralRenderer() {
         super();
@@ -41,12 +41,13 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
      * Renderer with specified foreground and background colors, and default
      * selected background color.
      *
-     * @param c Foreground color
-     * @param fg Background color
+     * @param c Background color
+     * @param fg Foreground color
      */
     public GeneralRenderer(Color c, Color fg) {
         this(c);
         this.background = c;
+        this.foreground = fg;
         setForeground(fg);
     }
 
@@ -54,13 +55,14 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
      * Renderer with specified foreground, background and selected background
      * colors
      *
-     * @param c Foreground color
-     * @param fg Unselected background color
+     * @param c Background color
+     * @param fg Unselected foreground color
      * @param sel Selected background color
      */
     public GeneralRenderer(Color c, Color fg, Color sel) {
         this(c);
         this.background = c;
+        this.foreground = fg;
         setForeground(fg);
         this.selBackground = sel;
     }
@@ -68,17 +70,22 @@ public class GeneralRenderer /*extends JTable implements TableCellRenderer {*/ e
     @Override
     public Component getTableCellRendererComponent(JTable table, Object o, boolean isSelected,
             boolean hasFocus, int row, int column) {
-        if (selBackground == null) {
-            return super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);
-        } else {
-            Component c = super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);
-            if (isSelected) {
+        Component c = super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);
+
+        if (isSelected) {
+            if (selBackground != null) {
                 c.setBackground(selBackground);
-            } else {
+            }
+        } else {
+            if (background != null) {
                 c.setBackground(background);
             }
-            return c;
+            if (foreground != null) {
+                c.setForeground(foreground);
+            }
         }
+
+        return c;
     }
 
     @Override

@@ -499,8 +499,10 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
         }
 
-        // Keep non-zero column marking logic as before
-        if ((column != 0) && (marking > 0)) {
+        // Mark colors apply only to rows that are not currently grayed out.
+        // Otherwise a marked entry would visually override the floating
+        // search/group filter state.
+        if ((column != 0) && (marking > 0) && (score >= 0)) {
             marking = Math.min(marking, Util.MARK_COLOR_LEVELS);
             renderer = markedRenderers[marking - 1];
         }
@@ -826,8 +828,8 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     /**
-     * Reload appearance preferences that are cached by an existing table.
-     * This avoids reconstructing the table model for appearance-only changes.
+     * Reload appearance preferences that are cached by an existing table. This
+     * avoids reconstructing the table model for appearance-only changes.
      */
     public void updateAppearancePreferences() {
         tableColorCodes = Globals.prefs.getBoolean("tableColorCodesOn");
@@ -926,18 +928,27 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         Color reqFieldBg = calculateRequiredFieldColor(tableBackground);
         Color optFieldBg = calculateOptionalFieldColor(tableBackground);
         Color incompleteBg = calculateIncompleteColor(tableBackground);
-        Color grayedOutBg = blend(tableBackground, tableForeground, 0.85f);
-        Color veryGrayedOutBg = blend(tableBackground, tableForeground, 0.70f);
-        Color grayedOutText = blend(tableForeground, tableBackground, 0.5f);
-        Color veryGrayedOutText = blend(tableForeground, tableBackground, 0.3f);
+        // Keep filtered rows close to the normal table background and mute
+        // mainly via the foreground. Large background blends can make the
+        // text and background converge to nearly the same color.
+        Color grayedOutBg = blend(tableBackground, tableForeground, 0.03f);
+        Color veryGrayedOutBg = blend(tableBackground, tableForeground, 0.06f);
+        Color grayedOutText = blend(tableForeground, tableBackground, 0.20f);
+        Color veryGrayedOutText = blend(tableForeground, tableBackground, 0.30f);
 
         reqRenderer = new GeneralRenderer(reqFieldBg, tableForeground);
         optRenderer = new GeneralRenderer(optFieldBg, tableForeground);
 
         incRenderer = new IncompleteRenderer(incompleteBg);
         compRenderer = new CompleteRenderer(tableBackground);
-        grayedOutNumberRenderer = new CompleteRenderer(grayedOutBg);
-        veryGrayedOutNumberRenderer = new CompleteRenderer(veryGrayedOutBg);
+        grayedOutNumberRenderer = new CompleteRenderer(grayedOutBg, grayedOutText);
+        veryGrayedOutNumberRenderer = new CompleteRenderer(veryGrayedOutBg, veryGrayedOutText);
+
+        // Intentionally keep filtered row numbers at the leading edge instead
+        // of centering them like matching rows. This provides a second visual
+        // cue for rows excluded by the floating search/group filters.
+        grayedOutNumberRenderer.setHorizontalAlignment(JLabel.LEADING);
+        veryGrayedOutNumberRenderer.setHorizontalAlignment(JLabel.LEADING);
 
         grayedOutRenderer = new GeneralRenderer(grayedOutBg, grayedOutText, selectionBackground);
         veryGrayedOutRenderer = new GeneralRenderer(veryGrayedOutBg, veryGrayedOutText, selectionBackground);
@@ -1063,6 +1074,10 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         public CompleteRenderer(Color color) {
             super(color);
+        }
+
+        public CompleteRenderer(Color background, Color foreground) {
+            super(background, foreground);
         }
 
         protected void setNumber(int number) {
