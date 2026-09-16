@@ -755,7 +755,8 @@ public class SearchManager2 extends SidePaneComponent
                 }
                 startedFloatSearch = true;
                 panel.mainTable.showFloatSearch(SearchMatcher.INSTANCE);
-
+                panel.output(Globals.lang("Filtered entries") + ": "
+                        + panel.mainTable.getFloatFilterMatchCount());
             }
 
             // Afterwards, select all text in the search field.

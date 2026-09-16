@@ -414,6 +414,49 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     }
 
     /**
+     * Returns whether search or group results are currently shown using the
+     * floating/grayed-out presentation.
+     */
+    public boolean isShowingFloatFilter() {
+        return showingFloatSearch || showingFloatGrouping;
+    }
+
+    /**
+     * Returns the number of entries that currently match all active floating
+     * search/group filters. This deliberately uses the same score calculation
+     * as the cell renderer so the reported count matches the non-grayed rows.
+     */
+    public int getFloatFilterMatchCount() {
+        int count = 0;
+
+        sortedForGrouping.getReadWriteLock().readLock().lock();
+        try {
+            for (BibtexEntry entry : sortedForGrouping) {
+                if (getFloatFilterScore(entry) >= 0) {
+                    count++;
+                }
+            }
+        } finally {
+            sortedForGrouping.getReadWriteLock().readLock().unlock();
+        }
+
+        return count;
+    }
+
+    private int getFloatFilterScore(BibtexEntry entry) {
+        int score = -3;
+
+        if (!showingFloatSearch || matches(entry, searchMatcher)) {
+            score++;
+        }
+        if (!showingFloatGrouping || matches(entry, groupMatcher)) {
+            score += 2;
+        }
+
+        return score;
+    }
+
+    /**
      * Removes sorting by group, and graying out of non-hits.
      */
     public void stopShowingFloatGrouping() {
@@ -443,15 +486,8 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         BibtexEntry entry = getEntrySafely(row);
 
-        int score = -3;
+        int score = getFloatFilterScore(entry);
         DefaultTableCellRenderer renderer = defRenderer;
-
-        if (!showingFloatSearch || matches(entry, searchMatcher)) {
-            score++;
-        }
-        if (!showingFloatGrouping || matches(entry, groupMatcher)) {
-            score += 2;
-        }
 
         int marking = isMarked(entry);
 

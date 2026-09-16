@@ -805,7 +805,15 @@ public class GroupSelector extends SidePaneComponent implements
             if (showOverlappingGroupsP) {
                 showOverlappingGroups(matches);
             }
-            frame.output(Globals.lang("Updated group selection") + ".");
+
+            // Keep the floating-filter result count visible. Group selection
+            // updates otherwise overwrite the status produced by the search.
+            if (panel.mainTable.isShowingFloatFilter()) {
+                frame.output(Globals.lang("Filtered entries") + ": "
+                        + panel.mainTable.getFloatFilterMatchCount());
+            } else {
+                frame.output(Globals.lang("Updated group selection") + ".");
+            }
         }
     }
 
