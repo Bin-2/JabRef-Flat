@@ -120,15 +120,15 @@ public class RightClickMenu extends JPopupMenu
                 }
             }
         });
-        add(new AbstractAction(Globals.lang("Send as email")) {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    panel.runCommand("sendAsEmail");
-                } catch (Throwable ex) {
-                    logger.warning(ex.getMessage());
-                }
-            }
-        });
+//        add(new AbstractAction(Globals.lang("Send as email")) {
+//            public void actionPerformed(ActionEvent e) {
+//                try {
+//                    panel.runCommand("sendAsEmail");
+//                } catch (Throwable ex) {
+//                    logger.warning(ex.getMessage());
+//                }
+//            }
+//        });
         addSeparator();
 
         JMenu markSpecific = JabRefFrame.subMenu("Mark specific color");
