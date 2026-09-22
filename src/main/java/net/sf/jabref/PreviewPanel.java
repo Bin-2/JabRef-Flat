@@ -42,6 +42,7 @@ import net.sf.jabref.export.layout.LayoutHelper;
 import net.sf.jabref.export.ExportFormats;
 import net.sf.jabref.gui.PreviewPanelTransferHandler;
 import net.sf.jabref.gui.ThemeAwareComponent;
+import net.sf.jabref.util.PreviewLinkifier;
 
 /**
  * Displays an BibtexEntry using the given layout format.
@@ -468,7 +469,7 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
         if (entry != null) {
             sb.append(layout.doLayout(entry, database, wordsToHighlight));
         }
-        previewPane.setText(sb.toString());
+        previewPane.setText(PreviewLinkifier.linkify(sb.toString()));
         previewPane.revalidate();
 
         // Scroll to top:
