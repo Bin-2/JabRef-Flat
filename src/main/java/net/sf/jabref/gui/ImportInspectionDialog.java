@@ -335,7 +335,16 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
     /* (non-Javadoc)
 	 * @see net.sf.jabref.gui.ImportInspection#setProgress(int, int)
      */
-    public void setProgress(int current, int max) {
+    public void setProgress(final int current, final int max) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    setProgress(current, max);
+                }
+            });
+            return;
+        }
+
         progressBar.setIndeterminate(false);
         progressBar.setMinimum(0);
         progressBar.setMaximum(max);
@@ -354,7 +363,16 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
     /* (non-Javadoc)
 	 * @see net.sf.jabref.gui.ImportInspection#addEntries(java.util.Collection)
      */
-    public void addEntries(Collection<BibtexEntry> entries) {
+    public void addEntries(final Collection<BibtexEntry> entries) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            final List<BibtexEntry> entriesCopy = new ArrayList<BibtexEntry>(entries);
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    addEntries(entriesCopy);
+                }
+            });
+            return;
+        }
 
         for (BibtexEntry entry : entries) {
             // We exploit the entry's search status for indicating "Keep"
@@ -378,8 +396,12 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
                 deselectAllDuplicates.setEnabled(true);
             }
             this.entries.getReadWriteLock().writeLock().lock();
-            this.entries.add(entry);
-            this.entries.getReadWriteLock().writeLock().unlock();
+
+            try {
+                this.entries.add(entry);
+            } finally {
+                this.entries.getReadWriteLock().writeLock().unlock();
+            }
         }
     }
 
@@ -427,6 +449,16 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
 	 * @see net.sf.jabref.gui.ImportInspection#entryListComplete()
      */
     public void entryListComplete() {
+
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    entryListComplete();
+                }
+            });
+            return;
+        }
+
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
         ok.setEnabled(true);
