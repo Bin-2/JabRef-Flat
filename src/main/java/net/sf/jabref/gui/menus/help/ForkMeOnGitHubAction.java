@@ -24,20 +24,29 @@ import net.sf.jabref.Globals;
 import net.sf.jabref.JabRef;
 import net.sf.jabref.Util;
 
-@SuppressWarnings("serial")
 public class ForkMeOnGitHubAction extends AbstractAction {
 
+    private static final long serialVersionUID = 1L;
+
+    private static final String GITHUB_URL = "https://github.com/Bin-2/JabRef-Flat";
+
     public ForkMeOnGitHubAction() {
-        super(Globals.menuTitle("Fork me on GitHub"));
+        super(Globals.menuTitle("GitHub Repo"));
         putValue(SHORT_DESCRIPTION, Globals.lang("Opens JabRef's GitHub page"));
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         try {
-            Util.openBrowser("https://github.com/JabRef/jabref");
+            Util.openBrowser(GITHUB_URL);
         } catch (IOException ex) {
             ex.printStackTrace();
-            JabRef.jrf.basePanel().output(Globals.lang("Could not open browser.") + " " + Globals.lang("Please open http://github.com/JabRef/jabref manually."));
+
+            JabRef.jrf.basePanel().output(
+                    Globals.lang("Could not open browser.")
+                    + " "
+                    + Globals.lang(
+                            "Please open http://github.com/Bin-2/JabRef-Flat manually."));
         }
     }
 }
