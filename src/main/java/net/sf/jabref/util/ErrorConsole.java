@@ -15,11 +15,16 @@
  */
 package net.sf.jabref.util;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
@@ -42,16 +47,16 @@ import net.sf.jabref.Globals;
  */
 public class ErrorConsole extends Handler {
 
-    ByteArrayOutputStream errByteStream = new ByteArrayOutputStream();
-    ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errByteStream = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream outByteStream = new ByteArrayOutputStream();
 
-    ArrayList<String> logOutput = new ArrayList<String>();
-    String logOutputCache = "";
-    boolean logOutputCacheRefreshNeeded = true;
-    SimpleFormatter fmt = new SimpleFormatter();
-    private static final int MAXLOGLINES = 500;
+    private final Deque<String> logOutput = new ArrayDeque<String>();
+    private final SimpleFormatter fmt = new SimpleFormatter();
+    private static final int MAX_LOG_RECORDS = 2000;
 
     private static ErrorConsole instance = null;
+
+    private JDialog dialog;
 
     public static ErrorConsole getInstance() {
         if (instance == null) {
@@ -78,15 +83,12 @@ public class ErrorConsole extends Handler {
         return outByteStream.toString();
     }
 
-    private String getLog() {
-        if (logOutputCacheRefreshNeeded) {
-            StringBuilder sb = new StringBuilder();
-            for (String line : logOutput) {
-                sb.append(line);
-            }
-            logOutputCache = sb.toString();
+    private synchronized String getLog() {
+        StringBuilder sb = new StringBuilder();
+        for (String record : logOutput) {
+            sb.append(record);
         }
-        return logOutputCache;
+        return sb.toString();
     }
 
     /**
@@ -98,25 +100,69 @@ public class ErrorConsole extends Handler {
     private void addTextArea(JTabbedPane tabbed, String title, String output, String ifEmpty) {
         JTextArea ta = new JTextArea(output);
         ta.setEditable(false);
+        ta.setLineWrap(false);
+        ta.setFont(new Font(Font.MONOSPACED, Font.PLAIN, ta.getFont().getSize()));
+
         if ((ifEmpty != null) && (ta.getText().length() == 0)) {
             ta.setText(ifEmpty);
         }
+
+        ta.setCaretPosition(0);
         JScrollPane sp = new JScrollPane(ta);
         tabbed.addTab(title, sp);
     }
 
     public void displayErrorConsole(JFrame parent) {
-        JTabbedPane tabbed = new JTabbedPane();
+        if ((dialog != null) && dialog.isDisplayable()) {
+            if (!dialog.isVisible()) {
+                dialog.setVisible(true);
+            }
+            dialog.toFront();
+            return;
+        }
 
+        final JDialog currentDialog = new JDialog(parent, Globals.lang("Program output"), false);
+        dialog = currentDialog;
+        currentDialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        currentDialog.getRootPane().registerKeyboardAction(
+                new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentDialog.dispose();
+            }
+        },
+                KeyStroke.getKeyStroke("ESCAPE"),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        JTabbedPane tabbed = new JTabbedPane();
         addTextArea(tabbed, Globals.lang("Output"), getOutput(), null);
         addTextArea(tabbed, Globals.lang("Exceptions"), getErrorMessages(),
                 Globals.lang("No exceptions have ocurred."));
         addTextArea(tabbed, Globals.lang("Log"), getLog(), null);
 
-        tabbed.setPreferredSize(new Dimension(500, 500));
+        JButton closeButton = new JButton(Globals.lang("Close"));
+        closeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                currentDialog.dispose();
+            }
+        });
 
-        JOptionPane.showMessageDialog(parent, tabbed,
-                Globals.lang("Program output"), JOptionPane.ERROR_MESSAGE);
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+        buttons.add(closeButton);
+
+        JPanel content = new JPanel(new BorderLayout(8, 8));
+        content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        content.add(tabbed, BorderLayout.CENTER);
+        content.add(buttons, BorderLayout.SOUTH);
+
+        currentDialog.setContentPane(content);
+        currentDialog.setMinimumSize(new Dimension(600, 400));
+        currentDialog.setSize(850, 600);
+        currentDialog.setLocationRelativeTo(parent);
+        currentDialog.setResizable(true);
+        currentDialog.setVisible(true);
     }
 
     class ErrorConsoleAction extends AbstractAction {
@@ -139,23 +185,22 @@ public class ErrorConsole extends Handler {
     }
 
     // All writes to this print stream are copied to two print streams
-    public class TeeStream extends PrintStream {
+    private static class TeeStream extends PrintStream {
 
-        PrintStream out;
+        private final PrintStream out;
 
-        public TeeStream(PrintStream out1, PrintStream out2) {
+        TeeStream(PrintStream out1, PrintStream out2) {
             super(out1);
-            this.out = out2;
+            out = out2;
         }
 
-        public void write(byte buf[], int off, int len) {
-            try {
-                super.write(buf, off, len);
-                out.write(buf, off, len);
-            } catch (Exception ignored) {
-            }
+        @Override
+        public void write(byte[] buf, int off, int len) {
+            super.write(buf, off, len);
+            out.write(buf, off, len);
         }
 
+        @Override
         public void flush() {
             super.flush();
             out.flush();
@@ -172,21 +217,14 @@ public class ErrorConsole extends Handler {
     }
 
     @Override
-    public void publish(LogRecord record) {
-        String msg = fmt.format(record);
-        logOutput.add(msg);
-        if (logOutput.size() < MAXLOGLINES) {
-            // if we did not yet reach MAXLOGLINES, we just append the string to the cache
-            logOutputCache = logOutputCache + msg;
-        } else {
-            // if we reached MAXLOGLINES, we switch to the "real" caching method and remove old lines 
-            logOutputCacheRefreshNeeded = true;
-            while (logOutput.size() > MAXLOGLINES) {
-                // if log is too large, remove first line
-                // we need a while loop as the formatter may output more than one line
-                logOutput.remove(0);
-            }
+    public synchronized void publish(LogRecord record) {
+        if (!isLoggable(record)) {
+            return;
         }
-        logOutputCacheRefreshNeeded = true;
+
+        logOutput.addLast(fmt.format(record));
+        while (logOutput.size() > MAX_LOG_RECORDS) {
+            logOutput.removeFirst();
+        }
     }
 }
