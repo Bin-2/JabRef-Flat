@@ -34,7 +34,6 @@ import javax.swing.table.TableColumnModel;
 
 import net.sf.jabref.*;
 import net.sf.jabref.groups.EntryTableTransferHandler;
-import net.sf.jabref.search.HitOrMissComparator;
 import net.sf.jabref.search.NoSearchMatcher;
 import net.sf.jabref.specialfields.SpecialFieldsUtils;
 import ca.odell.glazedlists.CompositeList;
@@ -62,20 +61,18 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
     private MainTableFormat tableFormat;
     private BasePanel panel;
-    private SortedList<BibtexEntry> sortedForMarking, sortedForTable, sortedForGrouping;
-    private FilterList<BibtexEntry> searchHits, searchMisses;
-    private CompositeList<BibtexEntry> searchPartition;
-    private TransactionList<BibtexEntry> sortedForSearch;
+    private SortedList<BibtexEntry> sortedForMarking, sortedForTable;
+    private FilterList<BibtexEntry> searchHits, searchMisses, groupHits, groupMisses;
+    private CompositeList<BibtexEntry> searchPartition, groupPartition;
+    private TransactionList<BibtexEntry> sortedForSearch, sortedForGrouping;
     private boolean tableColorCodes, showingFloatSearch = false, showingFloatGrouping = false;
     private EventSelectionModel<BibtexEntry> selectionModel;
     private TableComparatorChooser<BibtexEntry> comparatorChooser;
     private JScrollPane pane;
-    private Comparator<BibtexEntry> groupComparator,
-            markingComparator = new IsMarkedComparator();
+    private Comparator<BibtexEntry> markingComparator = new IsMarkedComparator();
     private Matcher<BibtexEntry> searchMatcher, groupMatcher;
     private boolean initializingSorting = false;
     private Comparator<BibtexEntry> currentMarkingComparator = null;
-    private Comparator<BibtexEntry> currentGroupComparator = null;
 
     // needed to activate/deactivate the listener
     private final PersistenceTableColumnListener tableColumnListener;
@@ -194,14 +191,23 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         sortedForSearch = new TransactionList<BibtexEntry>(searchPartition);
         perfLog("constructor new search partition size=" + safeEventListSize(sortedForSearch), blockStartNs);
 
-        // This SortedList applies afterwards, and can float grouping hits:
+        // Partition group results in the same way as search results. Hits are
+        // shown first, while both partitions preserve the order produced by
+        // sortedForSearch. This avoids treating all hits/misses as comparator-
+        // equal, which could move newly inserted entries to the start of a
+        // partition.
         blockStartNs = perfStart();
-        sortedForGrouping = new SortedList<BibtexEntry>(sortedForSearch, null);
-        perfLog("constructor new sortedForGrouping size=" + safeEventListSize(sortedForGrouping), blockStartNs);
+        groupHits = new FilterList<BibtexEntry>(sortedForSearch, NoSearchMatcher.INSTANCE);
+        groupMisses = new FilterList<BibtexEntry>(sortedForSearch, Matchers.<BibtexEntry>falseMatcher());
+        groupPartition = new CompositeList<BibtexEntry>(sortedForSearch.getPublisher(),
+                sortedForSearch.getReadWriteLock());
+        groupPartition.addMemberList(groupHits);
+        groupPartition.addMemberList(groupMisses);
+        sortedForGrouping = new TransactionList<BibtexEntry>(groupPartition);
+        perfLog("constructor new group partition size=" + safeEventListSize(sortedForGrouping), blockStartNs);
 
         searchMatcher = null;
         groupMatcher = null;
-        groupComparator = null;//new HitOrMissComparator(groupMatcher);
 
         blockStartNs = perfStart();
         EventTableModel<BibtexEntry> tableModel = new EventTableModel<BibtexEntry>(sortedForGrouping, tableFormat);
@@ -297,8 +303,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         Comparator<BibtexEntry> newMarkingComparator = Globals.prefs.getBoolean("floatMarkedEntries")
                 ? markingComparator : null;
-        Comparator<BibtexEntry> newGroupComparator = groupComparator;
-
         if (currentMarkingComparator != newMarkingComparator) {
             blockStartNs = perfStart();
             sortedForMarking.getReadWriteLock().writeLock().lock();
@@ -310,19 +314,6 @@ public class MainTable extends JTable implements ThemeAwareComponent {
             }
             perfLog("refreshSorting set marking comparator active=" + (newMarkingComparator != null)
                     + ", rows=" + safeEventListSize(sortedForMarking), blockStartNs);
-        }
-
-        if (currentGroupComparator != newGroupComparator) {
-            blockStartNs = perfStart();
-            sortedForGrouping.getReadWriteLock().writeLock().lock();
-            try {
-                sortedForGrouping.setComparator(newGroupComparator);
-                currentGroupComparator = newGroupComparator;
-            } finally {
-                sortedForGrouping.getReadWriteLock().writeLock().unlock();
-            }
-            perfLog("refreshSorting set group comparator active=" + (newGroupComparator != null)
-                    + ", rows=" + safeEventListSize(sortedForGrouping), blockStartNs);
         }
 
         perfLog("refreshSorting total rows=" + safeEventListSize(sortedForGrouping), totalStartNs);
@@ -404,9 +395,29 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         long startNs = perfStart();
         showingFloatGrouping = true;
         groupMatcher = m;
-        groupComparator = (m == null) ? null : new HitOrMissComparator(m);
+        updateGroupPartition(m);
         refreshSorting();
         perfLog("showFloatGrouping matcher=" + (m != null) + ", rows=" + safeEventListSize(sortedForGrouping), startNs);
+    }
+
+    private void updateGroupPartition(Matcher<BibtexEntry> matcher) {
+        Matcher<BibtexEntry> hitMatcher = matcher == null ? NoSearchMatcher.INSTANCE : matcher;
+        Matcher<BibtexEntry> missMatcher = matcher == null
+                ? Matchers.<BibtexEntry>falseMatcher()
+                : Matchers.invert(matcher);
+
+        sortedForGrouping.getReadWriteLock().writeLock().lock();
+        try {
+            sortedForGrouping.beginEvent(true);
+            try {
+                groupHits.setMatcher(hitMatcher);
+                groupMisses.setMatcher(missMatcher);
+            } finally {
+                sortedForGrouping.commitEvent();
+            }
+        } finally {
+            sortedForGrouping.getReadWriteLock().writeLock().unlock();
+        }
     }
 
     public boolean isShowingFloatSearch() {
@@ -463,7 +474,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         long startNs = perfStart();
         showingFloatGrouping = false;
         groupMatcher = null;
-        groupComparator = null;
+        updateGroupPartition(null);
         refreshSorting();
         perfLog("stopShowingFloatGrouping rows=" + safeEventListSize(sortedForGrouping), startNs);
     }

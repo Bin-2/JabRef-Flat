@@ -2035,6 +2035,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 ArrayList<BibtexEntry> list = new ArrayList<>();
                 list.add(be);
                 Util.setAutomaticFields(list, true, true, false);
+                autoAssignNewEntryToSelectedGroups(be);
 
                 // Create an UndoableInsertEntry object.
                 undoManager.addEdit(new UndoableInsertEntry(database, be, BasePanel.this));
@@ -2070,32 +2071,64 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     }
 
     /**
-     * This listener is used to add a new entry to a group (or a set of groups)
-     * in case the Group View is selected and one or more groups are marked
+     * Keeps the active group presentation in sync when entries are added.
+     * Database insertion itself must not assign group membership: paste and
+     * import operations also use ADDED_ENTRY events.
      */
     private class GroupTreeUpdater implements DatabaseChangeListener {
 
+        private boolean refreshPending;
+
         @Override
         public void databaseChanged(DatabaseChangeEvent e) {
-            if ((e.getType() == ChangeType.ADDED_ENTRY)
-                    && (Globals.prefs.getBoolean("autoAssignGroup"))
-                    && (frame.groupToggle.isSelected())) {
-                BibtexEntry[] entries = {e.getEntry()};
-                TreePath[] selection = frame.groupSelector.getGroupsTree().getSelectionPaths();
-                if (selection != null) {
-                    // it is possible that the user selected nothing. Therefore, checked for "!= null"
-                    for (TreePath tree : selection) {
-                        ((GroupTreeNode) (tree.getLastPathComponent())).addToGroup(entries);
-                    }
+            if ((e.getType() != ChangeType.ADDED_ENTRY) || !frame.groupToggle.isSelected()) {
+                return;
+            }
+
+            scheduleGroupSelectionRefresh();
+        }
+
+        private void scheduleGroupSelectionRefresh() {
+            synchronized (this) {
+                if (refreshPending) {
+                    return;
                 }
-                //BasePanel.this.updateEntryEditorIfShowing(); // doesn't seem to be necessary
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
+                refreshPending = true;
+            }
+
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (GroupTreeUpdater.this) {
+                        refreshPending = false;
+                    }
+                    if (frame.groupToggle.isSelected()) {
                         BasePanel.this.getGroupSelector().valueChanged(null);
                     }
-                });
-            }
+                }
+            });
+        }
+    }
+
+    /**
+     * Applies the optional automatic group assignment only to entries created
+     * through the New Entry action. Imported or pasted entries are deliberately
+     * excluded and retain only their actual group membership.
+     */
+    private void autoAssignNewEntryToSelectedGroups(BibtexEntry entry) {
+        if (!Globals.prefs.getBoolean("autoAssignGroup")
+                || !frame.groupToggle.isSelected()) {
+            return;
+        }
+
+        TreePath[] selection = frame.groupSelector.getGroupsTree().getSelectionPaths();
+        if (selection == null) {
+            return;
+        }
+
+        BibtexEntry[] entries = {entry};
+        for (TreePath tree : selection) {
+            ((GroupTreeNode) tree.getLastPathComponent()).addToGroup(entries);
         }
     }
 
