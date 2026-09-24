@@ -27,6 +27,7 @@ import net.sf.jabref.OutputPrinter;
 import net.sf.jabref.msbib.MSBibDatabase;
 
 import org.w3c.dom.Document;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Importer for the MS Office 2007 XML bibliography format By S. M. Mahbub
@@ -53,6 +54,7 @@ public class MsBibImporter extends ImportFormat {
             DocumentBuilder dbuild = DocumentBuilderFactory.
                     newInstance().
                     newDocumentBuilder();
+            dbuild.setErrorHandler(new DefaultHandler());
             docin = dbuild.parse(in);
         } catch (Exception e) {
             return false;
