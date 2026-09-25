@@ -75,6 +75,7 @@ public final class JabRefPreferences {
             WRITEFIELD_ADDSPACES = "writeFieldAddSpaces",
             WRITEFIELD_CAMELCASENAME = "writeFieldCamelCase",
             UPDATE_TIMESTAMP = "updateTimestamp",
+            LOCK_COLUMN_SORTING = "lockColumnSorting",
             PRIMARY_SORT_FIELD = "priSort",
             PRIMARY_SORT_DESCENDING = "priDescending",
             SECONDARY_SORT_FIELD = "secSort",
@@ -428,6 +429,7 @@ public final class JabRefPreferences {
         defaults.put("showShort", Boolean.TRUE);
 
         // Sorting preferences
+        defaults.put(LOCK_COLUMN_SORTING, Boolean.FALSE);
         defaults.put(PRIMARY_SORT_FIELD, "author");
         defaults.put(PRIMARY_SORT_DESCENDING, Boolean.FALSE);
         defaults.put(SECONDARY_SORT_FIELD, "year");

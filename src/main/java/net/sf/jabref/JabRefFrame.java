@@ -163,6 +163,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     // the groups interface
     public JToggleButton groupToggle;
     public JToggleButton searchToggle, previewToggle, highlightAny, highlightAll;
+    private JToggleButton sortLockToggle;
 
     OpenDatabaseAction open = new OpenDatabaseAction(this, true);
     AbstractAction close = new CloseDatabaseAction(),
@@ -2075,6 +2076,13 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.addSeparator();
         tlb.addAction(createToolbarAction(showPrefs, "preferences"));
 
+        boolean sortingLocked = prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING);
+        sortLockToggle = createToolbarToggleButton(toggleSortLock,
+                sortingLocked ? "sortLock" : "sortUnlock");
+        sortLockToggle.setSelected(sortingLocked);
+        updateSortLockTogglePresentation();
+        tlb.add(sortLockToggle);
+
         tlb.addSeparator();
         tlb.add(new ToolbarSizeSelector());
 
@@ -2186,6 +2194,39 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     /**
      * Create toolbar toggle button with consistent styling and icon handling.
      */
+    private void setColumnSortingLocked(boolean locked) {
+        prefs.putBoolean(JabRefPreferences.LOCK_COLUMN_SORTING, locked);
+
+        for (int i = 0; i < baseCount(); i++) {
+            BasePanel panel = baseAt(i);
+            if (panel != null && panel.mainTable != null) {
+                panel.mainTable.setColumnSortingLocked(locked);
+            }
+        }
+
+        updateSortLockTogglePresentation();
+    }
+
+    private void updateSortLockTogglePresentation() {
+        if (sortLockToggle == null) {
+            return;
+        }
+
+        boolean locked = prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING);
+        String iconName = locked ? "sortLock" : "sortUnlock";
+        Icon icon = getCachedToolbarIconOnly(iconName);
+        if (icon == null) {
+            icon = getCachedToolbarIcon(iconName);
+        }
+        if (icon != null) {
+            sortLockToggle.setIcon(icon);
+        }
+
+        sortLockToggle.setSelected(locked);
+        sortLockToggle.setToolTipText(Globals.lang(
+                locked ? "Unlock column sorting" : "Lock column sorting"));
+    }
+
     private JToggleButton createToolbarToggleButton(Action action, String iconName) {
         JToggleButton button = new JToggleButton(action);
         button.setText(null);
@@ -2680,6 +2721,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             }
         }
     }
+
+    // Toggle protection against accidental column-header sorting.
+    AbstractAction toggleSortLock = new AbstractAction() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            boolean locked = !prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING);
+            setColumnSortingLocked(locked);
+        }
+    };
 
     // The action for opening the preferences dialog.
     AbstractAction showPrefs = new ShowPrefsAction();

@@ -22,14 +22,18 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ArrayList;
 
 import javax.swing.*;
+import javax.swing.event.TableColumnModelEvent;
 import javax.swing.plaf.TableUI;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
 
 import net.sf.jabref.*;
@@ -68,6 +72,9 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     private boolean tableColorCodes, showingFloatSearch = false, showingFloatGrouping = false;
     private EventSelectionModel<BibtexEntry> selectionModel;
     private TableComparatorChooser<BibtexEntry> comparatorChooser;
+    private final List<MouseListener> comparatorChooserMouseListeners = new ArrayList<MouseListener>();
+    private final List<MouseMotionListener> comparatorChooserMouseMotionListeners = new ArrayList<MouseMotionListener>();
+    private boolean columnSortingLocked;
     private JScrollPane pane;
     private Comparator<BibtexEntry> markingComparator = new IsMarkedComparator();
     private Matcher<BibtexEntry> searchMatcher, groupMatcher;
@@ -238,6 +245,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         blockStartNs = perfStart();
         this.setTableHeader(new PreventDraggingJTableHeader(this.getColumnModel()));
+        setColumnSortingLocked(Globals.prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING));
         perfLog("constructor tableHeader", blockStartNs);
 
         blockStartNs = perfStart();
@@ -1136,11 +1144,82 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         }
     }
 
+    public void setColumnSortingLocked(boolean locked) {
+        columnSortingLocked = locked;
+        setComparatorChooserHeaderListenersEnabled(!locked);
+    }
+
+    @Override
+    public void columnMoved(TableColumnModelEvent e) {
+        if (columnSortingLocked && e.getFromIndex() == e.getToIndex()) {
+            return;
+        }
+        super.columnMoved(e);
+    }
+
+    private void setComparatorChooserHeaderListenersEnabled(boolean enabled) {
+        JTableHeader header = getTableHeader();
+        if (header == null) {
+            return;
+        }
+
+        for (MouseListener listener : comparatorChooserMouseListeners) {
+            boolean installed = containsIdentity(header.getMouseListeners(), listener);
+            if (enabled && !installed) {
+                header.addMouseListener(listener);
+            } else if (!enabled && installed) {
+                header.removeMouseListener(listener);
+            }
+        }
+
+        for (MouseMotionListener listener : comparatorChooserMouseMotionListeners) {
+            boolean installed = containsIdentity(header.getMouseMotionListeners(), listener);
+            if (enabled && !installed) {
+                header.addMouseMotionListener(listener);
+            } else if (!enabled && installed) {
+                header.removeMouseMotionListener(listener);
+            }
+        }
+    }
+
+    private static boolean containsIdentity(Object[] listeners, Object listener) {
+        for (Object current : listeners) {
+            if (current == listener) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void captureComparatorChooserHeaderListeners(JTableHeader header,
+            MouseListener[] mouseListenersBefore, MouseMotionListener[] mouseMotionListenersBefore) {
+        comparatorChooserMouseListeners.clear();
+        for (MouseListener listener : header.getMouseListeners()) {
+            if (!containsIdentity(mouseListenersBefore, listener)) {
+                comparatorChooserMouseListeners.add(listener);
+            }
+        }
+
+        comparatorChooserMouseMotionListeners.clear();
+        for (MouseMotionListener listener : header.getMouseMotionListeners()) {
+            if (!containsIdentity(mouseMotionListenersBefore, listener)) {
+                comparatorChooserMouseMotionListeners.add(listener);
+            }
+        }
+    }
+
     public TableComparatorChooser<BibtexEntry> createTableComparatorChooser(JTable table, SortedList<BibtexEntry> list,
             Object sortingStrategy) {
         long startNs = perfStart();
         long blockStartNs = perfStart();
+        JTableHeader header = table.getTableHeader();
+        MouseListener[] mouseListenersBefore = header.getMouseListeners();
+        MouseMotionListener[] mouseMotionListenersBefore = header.getMouseMotionListeners();
         final TableComparatorChooser<BibtexEntry> result = TableComparatorChooser.install(table, list, sortingStrategy);
+        captureComparatorChooserHeaderListeners(header, mouseListenersBefore, mouseMotionListenersBefore);
+        if (columnSortingLocked) {
+            setComparatorChooserHeaderListenersEnabled(false);
+        }
         perfLog("createTableComparatorChooser install rows=" + safeEventListSize(list), blockStartNs);
         blockStartNs = perfStart();
         result.addSortActionListener(new ActionListener() {
