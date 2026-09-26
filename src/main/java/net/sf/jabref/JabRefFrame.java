@@ -1771,86 +1771,124 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         pluginMenu.add(item);
     }
 
-    class ToolbarSizeSelector extends JComboBox<String> implements ActionListener {
+    class ToolbarSizeButton extends JButton implements ActionListener {
 
-        public ToolbarSizeSelector() {
-            super(new String[]{"Small", "Medium", "Large"});
+        private final JPopupMenu popupMenu = new JPopupMenu();
+        private final JRadioButtonMenuItem smallItem = new JRadioButtonMenuItem("Small");
+        private final JRadioButtonMenuItem mediumItem = new JRadioButtonMenuItem("Medium");
+        private final JRadioButtonMenuItem largeItem = new JRadioButtonMenuItem("Large");
 
-            // Set current selection based on global size
-            switch (GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE) {
-                case GUIGlobals.TOOLBAR_ICON_SMALL:
-                    setSelectedIndex(0);
-                    break;
-                case GUIGlobals.TOOLBAR_ICON_MEDIUM:
-                    setSelectedIndex(1);
-                    break;
-                case GUIGlobals.TOOLBAR_ICON_LARGE:
-                    setSelectedIndex(2);
-                    break;
-            }
-            setToolTipText("Toolbar icon size");
-            // Dynamic sizing based on content and toolbar
-            configureDynamicSizing();
-
+        public ToolbarSizeButton() {
+            configureButtonAppearance();
+            buildPopupMenu();
             addActionListener(this);
         }
 
-        private void configureDynamicSizing() {
-            // Calculate optimal width based on content
-            FontMetrics metrics;
-            metrics = getFontMetrics(getFont());
-            int maxWidth = 0;
+        private void configureButtonAppearance() {
+            setFocusable(false);
 
-            for (int i = 0; i < getItemCount(); i++) {
-                int itemWidth = metrics.stringWidth(getItemAt(i));
-                maxWidth = Math.max(maxWidth, itemWidth);
+            if (!Globals.ON_MAC) {
+                setMargin(marg);
             }
 
-            // Add padding for dropdown arrow and borders
-            int padding = 20; // Space for dropdown arrow and borders
-            int optimalWidth = maxWidth + padding;
+            Icon buttonIcon = getToolbarSizeButtonIcon();
+            if (buttonIcon != null) {
+                setIcon(buttonIcon);
+                setText(null);
+            } else {
+                setIcon(null);
+                setText("Aa");
+                configureFallbackTextAppearance();
+            }
 
-            // Set height to match toolbar icon size for consistency
-            int optimalHeight = GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE;
+            setToolTipText("Toolbar icon size: " + getCurrentSizeLabel()
+                    + " (" + GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE + " px)");
 
-            // Set preferred size (will be used by layout manager)
-            setPreferredSize(new Dimension(optimalWidth, optimalHeight));
-
-            // Set minimum size to prevent it from becoming too small
-            setMinimumSize(new Dimension(80, optimalHeight));
-
-            // Maximum size can be slightly larger than preferred
-            setMaximumSize(new Dimension(optimalWidth + 20, optimalHeight));
+            Dimension preferredSize = getPreferredSize();
+            int minButtonSide = GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE + 8;
+            int width = Math.max(preferredSize.width, minButtonSide);
+            int height = Math.max(preferredSize.height, minButtonSide);
+            Dimension buttonSize = new Dimension(width, height);
+            setPreferredSize(buttonSize);
+            setMaximumSize(buttonSize);
         }
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            int newSize;
-            switch (getSelectedIndex()) {
-                case 0:
-                    newSize = GUIGlobals.TOOLBAR_ICON_SMALL;
-                    break;
-                case 1:
-                    newSize = GUIGlobals.TOOLBAR_ICON_MEDIUM;
-                    break;
-                case 2:
-                    newSize = GUIGlobals.TOOLBAR_ICON_LARGE;
-                    break;
-                default:
-                    newSize = GUIGlobals.TOOLBAR_ICON_MEDIUM;
+        private Icon getToolbarSizeButtonIcon() {
+            Icon icon = getCachedToolbarIconOnly("toolbarSize");
+            if (icon == null) {
+                icon = getCachedToolbarIcon("toolbarSize");
             }
+            return icon;
+        }
 
+        private void configureFallbackTextAppearance() {
+            float fontSize = Math.max(11f, GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE * 0.75f);
+            Font derivedFont = getFont().deriveFont(Font.BOLD, fontSize);
+            setFont(derivedFont);
+        }
+
+        private void buildPopupMenu() {
+            ButtonGroup group = new ButtonGroup();
+            addPopupItem(group, smallItem, GUIGlobals.TOOLBAR_ICON_SMALL);
+            addPopupItem(group, mediumItem, GUIGlobals.TOOLBAR_ICON_MEDIUM);
+            addPopupItem(group, largeItem, GUIGlobals.TOOLBAR_ICON_LARGE);
+            updateSelection();
+        }
+
+        private void addPopupItem(ButtonGroup group,
+                                  JRadioButtonMenuItem item,
+                                  final int iconSize) {
+            group.add(item);
+            popupMenu.add(item);
+            item.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    applyToolbarIconSize(iconSize);
+                }
+            });
+        }
+
+        private void updateSelection() {
+            switch (GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE) {
+                case GUIGlobals.TOOLBAR_ICON_SMALL:
+                    smallItem.setSelected(true);
+                    break;
+                case GUIGlobals.TOOLBAR_ICON_LARGE:
+                    largeItem.setSelected(true);
+                    break;
+                case GUIGlobals.TOOLBAR_ICON_MEDIUM:
+                default:
+                    mediumItem.setSelected(true);
+                    break;
+            }
+        }
+
+        private String getCurrentSizeLabel() {
+            switch (GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE) {
+                case GUIGlobals.TOOLBAR_ICON_SMALL:
+                    return "Small";
+                case GUIGlobals.TOOLBAR_ICON_LARGE:
+                    return "Large";
+                case GUIGlobals.TOOLBAR_ICON_MEDIUM:
+                default:
+                    return "Medium";
+            }
+        }
+
+        private void applyToolbarIconSize(int newSize) {
             if (newSize == GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE) {
                 return;
             }
 
-            // Update global size
             GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE = newSize;
-
-            // Save preference
             Globals.prefs.putInt("toolbarIconSize", newSize);
-
             refreshToolbarIcons();
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            updateSelection();
+            popupMenu.show(this, 0, getHeight());
         }
     }
 
@@ -2084,7 +2122,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.add(sortLockToggle);
 
         tlb.addSeparator();
-        tlb.add(new ToolbarSizeSelector());
+        tlb.add(new ToolbarSizeButton());
 
         tlb.add(Box.createHorizontalGlue());
         //tlb.add(new JabRefLabel(GUIGlobals.frameTitle+" "+GUIGlobals.version));
