@@ -15,8 +15,6 @@
  */
 package net.sf.jabref;
 
-// import com.jgoodies.looks.plastic.Plastic3DLookAndFeel;
-// import com.jgoodies.looks.plastic.theme.SkyBluer;
 import java.awt.Font;
 import java.awt.Frame;
 import java.io.File;
@@ -298,7 +296,7 @@ public final class JabRef {
             }
         }
         // openBibFile() can initialize special-field icons, so the icon theme
-        // must match the active Look & Feel before any input file is opened.
+        // must match the active interface theme before any input file is opened.
         boolean initializeGuiTheme = initialStartup
                 && !commandmode
                 && !cli.isShowVersion()
@@ -307,7 +305,7 @@ public final class JabRef {
             if (splashScreen != null) {
                 splashScreen.setStatus("Applying interface theme...", 20);
             }
-            setLookAndFeel();
+            applyStartupTheme();
         } else {
             // Non-GUI and later remote invocations still require an initialized
             // icon map for code paths that create special-field values.
@@ -636,7 +634,7 @@ public final class JabRef {
         return new ParserResult(result);
     }
 
-    private void setLookAndFeel() {
+    private void applyStartupTheme() {
         try {
             final String systemLnF = UIManager.getSystemLookAndFeelClassName();
 
@@ -684,7 +682,7 @@ public final class JabRef {
 
                 JOptionPane.showMessageDialog(
                         jrf,
-                        Globals.lang("Unable to find the requested Look & Feel and thus the default one is used."),
+                        Globals.lang("Unable to load the requested theme; the default theme is used instead."),
                         Globals.lang("Warning"),
                         JOptionPane.WARNING_MESSAGE
                 );

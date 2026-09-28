@@ -16,19 +16,13 @@
 package net.sf.jabref;
 
 import java.awt.BorderLayout;
-import java.util.ArrayList;
-import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import net.sf.jabref.help.HelpAction;
 import net.sf.jabref.help.HelpDialog;
@@ -42,12 +36,10 @@ public class AdvancedTab extends JPanel implements PrefsTab {
 
     JabRefPreferences _prefs;
     HelpAction remoteHelp;
-    JCheckBox useDefault, useRemoteServer, useNativeFileDialogOnMac, filechooserDisableRename,
+    JCheckBox useRemoteServer, useNativeFileDialogOnMac, filechooserDisableRename,
             useIEEEAbrv, biblatexMode;
-    JComboBox className;
     JTextField remoteServerPort;
-    String oldLnf = "";
-    boolean oldUseDef, oldBiblMode = false, oldConvertToEquation,
+    boolean oldBiblMode = false, oldConvertToEquation,
             oldCaseKeeperOnSearch, oldUnitFormatterOnSearch;
     int oldPort = -1;
 
@@ -63,40 +55,12 @@ public class AdvancedTab extends JPanel implements PrefsTab {
 
         remoteHelp = new HelpAction(diag, GUIGlobals.remoteHelp, "Help",
                 GUIGlobals.getMenuIcon("helpSmall"));
-        useDefault = new JCheckBox(Globals.lang("Use other look and feel"));
         useRemoteServer = new JCheckBox(Globals.lang("Listen for remote operation on port") + ":");
         useNativeFileDialogOnMac = new JCheckBox(Globals.lang("Use native file dialog"));
         filechooserDisableRename = new JCheckBox(Globals.lang("Disable file renaming in non-native file dialog"));
         useIEEEAbrv = new JCheckBox(Globals.lang("Use IEEE LaTeX abbreviations"));
         biblatexMode = new JCheckBox(Globals.lang("BibLaTeX mode"));
         remoteServerPort = new JTextField();
-        String[] possibleLookAndFeels = {
-            "com.jgoodies.plaf.plastic.Plastic3DLookAndFeel",
-            "com.sun.java.swing.plaf.windows.WindowsLookAndFeel",
-            "com.sun.java.swing.plaf.motif.MotifLookAndFeel",
-            "javax.swing.plaf.mac.MacLookAndFeel",
-            "com.sun.java.swing.plaf.gtk.GTKLookAndFeel",
-            "javax.swing.plaf.metal.MetalLookAndFeel"
-        };
-        // Only list L&F which are available
-        List<String> lookAndFeels = new ArrayList<String>();
-        for (String lf : possibleLookAndFeels) {
-            try {
-                // Try to find L&F, throws exception if not successful
-                Class.forName(lf);
-                lookAndFeels.add(lf);
-            } catch (ClassNotFoundException e) {
-            }
-        }
-        // className = new JComboBox(lookAndFeels.toArray(new String[lookAndFeels.size()])); // commented 17:21 2025-09-18
-        className = new JComboBox<>(lookAndFeels.toArray(new String[0])); // added 17:21 2025-09-18
-        className.setEditable(true);
-        final JComboBox clName = className;
-        useDefault.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                clName.setEnabled(((JCheckBox) e.getSource()).isSelected());
-            }
-        });
         useConvertToEquation = new JCheckBox(Globals.lang("Prefer converting subscripts and superscripts to equations rather than text"));
         useCaseKeeperOnSearch = new JCheckBox(Globals.lang("Add {} to specified title words on search to keep the correct case"));
         useUnitFormatterOnSearch = new JCheckBox(Globals.lang("Format units by adding non-breaking separators and keeping the correct case on search"));
@@ -106,32 +70,6 @@ public class AdvancedTab extends JPanel implements PrefsTab {
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
         JPanel pan = new JPanel();
 
-        if (!Globals.ON_MAC) {
-            builder.appendSeparator(Globals.lang("Look and feel"));
-            JLabel lab = new JLabel(Globals.lang("Default look and feel") + ": " + UIManager.getSystemLookAndFeelClassName());
-            builder.nextLine();
-            builder.append(pan);
-            builder.append(lab);
-            builder.nextLine();
-            builder.append(pan);
-            builder.append(useDefault);
-            builder.nextLine();
-            builder.append(pan);
-            JPanel pan2 = new JPanel();
-            lab = new JLabel(Globals.lang("Class name") + ":");
-            pan2.add(lab);
-            pan2.add(className);
-            builder.append(pan2);
-            builder.nextLine();
-            builder.append(pan);
-            lab = new JLabel(Globals.lang("Note that you must specify the fully qualified class name for the look and feel,"));
-            builder.append(lab);
-            builder.nextLine();
-            builder.append(pan);
-            lab = new JLabel(Globals.lang("and the class must be available in your classpath next time you start JabRef."));
-            builder.append(lab);
-            builder.nextLine();
-        }
         builder.appendSeparator(Globals.lang("Remote operation"));
         builder.nextLine();
         builder.append(new JPanel());
@@ -190,13 +128,6 @@ public class AdvancedTab extends JPanel implements PrefsTab {
     }
 
     public void setValues() {
-        oldUseDef = _prefs.getBoolean("useDefaultLookAndFeel");
-        oldLnf = _prefs.get("lookAndFeel");
-
-        useDefault.setSelected(!oldUseDef);
-        className.setSelectedItem(oldLnf);
-        className.setEnabled(!oldUseDef);
-
         useRemoteServer.setSelected(_prefs.getBoolean("useRemoteServer"));
         oldPort = _prefs.getInt("remoteServerPort");
         remoteServerPort.setText(String.valueOf(oldPort));
@@ -220,14 +151,6 @@ public class AdvancedTab extends JPanel implements PrefsTab {
     }
 
     public void storeSettings() {
-        boolean newUseDefault = !useDefault.isSelected();
-
-        Object selectedItem = className.getSelectedItem();
-        String selectedLnf = (selectedItem == null) ? "" : selectedItem.toString().trim();
-
-        _prefs.putBoolean("useDefaultLookAndFeel", newUseDefault);
-        _prefs.put("lookAndFeel", selectedLnf);
-
         _prefs.putBoolean("useNativeFileDialogOnMac", useNativeFileDialogOnMac.isSelected());
         _prefs.putBoolean("filechooserDisableRename", filechooserDisableRename.isSelected());
         UIManager.put("FileChooser.readOnly", filechooserDisableRename.isSelected());
@@ -279,15 +202,6 @@ public class AdvancedTab extends JPanel implements PrefsTab {
         }
 
         _prefs.putBoolean("biblatexMode", biblatexMode.isSelected());
-
-        if ((newUseDefault != oldUseDef) || !oldLnf.equals(selectedLnf)) {
-            JOptionPane.showMessageDialog(null,
-                    Globals.lang("You have changed the look and feel setting.")
-                            .concat(" ")
-                            .concat(Globals.lang("You must restart JabRef for this to come into effect.")),
-                    Globals.lang("Changed look and feel settings"),
-                    JOptionPane.WARNING_MESSAGE);
-        }
 
         if (biblatexMode.isSelected() != oldBiblMode) {
             JOptionPane.showMessageDialog(null,

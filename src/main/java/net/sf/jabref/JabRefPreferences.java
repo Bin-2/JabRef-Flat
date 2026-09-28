@@ -380,7 +380,6 @@ public final class JabRefPreferences {
             //defaults.put("pdfviewer", "cmd.exe /c start /b");
             //defaults.put("psviewer", "cmd.exe /c start /b");
             //defaults.put("htmlviewer", "cmd.exe /c start /b");
-            defaults.put("lookAndFeel", "com.jgoodies.looks.windows.WindowsLookAndFeel");
             defaults.put("Theme", "FlatLight");
             defaults.put("winEdtPath", "C:\\Program Files\\WinEdt Team\\WinEdt\\WinEdt.exe");
             defaults.put("latexEditorPath", "C:\\Program Files\\LEd\\LEd.exe");
@@ -393,7 +392,6 @@ public final class JabRefPreferences {
             //defaults.put("pdfviewer", "evince");
             //defaults.put("psviewer", "gv");
             //defaults.put("htmlviewer", "firefox");
-            defaults.put("lookAndFeel", "com.jgoodies.plaf.plastic.Plastic3DLookAndFeel");
             defaults.put("Theme", "FlatLight");
             defaults.put("fontFamily", "SansSerif");
 
@@ -406,7 +404,6 @@ public final class JabRefPreferences {
         defaults.put("proxyHostname", "my proxy host");
         defaults.put("proxyPort", "my proxy port");
         defaults.put(PDF_PREVIEW, Boolean.FALSE);
-        defaults.put("useDefaultLookAndFeel", Boolean.TRUE);
         defaults.put("lyxpipe", System.getProperty("user.home") + File.separator + ".lyx/lyxpipe");
         defaults.put("vim", "vim");
         defaults.put("vimServer", "vim");
