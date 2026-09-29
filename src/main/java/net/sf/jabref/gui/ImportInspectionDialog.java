@@ -71,7 +71,7 @@ import ca.odell.glazedlists.swing.TableComparatorChooser;
 
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.builder.ButtonStackBuilder;
-import com.jgoodies.uif_lite.component.UIFSplitPane;
+import javax.swing.JSplitPane;
 
 /**
  * Dialog to allow the selection of entries as part of an Import.
@@ -116,7 +116,7 @@ public class ImportInspectionDialog extends JDialog implements ImportInspector, 
 
     protected MetaData metaData;
 
-    protected UIFSplitPane contentPane = new UIFSplitPane(UIFSplitPane.VERTICAL_SPLIT);
+    protected JSplitPane contentPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 
     protected JTable glTable;
 

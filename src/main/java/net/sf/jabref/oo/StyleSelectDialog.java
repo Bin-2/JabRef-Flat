@@ -26,7 +26,7 @@ import ca.odell.glazedlists.swing.EventTableModel;
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
-import com.jgoodies.uif_lite.component.UIFSplitPane;
+import javax.swing.JSplitPane;
 import net.sf.jabref.*;
 import net.sf.jabref.external.ExternalFileType;
 import net.sf.jabref.external.UnknownExternalFileType;
@@ -55,7 +55,7 @@ public class StyleSelectDialog {
     private EventList<OOBibStyle> styles;
     private JDialog diag;
     private JTable table;
-    private UIFSplitPane contentPane = new UIFSplitPane(UIFSplitPane.VERTICAL_SPLIT);
+    private JSplitPane contentPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
     private EventTableModel<OOBibStyle> tableModel;
     private EventSelectionModel<OOBibStyle> selectionModel;
     private JPopupMenu popup = new JPopupMenu();

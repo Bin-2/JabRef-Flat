@@ -89,7 +89,7 @@ import net.sf.jabref.wizard.integrity.gui.IntegrityWizard;
 
 import com.jgoodies.looks.HeaderStyle;
 import com.jgoodies.looks.Options;
-import com.jgoodies.uif_lite.component.UIFSplitPane;
+import javax.swing.JSplitPane;
 import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.Set;
@@ -99,7 +99,7 @@ import java.util.Set;
  */
 public final class JabRefFrame extends JFrame implements OutputPrinter {
 
-    UIFSplitPane contentPane = new UIFSplitPane();
+    JSplitPane contentPane = new JSplitPane();
 
     JabRefPreferences prefs = Globals.prefs;
     PrefsDialog3 prefsDialog = null;

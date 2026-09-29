@@ -26,7 +26,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JToolBar;
 
-import com.jgoodies.uif_lite.panel.SimpleInternalFrame;
 import javax.swing.Icon;
 import javax.swing.SwingUtilities;
 
@@ -230,7 +229,7 @@ public abstract class SidePaneComponent extends SimpleInternalFrame {
 
     /**
      * Updates the UI for theme changes. This handles both standard Swing
-     * components and JGoodies SimpleInternalFrame properly.
+     * components and the side pane header properly.
      */
     public void updateUIForThemeChange() {
         try {

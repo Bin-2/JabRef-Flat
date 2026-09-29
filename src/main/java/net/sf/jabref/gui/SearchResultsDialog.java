@@ -51,7 +51,7 @@ import ca.odell.glazedlists.swing.EventSelectionModel;
 import ca.odell.glazedlists.swing.EventTableModel;
 import ca.odell.glazedlists.swing.TableComparatorChooser;
 
-import com.jgoodies.uif_lite.component.UIFSplitPane;
+import javax.swing.JSplitPane;
 
 /**
  * Dialog to display search results, potentially from more than one BasePanel,
@@ -80,7 +80,7 @@ public class SearchResultsDialog {
     private HashMap<BibtexEntry, BasePanel> entryHome = new HashMap<BibtexEntry, BasePanel>();
 
     private JTable entryTable;
-    protected UIFSplitPane contentPane = new UIFSplitPane(UIFSplitPane.VERTICAL_SPLIT);
+    protected JSplitPane contentPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
     PreviewPanel preview;
 
     public SearchResultsDialog(JabRefFrame frame, String title) {
