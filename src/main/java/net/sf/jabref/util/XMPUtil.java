@@ -16,6 +16,9 @@
 package net.sf.jabref.util;
 
 import java.io.*;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 import javax.xml.transform.TransformerException;
@@ -1053,65 +1056,86 @@ public class XMPUtil {
         }
 
         PDDocument document = null;
+        File tempFile = null;
+        File targetFile = file.getCanonicalFile();
 
         try {
-            document = PDDocument.load(file.getAbsoluteFile());
-            if (document.isEncrypted()) {
-                throw new EncryptionNotSupportedException(
-                        "Error: Cannot add metadata to encrypted document.");
-            }
-
-            if (writePDFInfo && bibtexEntries.size() == 1) {
-                writeDocumentInformation(document, bibtexEntries
-                        .iterator().next(), null);
-                writeDublinCore(document, bibtexEntries, null);
-            }
-
-            PDDocumentCatalog catalog = document.getDocumentCatalog();
-            PDMetadata metaRaw = catalog.getMetadata();
-
-            XMPMetadata meta;
-            if (metaRaw != null) {
-                meta = new XMPMetadata(XMLUtil.parse(metaRaw
-                        .createInputStream()));
-            } else {
-                meta = new XMPMetadata();
-            }
-            meta.addXMLNSMapping(XMPSchemaBibtex.NAMESPACE,
-                    XMPSchemaBibtex.class);
-
-            // Remove all current Bibtex-schemas
-            List<XMPSchema> schemas = meta
-                    .getSchemasByNamespaceURI(XMPSchemaBibtex.NAMESPACE);
-            for (XMPSchema schema : schemas) {
-                XMPSchemaBibtex bib = (XMPSchemaBibtex) schema;
-                bib.getElement().getParentNode().removeChild(bib.getElement());
-            }
-
-            for (BibtexEntry e : bibtexEntries) {
-                XMPSchemaBibtex bibtex = new XMPSchemaBibtex(meta);
-                meta.addSchema(bibtex);
-                bibtex.setBibtexEntry(e, null);
-            }
-
-            // Save to stream and then input that stream to the PDF
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            meta.save(os);
-            ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
-            PDMetadata metadataStream = new PDMetadata(document, is, false);
-            catalog.setMetadata(metadataStream);
-
-            // Save
             try {
-                document.save(file.getAbsolutePath());
-            } catch (COSVisitorException e) {
-                throw new TransformerException("Could not write XMP-metadata: "
-                        + e.getLocalizedMessage());
+                document = PDDocument.load(targetFile);
+                if (document.isEncrypted()) {
+                    throw new EncryptionNotSupportedException(
+                            "Error: Cannot add metadata to encrypted document.");
+                }
+
+                if (writePDFInfo && bibtexEntries.size() == 1) {
+                    writeDocumentInformation(document, bibtexEntries
+                            .iterator().next(), null);
+                    writeDublinCore(document, bibtexEntries, null);
+                }
+
+                PDDocumentCatalog catalog = document.getDocumentCatalog();
+                PDMetadata metaRaw = catalog.getMetadata();
+
+                XMPMetadata meta;
+                if (metaRaw != null) {
+                    meta = new XMPMetadata(XMLUtil.parse(metaRaw
+                            .createInputStream()));
+                } else {
+                    meta = new XMPMetadata();
+                }
+                meta.addXMLNSMapping(XMPSchemaBibtex.NAMESPACE,
+                        XMPSchemaBibtex.class);
+
+                // Remove all current Bibtex-schemas
+                List<XMPSchema> schemas = meta
+                        .getSchemasByNamespaceURI(XMPSchemaBibtex.NAMESPACE);
+                for (XMPSchema schema : schemas) {
+                    XMPSchemaBibtex bib = (XMPSchemaBibtex) schema;
+                    bib.getElement().getParentNode().removeChild(bib.getElement());
+                }
+
+                for (BibtexEntry e : bibtexEntries) {
+                    XMPSchemaBibtex bibtex = new XMPSchemaBibtex(meta);
+                    meta.addSchema(bibtex);
+                    bibtex.setBibtexEntry(e, null);
+                }
+
+                // Save to stream and then input that stream to the PDF
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                meta.save(os);
+                ByteArrayInputStream is = new ByteArrayInputStream(os.toByteArray());
+                PDMetadata metadataStream = new PDMetadata(document, is, false);
+                catalog.setMetadata(metadataStream);
+
+                // Save to a separate file. PDFBox may still need to read objects from
+                // the source PDF while saving, so writing directly to the source can
+                // truncate it before the save has completed.
+                tempFile = File.createTempFile("jabref-xmp-", ".pdf",
+                        targetFile.getParentFile());
+                try {
+                    document.save(tempFile.getAbsolutePath());
+                } catch (COSVisitorException e) {
+                    throw new TransformerException("Could not write XMP-metadata: "
+                            + e.getLocalizedMessage());
+                }
+
+            } finally {
+                if (document != null) {
+                    document.close();
+                }
             }
 
+            try {
+                Files.move(tempFile.toPath(), targetFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempFile.toPath(), targetFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
         } finally {
-            if (document != null) {
-                document.close();
+            if ((tempFile != null) && tempFile.exists()) {
+                tempFile.delete();
             }
         }
     }
