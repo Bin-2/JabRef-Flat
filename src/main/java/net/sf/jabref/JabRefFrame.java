@@ -445,6 +445,12 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 closeDatabaseAction,
                 copyFullPathAction);
 
+        tabbedPane.putClientProperty("JTabbedPane.tabType", "card");
+        tabbedPane.putClientProperty("JTabbedPane.showTabSeparators", Boolean.TRUE);
+        tabbedPane.putClientProperty("JTabbedPane.showContentSeparator", Boolean.TRUE);
+        tabbedPane.putClientProperty("JTabbedPane.tabHeight", 20);
+        tabbedPane.putClientProperty("JTabbedPane.tabInsets", new Insets(0, 12, 0, 12));
+
         // Load saved toolbar size preference
         int savedSize;
         try {
