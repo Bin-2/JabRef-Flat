@@ -39,28 +39,6 @@ public class JabRefFileChooser extends JFileChooser {
         super(file);
     }
 
-    /*public int showOpenDialog(Component parent) throws HeadlessException {
-        if (lastSize != null) {
-            setSize(lastSize);
-            System.out.println("Setting size: "+lastSize);
-        }
-        int answer = super.showOpenDialog(parent);
-        lastSize = getSize();
-        return answer;
-    }*/
-
- /*public int showSaveDialog(Component parent) throws HeadlessException {
-        if (lastSize != null) {
-            setSize(lastSize);
-            System.out.println("Setting size: "+lastSize);
-        }
-        int answer = super.showSaveDialog(parent);
-        lastSize = getSize();
-        return answer;
-    }*/
-    //========================================================
-    //
-    //========================================================
     @Override
     protected void setUI(ComponentUI newUI) {
         if (Globals.osName.equals(Globals.MAC)) {
@@ -69,9 +47,6 @@ public class JabRefFileChooser extends JFileChooser {
             super.setUI(new JabRefUI(this));
         }
     }
-    //========================================================
-    //
-    //========================================================
 
     public static void main(String[] args) {
         JabRefFileChooser fc = new JabRefFileChooser();
@@ -99,7 +74,6 @@ class JabRefUI extends MetalFileChooserUI {
 
         @Override
         public void mouseEntered(MouseEvent e) {
-            //System.out.println("mouse entered");
             MouseListener[] l = list.getMouseListeners();
             for (MouseListener aL : l) {
                 if (aL instanceof SingleClickListener) {

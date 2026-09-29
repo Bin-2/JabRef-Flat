@@ -175,12 +175,7 @@ public class MedlineHandler extends DefaultHandler {
             // check if year ="" then give medline date instead
             if (year.equals("")) {
                 if (!MedlineDate.equals("")) {
-                    // multi-year date format
-                    //System.out.println(MedlineDate);
                     year = MedlineDate.substring(0, 4);
-                    //Matcher m = Pattern.compile("\\b[0-9]{4}\\b").matcher(MedlineDate);
-                    //if(m.matches())
-                    //year = m.group();
                 }
             }
 

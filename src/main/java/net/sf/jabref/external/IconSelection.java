@@ -111,34 +111,7 @@ public class IconSelection extends JDialog {
         for (ImageIcon anIconSet : iconSet) {
             listModel.addElement(new JLabel(anIconSet));
         }
-//        class MyRenderer implements ListCellRenderer {
-//
-//            JLabel comp = new JLabel();
-//
-//            public MyRenderer() {
-//                comp.setOpaque(true);
-//                comp.setIconTextGap(0);
-//                comp.setHorizontalAlignment(JLabel.CENTER);
-//            }
-//
-//            public Component getListCellRendererComponent(JList list, Object value, int i,
-//                    boolean isSelected,
-//                    boolean hasFocus) {
-//                comp.setText(null);
-//                comp.setIcon(((JLabel) value).getIcon());
-//                if (isSelected) {
-//                    comp.setBackground(list.getSelectionBackground());
-//                    comp.setForeground(list.getSelectionForeground());
-//                    comp.setBorder(BorderFactory.createEtchedBorder());
-//                } else {
-//                    comp.setBackground(list.getBackground());
-//                    comp.setForeground(list.getForeground());
-//                    comp.setBorder(null);
-//                }
-//
-//                return comp;
-//            }
-//        }
+
         // Fully typed renderer
         class MyRenderer implements ListCellRenderer<JLabel> {
 

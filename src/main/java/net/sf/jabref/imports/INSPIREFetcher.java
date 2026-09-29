@@ -33,8 +33,8 @@ import net.sf.jabref.net.URLDownload;
  * Fetches literature metadata from the current INSPIRE REST API.
  *
  * INSPIRE can serialize search results directly as BibTeX, which lets this
- * legacy fetcher reuse JabRef's existing BibTeX parser without HTML scraping
- * or a JSON dependency.
+ * legacy fetcher reuse JabRef's existing BibTeX parser without HTML scraping or
+ * a JSON dependency.
  */
 public class INSPIREFetcher implements EntryFetcher {
 
@@ -144,7 +144,6 @@ public class INSPIREFetcher implements EntryFetcher {
     public void stopFetching() {
         shouldContinue = false;
     }
-
 
     @Override
     public String getHelpPage() {

@@ -51,9 +51,6 @@ class EntryEditorTabFocusListener implements FocusListener {
             if (e.getSource() instanceof JTextComponent) {
 
                 c = (JTextComponent) e.getSource();
-                /**
-                 * [ 1553552 ] Not properly detecting changes to flag as changed
-                 */
                 d = new DocumentListener() {
 
                     void fire() {

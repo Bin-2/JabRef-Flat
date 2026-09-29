@@ -163,15 +163,12 @@ public class StringDialog extends JDialog {
             setShowVerticalLines(true);
             setShowHorizontalLines(true);
             setColumnSelectionAllowed(true);
-//            setBackground(new Color(249, 250, 251));
             DefaultCellEditor dce = new DefaultCellEditor(new JTextField());
             dce.setClickCountToStart(2);
             setDefaultEditor(String.class, dce);
             TableColumnModel cm = getColumnModel();
             cm.getColumn(0).setPreferredWidth(800);
             cm.getColumn(1).setPreferredWidth(2000);
-//            sp.getViewport().setBackground(Globals.prefs.getColor("tableBackground"));
-            // getInputMap().remove(GUIGlobals.exitDialog);
             getInputMap().put(frame.prefs.getKey("Close dialog"), "close");
             getActionMap().put("close", closeAction);
             getInputMap().put(frame.prefs.getKey("Help"), "help");
@@ -218,10 +215,6 @@ public class StringDialog extends JDialog {
         }
 
         public void setValueAt(Object value, int row, int col) {
-            //	    if (row >= base.getStringCount())
-            //	return; // After a Remove operation the program somehow
-            // thinks the user is still editing an entry,
-            // which might now be outside
             if (col == 0) {
                 // Change name of string.
                 if (!value.equals(((BibtexString) strings[row]).getName())) {
@@ -323,7 +316,6 @@ public class StringDialog extends JDialog {
 
         public CloseAction(StringDialog parent) {
             super("Close window");
-            //, new ImageIcon(GUIGlobals.closeIconFile));
             putValue(SHORT_DESCRIPTION, Globals.lang("Close dialog"));
             this.parent = parent;
         }

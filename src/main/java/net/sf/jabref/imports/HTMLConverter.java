@@ -868,18 +868,6 @@ public class HTMLConverter implements LayoutFormatter {
 
     private final int MAX_TAG_LENGTH = 100;
 
-    /*private final int MAX_TAG_LENGTH = 30;*/
- /*private final int MAX_CHAR_LENGTH = 10;
-
-    private int readHtmlChar(String text, StringBuffer sb, int position) {
-        // Have just read the < character that starts the tag.
-        int index = text.indexOf(';', position);
-        if ((index > position) && (index-position < MAX_CHAR_LENGTH)) {
-        	//String code = text.substring(position, index);
-            //System.out.println("Removed code: "+text.substring(position, index));
-            return index; // Just skip the tag.
-        } else return position; // Don't do anything.
-    }*/
     private int readTag(String text, StringBuilder sb, int position) {
         // Have just read the < character that starts the tag.
         int index = text.indexOf('>', position);

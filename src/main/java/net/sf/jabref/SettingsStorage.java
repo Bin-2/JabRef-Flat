@@ -24,8 +24,8 @@ import java.util.prefs.Preferences;
  * Bootstrap configuration for the preferences backing store.
  *
  * The backing store must be selected before java.util.prefs.Preferences is
- * initialized. Therefore the storage mode and XML file location are mirrored
- * in a tiny properties file outside Preferences itself.
+ * initialized. Therefore the storage mode and XML file location are mirrored in
+ * a tiny properties file outside Preferences itself.
  */
 public final class SettingsStorage {
 
@@ -49,7 +49,8 @@ public final class SettingsStorage {
     }
 
     /**
-     * Must be the first application initialization performed from JabRef.main().
+     * Must be the first application initialization performed from
+     * JabRef.main().
      */
     public static synchronized void initialize() {
         if (initialized) {

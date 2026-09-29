@@ -127,14 +127,14 @@ public class AutoSetExternalFileForEntries extends AbstractWorker {
                 // If something was found, entriesChanged it:
                 if (!editor.getText().equals("") && !editor.getText().equals(old)) {
                     // Store an undo edit:
-                    //System.out.println("Setting: "+sel[i].getCiteKey()+" "+editor.getText());
+                    // System.out.println("Setting: "+sel[i].getCiteKey()+" "+editor.getText());
                     ce.addEdit(new UndoableFieldChange(aSel, fieldName, old, editor.getText()));
                     aSel.setField(fieldName, editor.getText());
                     entriesChanged++;
                 }
             }
         }
-        //System.out.println("Done setting");
+        // System.out.println("Done setting");
         // The following loop checks all external links that are already set.
         if (checkExisting) {
             mainLoop:

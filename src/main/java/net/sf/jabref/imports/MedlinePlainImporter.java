@@ -193,13 +193,7 @@ public class MedlinePlainImporter extends ImportFormat {
                     }
                 } else if (lab.equals("PG")) {
                     hm.put("pages", val);
-                } //                else if (lab.equals("STAT")) {
-                //                    if (val.equals("MEDLINE"))
-                //                        hm.put("publisher", "PubMed");
-                //                    else
-                //                        hm.put("publisher", val);
-                //                }
-                else if (lab.equals("PL")) {
+                } else if (lab.equals("PL")) {
                     hm.put("address", val);
                 } else if (lab.equals("IS")) {
                     hm.put("issn", val);
@@ -237,11 +231,7 @@ public class MedlinePlainImporter extends ImportFormat {
                         comment = comment + "\n";
                     }
                     comment = comment + val;
-                } //                // Added ID import 2005.12.01, Morten Alver:
-                //                else if (lab.equals("ID"))
-                //                    hm.put("refid", val);
-                //                    // Added doi import (sciencedirect.com) 2011.01.10, Alexander Hug <alexander@alexanderhug.info>
-                else if (lab.equals("AID")) {
+                } else if (lab.equals("AID")) {
                     String doi = val;
                     if (doi.startsWith("doi:")) {
                         doi = doi.replaceAll("(?i)doi:", "").trim();

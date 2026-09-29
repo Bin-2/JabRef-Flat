@@ -171,25 +171,6 @@ public class BibtexDatabase {
         return _entries.values();
     }
 
-    //    public synchronized BibtexEntry getEntryByKey(String key) {
-    //        BibtexEntry back = null;
-    //
-    //        int keyHash = key.hashCode(); // key hash for better performance
-    //
-    //        Set<String> keySet = _entries.keySet();
-    //        for (String entrieID : keySet) {
-    //            BibtexEntry entry = getEntryById(entrieID);
-    //            if ((entry != null) && (entry.getCiteKey() != null)) {
-    //                String citeKey = entry.getCiteKey();
-    //                if (citeKey != null) {
-    //                    if (keyHash == citeKey.hashCode()) {// Hash collision check
-    //                        back = entry;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //        return back;
-    //    }
     public synchronized BibtexEntry getEntryByKey(String key) {
         return _keyToEntryMap.get(key);
     }

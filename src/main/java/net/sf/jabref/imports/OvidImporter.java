@@ -49,8 +49,6 @@ public class OvidImporter extends ImportFormat {
     public static Pattern book_pat = Pattern.compile(
             "\\(([0-9][0-9][0-9][0-9])\\)\\. [A-Za-z, ]+([0-9]+) pp\\. ([\\w, ]+): ([\\w, ]+)");
 
-    //   public static Pattern ovid_pat_inspec= Pattern.compile("Source ([
-    // \\w&\\-]+)");
     /**
      * Return the name of this import format.
      */
@@ -125,7 +123,7 @@ public class OvidImporter extends ImportFormat {
                 if (!isAuthor && content.endsWith(".")) {
                     content = content.substring(0, content.length() - 1);
                 }
-                //fields[j] = fields[j].trim();
+
                 if (isAuthor) {
 
                     h.put("author", content);

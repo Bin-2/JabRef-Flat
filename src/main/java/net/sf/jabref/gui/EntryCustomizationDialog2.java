@@ -129,10 +129,6 @@ public class EntryCustomizationDialog2 extends JDialog implements ListSelectionL
         im.put(Globals.prefs.getKey("Close dialog"), "close");
         am.put("close", closeAction);
 
-        //con.fill = GridBagConstraints.BOTH;
-        //con.weightx = 0.3;
-        //con.weighty = 1;
-        //gbl.setConstraints(typeComp, con);
         main.add(typeComp, BorderLayout.WEST);
         main.add(right, BorderLayout.CENTER);
         main.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -332,8 +328,6 @@ public class EntryCustomizationDialog2 extends JDialog implements ListSelectionL
                 opt2Lists.remove(name);
             }
         }
-        //messageLabel.setText("'"+type.getName()+"' "+
-        //        Globals.lang("is a standard type."));
 
     }
 

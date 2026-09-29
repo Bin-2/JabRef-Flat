@@ -97,12 +97,6 @@ public class GeneralFetcher extends SidePaneComponent implements ActionListener 
         String[] choices = new String[fetcherArray.length];
         for (int i = 0; i < fetcherArray.length; i++) {
             choices[i] = fetcherArray[i].getTitle();
-            //choices[i] = new JLabel(fetchers.get(i).getTitle(), new ImageIcon(fetchers.get(i).getIcon()),
-            //        JLabel.HORIZONTAL);
-            /*if (fetchers.get(i).getOptionsPanel() != null)
-                optionsPanel.add(fetchers.get(i).getOptionsPanel(), String.valueOf(i));
-            else
-                optionsPanel.add(new JPanel(), String.valueOf(i));*/
         }
         fetcherChoice = new JComboBox<>(choices);
         int defaultFetcher = Globals.prefs.getInt("selectedFetcherIndex");
@@ -116,25 +110,6 @@ public class GeneralFetcher extends SidePaneComponent implements ActionListener 
         }
         helpBut.setEnabled(activeFetcher.getHelpPage() != null);
 
-        //optionsCards.show(optionsPanel, String.valueOf(defaultFetcher));
-
-        /*fetcherChoice.setRenderer(new ListCellRenderer() {
-            JLabel label = new JLabel();
-            public Component getListCellRendererComponent(JList jList, Object o, int i, boolean isSelected,
-                boolean cellHasFocus) {
-                JLabel theLab = (JLabel)o;
-                label.setIcon(theLab.getIcon());
-                label.setText(theLab.getText());
-                if (cellHasFocus) {
-                    label.setBackground(UIManager.getDefaults().getColor("ComboBox.selectionBackground").darker());
-                    label.setForeground(UIManager.getDefaults().getColor("ComboBox.foreground"));
-                } else {
-                    label.setBackground(UIManager.getDefaults().getColor("ComboBox.background"));
-                    label.setForeground(UIManager.getDefaults().getColor("ComboBox.foreground"));
-                }
-                return label;
-            }
-        });*/
         fetcherChoice.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 activeFetcher = fetcherArray[fetcherChoice.getSelectedIndex()];
@@ -227,18 +202,6 @@ public class GeneralFetcher extends SidePaneComponent implements ActionListener 
         }
     }
 
-//    /**
-//     * Get help icon for the help button
-//     */
-//    private static Icon getHelpIcon() {
-//        Icon svgIcon = GUIGlobals.getIcon("helpSmall", GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE);
-//        if (svgIcon != null) {
-//            return svgIcon;
-//        } else {
-//            // Fallback to legacy icon
-//            return GUIGlobals.getImageIcon("helpSmall");
-//        }
-//    }
     public void setHelpResourceOwner(Class c) {
         help.setResourceOwner(c);
     }

@@ -51,12 +51,6 @@ public class FieldTextArea extends JTextAreaWithHighlighting implements FieldEdi
     public FieldTextArea(String fieldName_, String content) {
         super(content);
 
-        // Listen for undo and redo events
-        /*
-		 * getDocument().addUndoableEditListener(new UndoableEditListener() {
-		 * public void undoableEditHappened(UndoableEditEvent evt) {
-		 * undo.addEdit(evt.getEdit()); } });
-         */
         updateFont();
 
         // Add the global focus listener, so a menu item can see if this field
@@ -72,10 +66,7 @@ public class FieldTextArea extends JTextAreaWithHighlighting implements FieldEdi
         fieldName = fieldName_;
 
         label = new FieldNameLabel(" " + Util.nCase(fieldName) + " ");
-//        setBackground(GUIGlobals.validFieldBackgroundColor);
-//        setForeground(GUIGlobals.editorTextColor);
 
-        // setFont(new Font("Times", Font.PLAIN, 10));
         FieldTextMenu popMenu = new FieldTextMenu(this);
         this.addMouseListener(popMenu);
         label.addMouseListener(popMenu);
@@ -168,7 +159,6 @@ public class FieldTextArea extends JTextAreaWithHighlighting implements FieldEdi
 		 * try { if (undo.canUndo()) { undo.undo(); } } catch
 		 * (CannotUndoException e) { }
          */
-
     }
 
     @Override
@@ -181,7 +171,6 @@ public class FieldTextArea extends JTextAreaWithHighlighting implements FieldEdi
 		 * try { if (undo.canRedo()) { undo.redo(); } } catch
 		 * (CannotUndoException e) { }
          */
-
     }
 
     @Override

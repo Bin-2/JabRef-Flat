@@ -137,18 +137,4 @@ public class PushToLyx implements PushToApplication {
         settings.add(new JLabel(Globals.lang("Path to LyX pipe") + ":"));
         settings.add(lyxPipe);
     }
-    /*class Timeout extends javax.swing.Timer
-    {
-      public Timeout(int timeout, final Thread toStop, final String message) {
-        super(timeout, new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            toStop.stop();         // !!! <- deprecated
-            // toStop.interrupt(); // better ?, interrupts wait and IO
-            //stop();
-            //output(message);
-          }
-        });
-      }
-    } */
-
 }

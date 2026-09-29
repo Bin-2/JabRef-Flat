@@ -34,7 +34,6 @@ public class NetworkTab extends JPanel implements PrefsTab {
     private JTextField defProxyHostname, defProxyPort;
     JabRefPreferences _prefs;
     JabRefFrame _frame;
-//    private HelpAction ownerHelp, timeStampHelp;
 
     public NetworkTab(JabRefFrame frame, JabRefPreferences prefs) {
         _prefs = prefs;
@@ -64,8 +63,6 @@ public class NetworkTab extends JPanel implements PrefsTab {
         });
 
         FormLayout layout = new FormLayout("1dlu, 8dlu, left:pref, 4dlu, fill:150dlu, 4dlu, fill:pref", "");
-        //("right:pref, 10dlu, 50dlu, 5dlu, fill:60dlu", "");
-        //("10dlu, left:50dlu, 4dlu, fill:pref", "");
         DefaultFormBuilder builder = new DefaultFormBuilder(layout);
 
         builder.appendSeparator(Globals.lang("Network"));
@@ -80,7 +77,7 @@ public class NetworkTab extends JPanel implements PrefsTab {
         builder.append(new JPanel());
         JLabel lap2 = new JLabel(Globals.lang("Port") + ":");
         builder.append(lap2);
-        //builder.append(new JPanel());
+
         builder.append(defProxyPort);
 
         JPanel pan = builder.getPanel();

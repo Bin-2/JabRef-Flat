@@ -79,7 +79,7 @@ public class IntegrityMessagePanel
         this.basePanel = basePanel;
         validChecker = new IntegrityCheck(); // errors, warnings, hints
 
-        // JList --------------------------------------------------------------
+        // JList
         warningData = new HintListModel();
         warnings = new JList<>(warningData);
         warnings.setCellRenderer(new IntegrityListRenderer());
@@ -91,9 +91,8 @@ public class IntegrityMessagePanel
         paneScrollPane.setPreferredSize(new Dimension(540, 255));
         paneScrollPane.setMinimumSize(new Dimension(10, 10));
 
-        // Fix Panel ---------------------------------------------------------
+        // Fix Panel
         JPanel fixPanel = new JPanel();
-//    BoxLayout box = new BoxLayout(fixPanel, BoxLayout.LINE_AXIS) ;
 
         JLabel label1 = new JLabel(Globals.lang("Field_content"));
 
@@ -110,13 +109,12 @@ public class IntegrityMessagePanel
         fixPanel.add(applyButton);
         fixPanel.add(fixButton);
 
-        // Main Panel --------------------------------------------------------
+        // Main Panel
         this.setLayout(new BorderLayout());
         this.add(paneScrollPane, BorderLayout.CENTER);
         this.add(fixPanel, BorderLayout.SOUTH);
     }
 
-    // ------------------------------------------------------------------------
     public void updateView(BibtexEntry entry) {
         warningData.clear();
         IntegrityMessage.setPrintMode(IntegrityMessage.SINLGE_MODE);
@@ -129,7 +127,6 @@ public class IntegrityMessagePanel
         warningData.setData(validChecker.checkBibtexDatabase(base));
     }
 
-    // ------------------------------------------------------------------------
     //This method is required by ListSelectionListener.
     public void valueChanged(ListSelectionEvent e) {
         if (e.getValueIsAdjusting()) {
@@ -142,9 +139,6 @@ public class IntegrityMessagePanel
                 if (entry != null) {
                     str = entry.getField(msg.getFieldName());
                     basePanel.highlightEntry(entry);
-                    // make the "invalid" field visible  ....
-                    //          EntryEditor editor = basePanel.getCurrentEditor() ;
-                    //          editor.
                 }
             }
             content.setText(str);
@@ -152,8 +146,7 @@ public class IntegrityMessagePanel
         }
     }
 
-// --------------------------------------------------------------------------
-// This methods are required by KeyListener
+    // This methods are required by KeyListener
     @Override
     public void keyPressed(KeyEvent e) {
     }
@@ -180,7 +173,6 @@ public class IntegrityMessagePanel
                 BibtexEntry entry = msg.getEntry();
 
                 if (entry != null) {
-//          System.out.println("update") ;
                     String oldContent = entry.getField(msg.getFieldName());
                     UndoableFieldChange edit = new UndoableFieldChange(entry, msg.getFieldName(), oldContent,
                             content.getText());
@@ -188,7 +180,6 @@ public class IntegrityMessagePanel
                     basePanel.undoManager.addEdit(edit);
                     basePanel.markBaseChanged();
                     msg.setFixed(true);
-//          updateView(entry) ;
                     warningData.valueUpdated(warnings.getSelectedIndex());
                 }
             }
@@ -196,8 +187,6 @@ public class IntegrityMessagePanel
             applyButton.setEnabled(false);
         }
     }
-    // ---------------------------------------------------------------------------
-    // ---------------------------------------------------------------------------
 
     class IntegrityListRenderer extends DefaultListCellRenderer {
 

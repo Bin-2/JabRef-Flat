@@ -131,49 +131,7 @@ public class EntryTableTransferHandler extends TransferHandler {
                 List<File> l = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
                 return handleDraggedFiles(l, dropRow);
             }
-            // Done by MrDlib
-            /*if(t.isDataFlavorSupported(MindMapNodesSelection.mindMapNodesFlavor)){
-                String xml = (String)t.getTransferData(MindMapNodesSelection.mindMapNodesFlavor);
-                URL mindmapURL = null;
-                if(t.isDataFlavorSupported(MindMapNodesSelection.mindmapUrlFlavor)){
-                    mindmapURL = (URL)t.getTransferData(MindMapNodesSelection.mindmapUrlFlavor);
-                }
-                List<File> files = new ArrayList<File>();
-                String[] xmlNodes = xml.split("<nodeseparator>");
-                for(String xmlNode : xmlNodes){
-                    XMLElement element = new XMLElement();
-                    element.parseString(xmlNode);
-                    String link = element.getStringAttribute("Link");
-                    String absoluteLink = Tools.getLink(link, mindmapURL);
-                    if(absoluteLink == null) continue;
-                    File file = new File(absoluteLink);
-                    if(file.exists()){
-                        files.add(file);
-                    }
-                    else{
-                        try {
-                            URL url = new URL(absoluteLink);
-                            file = new File(url.toURI());
-                            if(file.exists()){
-                                files.add(file);
-                            }
-                        } catch (URISyntaxException e) {
-                            // Todo logging
-                        } catch(IllegalArgumentException e){
-                            // Todo logging
-                        } catch(MalformedURLException e){
-                            // Todo logging
-                        }
-                    }
-                }
-                if(files.size() > 0){
-                    return handleDraggedFiles(files, dropRow);
-                }
-                else{
-                    return false;
-                }
-            }*/
-            // Done by MrDlib
+
             if (t.isDataFlavorSupported(urlFlavor)) {
                 URL dropLink = (URL) t.getTransferData(urlFlavor);
                 return handleDropTransfer(dropLink, dropRow);
@@ -445,53 +403,6 @@ public class EntryTableTransferHandler extends TransferHandler {
 
                 continue;
             }
-            /*
-			if (extension.equals("pdf")) {
-				Collection c;
-				try {
-					c = XMPUtil.readXMP(fileNames[i]);
-				} catch (IOException e1) {
-					c = null;
-					frame.output(Globals.lang("No XMP metadata found in " + fileNames[i]));
-				}
-
-				if (c != null && c.size() > 0) {
-					Iterator it = c.iterator();
-
-					BasePanel panel = frame.basePanel();
-
-					if (panel == null) {
-						// // Create a new, empty, database.
-						BibtexDatabase database = new BibtexDatabase();
-						frame.addTab(database, null, null, Globals.prefs.get("defaultEncoding"),
-							true);
-						frame.output(Globals.lang("New database created."));
-						panel = frame.basePanel();
-					}
-
-					BibtexDatabase database = frame.basePanel().database();
-
-					NamedCompound ce = new NamedCompound(Glbals.lang("Drop PDF"));
-
-					while (it.hasNext()) {
-						BibtexEntry e = (BibtexEntry) it.next();
-
-						try {
-							e.setId(Util.createNeutralId());
-							database.insertEntry(e);
-							ce.addEdit(new UndoableInsertEntry(database, e, panel));
-						} catch (Exception e2) {
-							// Should not happen?
-						}
-					}
-
-					ce.end();
-					panel.undoManager.addEdit(ce);
-					panel.markBaseChanged();
-					continue;
-				}
-			}
-             */
 
             notBibFiles.add(fileName);
         }

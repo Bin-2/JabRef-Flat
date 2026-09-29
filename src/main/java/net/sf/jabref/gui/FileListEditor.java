@@ -95,9 +95,6 @@ public class FileListEditor extends JTable implements FieldEditor,
         });
 
         JScrollPane sPane = new JScrollPane(this);
-        // Fix scroll pane background
-//        sPane.getViewport().setBackground(UIManager.getColor("Table.background"));
-//        sPane.setBackground(UIManager.getColor("Table.background"));
 
         setTableHeader(null);
         addMouseListener(new TableClickListener());
@@ -242,14 +239,9 @@ public class FileListEditor extends JTable implements FieldEditor,
         setShowGrid(true);
         setGridColor(UIManager.getColor("Component.borderColor")); //
 
-        // Force table background to gray
-//        setBackground(new Color(242, 242, 242));
         // Fill viewport height so the gray shows below last row too
         setFillsViewportHeight(true);
 
-        // Optional: also force selection background if you want contrast
-//        setSelectionBackground(java.awt.Color.LIGHT_GRAY);
-        //setSelectionForeground(java.awt.Color.WHITE);
     }
 
     @Override
@@ -259,14 +251,6 @@ public class FileListEditor extends JTable implements FieldEditor,
         javax.swing.JScrollPane sp
                 = (javax.swing.JScrollPane) javax.swing.SwingUtilities.getAncestorOfClass(
                         javax.swing.JScrollPane.class, this);
-//        if (sp != null) {
-//            java.awt.Color bg = getBackground();
-//            javax.swing.JViewport vp = sp.getViewport();
-//            if (vp != null) {
-//                vp.setBackground(bg);
-//            }
-//            sp.setBackground(bg);
-//        }
     }
 
     @Override
@@ -276,13 +260,7 @@ public class FileListEditor extends JTable implements FieldEditor,
         setShowHorizontalLines(true);
         setShowVerticalLines(true);
         setShowGrid(true);
-//        setGridColor(java.awt.Color.BLACK);
-//        setBackground(java.awt.Color.LIGHT_GRAY);
         setFillsViewportHeight(true);
-
-        // re-apply selection colors after LAF changes
-//        setSelectionBackground(java.awt.Color.GRAY);
-        // setSelectionForeground(java.awt.Color.BLACK);
     }
 
     private void openSelectedFile() {

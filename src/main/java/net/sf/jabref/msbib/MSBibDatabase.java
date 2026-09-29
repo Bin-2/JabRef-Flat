@@ -91,8 +91,6 @@ public class MSBibDatabase {
         if (rootLst.getLength() == 0) {
             return bibitems;
         }
-//    	if(docin!= null && docin.getDocumentElement().getTagName().contains("Sources") == false)
-//    		return bibitems;
 
         NodeList sourceList = ((Element) (rootLst.item(0))).getElementsByTagName(bcol + "Source");
         for (int i = 0; i < sourceList.getLength(); i++) {

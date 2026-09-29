@@ -349,12 +349,8 @@ public class AutoDetectPaths extends AbstractWorker {
         prog.add(new JLabel(message), BorderLayout.NORTH);
         prog.add(bar, BorderLayout.CENTER);
         prog.pack();
-        prog.setLocationRelativeTo(null);//parent);
-        //SwingUtilities.invokeLater(new Runnable() {
-        //    public void run() {
+        prog.setLocationRelativeTo(null);
         prog.setVisible(true);
-        //    }
-        //});
         return prog;
     }
 }

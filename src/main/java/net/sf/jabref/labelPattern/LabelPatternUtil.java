@@ -398,41 +398,6 @@ public class LabelPatternUtil {
             _alist.add(tok.nextToken());
         }
         return _alist;
-
-        /*
-       // Regular expresion for identifying the fields
-       Pattern pi = Pattern.compile("\\[\\w*\\]");
-       // Regular expresion for identifying the spacer
-       Pattern ps = Pattern.compile("\\].()*\\[");
-
-       // The matcher for the field
-       Matcher mi = pi.matcher(labelPattern);
-       // The matcher for the spacer char
-       Matcher ms = ps.matcher(labelPattern);
-
-       // Before we do anything, we add the parameter to the ArrayLIst
-       _alist.add(labelPattern);
-
-       // If we can find the spacer character
-       if(ms.find()){
-     String t_spacer = ms.group();
-      // Remove the `]' and `[' at the ends
-      // We cant imagine a spacer of omre than one character.
-      t_spacer = t_spacer.substring(1,2);
-      _alist.add(t_spacer);
-       }
-
-       while(mi.find()){
-     // Get the matched string
-     String t_str = mi.group();
-      int _sindex = 1;
-      int _eindex = t_str.length() -1;
-      // Remove the `[' and `]' at the ends
-      t_str = t_str.substring(_sindex, _eindex);
-     _alist.add(t_str);
-       }
-
-       return _alist;*/
     }
 
     /**

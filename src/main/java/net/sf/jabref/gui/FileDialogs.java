@@ -117,8 +117,8 @@ public class FileDialogs {
             String description, OpenFileFilter off, int dialogType, boolean updateWorkingDirectory,
             boolean dirOnly, boolean multipleSelection, JComponent accessory) {
 
-// Added the !dirOnly condition below as a workaround to the native file dialog
-// not supporting directory selection:
+        // Added the !dirOnly condition below as a workaround to the native file dialog
+        // not supporting directory selection:
         if (!dirOnly && Globals.prefs.getBoolean("useNativeFileDialogOnMac")) {
 
             return getNewFileForMac(owner, directory, extension, dialogType,

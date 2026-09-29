@@ -147,9 +147,6 @@ public class PushToApplicationButton implements ActionListener {
             menuButton.setBorder(marginBorder);
         }
 
-        // menuButton.setOpaque(false); // Transparent
-        // menuButton.setContentAreaFilled(false); // No fill
-        // menuButton.setBorderPainted(false); // No border
         menuButton.addActionListener(new MenuButtonActionListener());
         menuButton.setToolTipText(Globals.lang("Select external application"));
         pushButton = new JButton();
@@ -173,10 +170,7 @@ public class PushToApplicationButton implements ActionListener {
         setSelected(selected);
         pushButton.addActionListener(this);
         pushButton.addMouseListener(new PushButtonMouseListener());
-//        pushButton.setOpaque(false);
-//        menuButton.setOpaque(false);
 
-//        comp.setOpaque(false);
         comp.add(pushButton, BorderLayout.WEST);
         comp.add(menuButton, BorderLayout.EAST);
         // comp.setBorder(BorderFactory.createLineBorder(Color.gray));
@@ -239,7 +233,6 @@ public class PushToApplicationButton implements ActionListener {
                 appIcon = getScaledIcon(appIcon, GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE, GUIGlobals.CURRENT_TOOLBAR_ICON_SIZE);
             }
         }
-        // System.out.println(appIcon);
 
         pushButton.setOpaque(false);
         pushButton.setIcon(appIcon);
@@ -405,7 +398,7 @@ public class PushToApplicationButton implements ActionListener {
             // Change the selection:
             setSelected(index);
             // Invoke the selected operation (is that expected behaviour?):
-            //PushToApplicationButton.this.actionPerformed(null);
+            // PushToApplicationButton.this.actionPerformed(null);
             // It makes sense to transfer focus to the push button after the
             // menu closes:
             pushButton.requestFocus();

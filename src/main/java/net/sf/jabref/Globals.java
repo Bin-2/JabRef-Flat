@@ -148,10 +148,7 @@ public class Globals {
     private static Handler consoleHandler;
 
     public static String[] ENCODINGS, ALL_ENCODINGS
-            = // (String[])
-            // Charset.availableCharsets().keySet().toArray(new
-            // String[]{});
-            new String[]{"ISO8859_1", "UTF8", "UTF-16", "ASCII", "Cp1250", "Cp1251", "Cp1252",
+            = new String[]{"ISO8859_1", "UTF8", "UTF-16", "ASCII", "Cp1250", "Cp1251", "Cp1252",
                 "Cp1253", "Cp1254", "Cp1257", "SJIS",
                 "KOI8_R", // Cyrillic
                 "EUC_JP", // Added Japanese encodings.
@@ -320,7 +317,7 @@ public class Globals {
                 translation = Globals.messages.getString(key.replaceAll(" ", "_"));
             }
         } catch (MissingResourceException ex) {
-            //logger("Warning: could not get translation for \"" + key + "\"");
+            // logger("Warning: could not get translation for \"" + key + "\"");
         }
         if (translation == null) {
             translation = key;
@@ -407,10 +404,6 @@ public class Globals {
             }
         } catch (MissingResourceException ex) {
             translation = key;
-
-            // System.err.println("Warning: could not get menu item translation
-            // for \""
-            // + key + "\"");
         }
         if ((translation != null) && (translation.length() != 0)) {
             return translation;
@@ -430,12 +423,6 @@ public class Globals {
         } else {
             return BibtexEntryType.OTHER;
         }
-        /*
-		 * if(type.equals("article")) return BibtexEntryType.ARTICLE; else
-		 * if(type.equals("book")) return BibtexEntryType.BOOK; else
-		 * if(type.equals("inproceedings")) return
-		 * BibtexEntryType.INPROCEEDINGS;
-         */
     }
 
     public static String SPECIAL_COMMAND_CHARS = "\"`^~'c=";
@@ -544,6 +531,7 @@ public class Globals {
         HTMLCHARS.put("^O", "&Ocirc;"); // #212
         HTMLCHARS.put("~O", "&Otilde;"); // #213
         HTMLCHARS.put("\"O", "&Ouml;"); // #214
+
         // According to ISO 8859-1 the "\times" symbol should be placed here
         // (#215).
         // Omitting this, because it is a mathematical symbol.
@@ -578,6 +566,7 @@ public class Globals {
         HTMLCHARS.put("^o", "&ocirc;"); // #244
         HTMLCHARS.put("~o", "&otilde;"); // #245
         HTMLCHARS.put("\"o", "&ouml;"); // #246
+
         // According to ISO 8859-1 the "\div" symbol should be placed here
         // (#247).
         // Omitting this, because it is a mathematical symbol.

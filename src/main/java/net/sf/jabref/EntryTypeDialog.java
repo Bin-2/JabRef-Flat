@@ -68,9 +68,7 @@ public class EntryTypeDialog extends JDialog implements ActionListener {
         JPanel pan = new JPanel();
         getContentPane().add(pan, BorderLayout.CENTER);
         JPanel buttons = new JPanel();
-        JButton // ok = new JButton("Ok"),
-                cancel = new JButton(Globals.lang("Cancel"));
-        //ok.addActionListener(this);
+        JButton cancel = new JButton(Globals.lang("Cancel"));
         cancel.addActionListener(this);
 
         // Make ESC close dialog, equivalent to clicking Cancel.
@@ -78,7 +76,6 @@ public class EntryTypeDialog extends JDialog implements ActionListener {
                 .put(baseFrame_.prefs.getKey("Close dialog"), "close");
         cancel.getActionMap().put("close", cancelAction);
 
-        //buttons.add(ok);
         ButtonBarBuilder bb = new ButtonBarBuilder(buttons);
         //buttons.setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
         bb.addGlue();
@@ -134,9 +131,6 @@ public class EntryTypeDialog extends JDialog implements ActionListener {
 
         public CancelAction() {
             super("Cancel");
-            //  new ImageIcon(GUIGlobals.imagepath+GUIGlobals.closeIconFile));
-            //putValue(SHORT_DESCRIPTION, "Cancel");
-            //putValue(MNEMONIC_KEY, GUIGlobals.closeKeyCode);
         }
 
         @Override

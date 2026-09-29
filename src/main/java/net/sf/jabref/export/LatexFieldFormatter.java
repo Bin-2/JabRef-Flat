@@ -111,11 +111,7 @@ public class LatexFieldFormatter implements FieldFormatter {
 
                 sb = new StringBuilder();
                 sb.append(valueDelimitersZero);
-                // No formatting at all for these fields, to allow custom formatting?
-//            if (Globals.prefs.getBoolean("preserveFieldFormatting"))
-//              sb.append(text);
-//            else
-//             currently, we do not do any more wrapping
+
                 if (writefieldWrapfield && !nonWrappableField) {
                     long wrapStart = System.nanoTime();
                     sb.append(Util.wrap2(text, GUIGlobals.LINE_LENGTH));
@@ -193,7 +189,7 @@ public class LatexFieldFormatter implements FieldFormatter {
 
             // currently, we do not add newlines and new formatting
             if (writefieldWrapfield && !nonWrappableField) {
-//             introduce a line break to be read at the parser
+                // introduce a line break to be read at the parser
                 long wrapStart = System.nanoTime();
                 result = Util.wrap2(sb.toString(), GUIGlobals.LINE_LENGTH);//, but that lead to ugly .tex
                 totalWrapNanos += System.nanoTime() - wrapStart;
@@ -225,9 +221,6 @@ public class LatexFieldFormatter implements FieldFormatter {
             int end_pos) {
         long writeTextStart = System.nanoTime();
         try {
-            /*sb.append("{");
-            sb.append(text.substring(start_pos, end_pos));
-            sb.append("}");*/
             sb.append(valueDelimitersZero);
             boolean escape = false, inCommandName = false, inCommand = false,
                     inCommandOption = false;

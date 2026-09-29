@@ -210,10 +210,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
     private final LatexFieldFormatter sourceFormatter = LatexFieldFormatter.buildIgnoreHashes();
     private final LatexFieldFormatter validatingFormatter = new LatexFieldFormatter();
 
-//    private static final List<EntryEditor> activeEditors = new ArrayList<>();
     public EntryEditor(JabRefFrame frame_, BasePanel panel_, BibtexEntry entry_) {
 
-//        activeEditors.add(this);
         frame = frame_;
         panel = panel_;
         entry = entry_;
@@ -243,10 +241,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 
         tabbed.putClientProperty("JComponent.focusWidth", 0);
         tabbed.putClientProperty("JComponent.innerFocusWidth", 0);
-        // tabbed.setFocusable(false);
 
         updateAllFields();
-//        Globals.addPreferenceChangeListener(themePrefListener);
 
     }
 
@@ -369,7 +365,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 
             sourceIndex = tabbed.getTabCount() - 1;
         }
-//        srcPanel.setFocusCycleRoot(true);
     }
 
     public BibtexEntryType getType() {
@@ -390,7 +385,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
     private void setupToolBar() {
         JPanel leftPan = new JPanel();
         leftPan.setLayout(new BorderLayout());
-//         tlb = new JToolBar(JToolBar.VERTICAL);
         tlb = new JToolBar(JToolBar.VERTICAL) {
             @Override
             public void updateUI() {
@@ -412,8 +406,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             }
         };
 
-        //tlb.putClientProperty(Options.HEADER_STYLE_KEY, HeaderStyle.BOTH);
-        //tlb.setBorder(null);
+        // tlb.putClientProperty(Options.HEADER_STYLE_KEY, HeaderStyle.BOTH);
+        // tlb.setBorder(null);
         tlb.setRollover(true);
 
         tlb.setMargin(new Insets(5, 0, 0, 0));
@@ -449,8 +443,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 setIcon(GUIGlobals.getImage("close"));
                 super.updateUI();
                 // Re-apply custom styling after theme change
-                //setText(null);
-                //setBorder(null);
+                // setText(null);
+                // setBorder(null);
                 setOpaque(false);
                 setBackground(UIManager.getColor("SplitPane.background"));
                 setMargin(new Insets(0, 0, 0, 0));
@@ -471,7 +465,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             @Override
             public void updateUI() {
                 super.updateUI();
-                
+
                 for (Component comp : getComponents()) {
                     if (comp instanceof JComponent) {
                         ((JComponent) comp).updateUI(); // force update if needed
@@ -511,45 +505,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         leftPan.add(tlb, BorderLayout.SOUTH);
         add(leftPan, BorderLayout.WEST);
     }
-
-// MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-//    @Override
-//    public void updateUI() {
-//        // Update all components
-//        super.updateUI();
-//
-//        // Refresh toolbar icons
-//        refreshToolbar();
-//
-//    }
-//
-//    public void refreshToolbar() {
-//        if (tlb == null) {
-//            return;
-//        }
-//
-//        // Update all buttons in toolbar
-//        for (Component comp : tlb.getComponents()) {
-//            if (comp instanceof AbstractButton) {
-//                refreshToolbarButton((AbstractButton) comp);
-//            }
-//        }
-//        tlb.revalidate();
-//        tlb.repaint();
-//    }
-//
-//    private void refreshToolbarButton(AbstractButton button) {
-//        Action action = button.getAction();
-//        if (action != null) {
-//            // Get the action's icon and reapply it
-//            Icon icon = (Icon) action.getValue(Action.SMALL_ICON);
-//            if (icon != null) {
-//                // This triggers icon reloading with current theme
-//                action.putValue(Action.SMALL_ICON, null);
-//                action.putValue(Action.SMALL_ICON, icon);
-//            }
-//        }
-//    }
 
     /**
      * Refreshes this editor after a Look & Feel change without rebuilding its
@@ -690,7 +645,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             });
 
             return but;
-            // } else if ((s != null) && s.equals("browsePdf")) {
         } else if ((s != null) && (s.equals("browseDoc") || s.equals("browseDocZip"))) {
 
             final String ext = "." + fieldName.toLowerCase();
@@ -704,10 +658,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             ExternalFilePanel pan = new ExternalFilePanel(frame, panel.metaData(), this, fieldName,
                     off, ed);
             return pan;
-        } /*
-         * else if ((s != null) && s.equals("browsePs")) { ExternalFilePanel pan =
-         * new ExternalFilePanel(frame, this, "ps", off, ed); return pan; }
-         */ else if ((s != null) && s.equals("url")) {
+        } else if ((s != null) && s.equals("url")) {
             if (ed instanceof JComponent) {
                 ((JComponent) ed).setDropTarget(new DropTarget((Component) ed,
                         DnDConstants.ACTION_NONE, new SimpleUrlDragDrop(ed, storeFieldAction)));
@@ -732,19 +683,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         source = new JTextAreaWithHighlighting();
         frame.getSearchManager().addSearchListener((SearchTextListener) source);
 
-        /* {
-            private boolean antialias = Globals.prefs.getBoolean("antialias");
-
-            public void paint(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                if (antialias)
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
-                super.paint(g2);
-            }
-        };*/
-        //DefaultFormBuilder builder = new DefaultFormBuilder
-        //        (srcPanel, new FormLayout( "fill:pref:grow", "fill:pref:grow"));
         source.setEditable(true);
         source.setLineWrap(true);
         source.setTabSize(GUIGlobals.INDENT);
@@ -759,7 +697,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 
         JScrollPane sp = new JScrollPane(source, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        //builder.append(sp);
 
         srcPanel.setLayout(new BorderLayout());
         srcPanel.add(sp, BorderLayout.CENTER);
@@ -862,7 +799,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         } else {
             new FocusRequester(source);
         }
-        // ((JComponent)activeTab).requestFocus();
     }
 
     /**
@@ -1267,7 +1203,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         public TypeLabel(String type) {
             super(type);
             setUI(new VerticalLabelUI(false));
-//            setForeground(GUIGlobals.entryEditorLabelColor);
             setHorizontalAlignment(RIGHT);
             setFont(GUIGlobals.typeNameFont);
 
@@ -1319,14 +1254,8 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         @Override
         public void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g;
-            //g2.setColor(GUIGlobals.entryEditorLabelColor);
-            //g2.setFont(GUIGlobals.typeNameFont);
-            //FontMetrics fm = g2.getFontMetrics();
-            //int width = fm.stringWidth(label);
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             super.paintComponent(g2);
-            //g2.rotate(-Math.PI / 2, 0, 0);
-            //g2.drawString(label, -width - 7, 28);
         }
     }
 
@@ -1385,11 +1314,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             putValue(SHORT_DESCRIPTION, Globals.lang("Delete entry"));
         }
 
-//        public void updateUI() {
-//            putValue(SMALL_ICON, GUIGlobals.getImage("delete"));
-//            putValue(SHORT_DESCRIPTION, Globals.lang("Delete entry"));
-//            putValue(NAME, Globals.lang("Delete"));
-//        }
         @Override
         public void actionPerformed(ActionEvent e) {
             // Show confirmation dialog if not disabled:
@@ -1438,7 +1362,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         public CopyKeyAction() {
             super("Copy BibTeX key to clipboard");
             putValue(SHORT_DESCRIPTION, "Copy BibTeX key to clipboard (Ctrl-K)");
-            // putValue(MNEMONIC_KEY, GUIGlobals.copyKeyCode);
         }
 
         @Override
@@ -1569,9 +1492,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                         fe.setInvalidBackgroundColor();
                     }
                 } else {
-                    // set == false
-                    // We set the field and label color.
-//                    fe.setValidBackgroundColor();
                 }
 
             } else if ((source.isEditable())
@@ -1581,7 +1501,7 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
                 if (accepted) {
                 }
             }
-////////////////////////////////////
+
             // Make sure we scroll to the entry if it moved in the table.
             // Should only be done if this editor is currently showing:
             //System.out.println(getType().getName()+": movingAway="+movingAway+", isShowing="+isShowing());
@@ -1623,31 +1543,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         }
     }
 
-//    class NextEntryAction extends AbstractAction {
-//
-//        public NextEntryAction() {
-//            super(Globals.lang("Next entry"), GUIGlobals.getImage("down"));
-//            putValue(SHORT_DESCRIPTION, Globals.lang("Next entry"));
-//        }
-//
-//        @Override
-//        public void actionPerformed(ActionEvent e) {
-//
-//            int thisRow = panel.mainTable.findEntry(entry);
-//            int newRow = -1;
-//
-//            if ((thisRow + 1) < panel.database.getEntryCount()) {
-//                newRow = thisRow + 1;
-//            } else if (thisRow > 0) {
-//                newRow = 0;
-//            } else {
-//                return; // newRow is still -1, so we can assume the database has
-//            }                        // only one entry.
-//
-//            scrollTo(newRow);
-//            panel.mainTable.setRowSelectionInterval(newRow, newRow);
-//        }
-//    }
     class NextEntryAction extends ThemedAction {
 
         public NextEntryAction() {
@@ -1674,11 +1569,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 
     class PrevEntryAction extends ThemedAction {
 
-//        public PrevEntryAction() {
-//            super(Globals.lang("Previous entry"), GUIGlobals.getImage("up"));
-//
-//            putValue(SHORT_DESCRIPTION, Globals.lang("Previous entry"));
-//        }
         public PrevEntryAction() {
             super(Globals.lang("Previous entry"), "up");
         }
@@ -1695,8 +1585,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
             } else {
                 return; // newRow is still -1, so we can assume the database has
             }                        // only one entry.
-            // id = panel.tableModel.getIdForRow(newRow);
-            // switchTo(id);
 
             scrollTo(newRow);
             panel.mainTable.setRowSelectionInterval(newRow, newRow);
@@ -1709,13 +1597,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
         JabRefFrame parent;
         BibtexEntry selectedEntry;
 
-//        public GenerateKeyAction(JabRefFrame parentFrame) {
-//            super(Globals.lang("Generate BibTeX key"), GUIGlobals.getImage("makeKey"));
-//            parent = parentFrame;
-//            // selectedEntry = newEntry ;
-//            putValue(SHORT_DESCRIPTION, Globals.lang("Generate BibTeX key"));
-//            // putValue(MNEMONIC_KEY, GUIGlobals.showGenKeyCode);
-//        }
         public GenerateKeyAction(JabRefFrame parentFrame) {
             super(Globals.lang("Generate BibTeX key"), "makeKey");
             this.parent = parentFrame;
@@ -1915,10 +1796,6 @@ public class EntryEditor extends JPanel implements VetoableChangeListener, Entry
 
     private class AutoLinkAction extends ThemedAction {
 
-//        public AutoLinkAction() {
-//            putValue(SMALL_ICON, GUIGlobals.getImage("autoGroup"));
-//            putValue(SHORT_DESCRIPTION, Globals.lang("Automatically set file links for this entry") + " (Alt-F)");
-//        }
         public AutoLinkAction() {
             super(Globals.lang("Automatically set file links for this entry"), "autoGroup");  // "makeKey" is the icon key
             putValue(SHORT_DESCRIPTION, Globals.lang("Automatically set file links for this entry") + " (Alt-F)");

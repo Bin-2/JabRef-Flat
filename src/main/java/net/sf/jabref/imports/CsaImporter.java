@@ -110,16 +110,16 @@ public class CsaImporter extends ImportFormat {
         Matcher pm = DATE_PATTERN.matcher(fstr);
         while (pm.find()) {
             match = pm.start();
-//	    System.out.println("MATCH: " + match + ": " + pm.group(0));
+            //  System.out.println("MATCH: " + match + ": " + pm.group(0));
         }
 
         if (match == -1) {
-//	    System.out.println("NO MATCH: \"" + fstr + "\"");
+            //  System.out.println("NO MATCH: \"" + fstr + "\"");
             return fstr;
         }
 
         if (!pm.find(match)) {
-//	    System.out.println("MATCH FAILED: \"" + fstr + "\"");
+            //  System.out.println("MATCH FAILED: \"" + fstr + "\"");
             return fstr;
         }
 
@@ -378,7 +378,6 @@ public class CsaImporter extends ImportFormat {
                         String oyear = hm.get("year");
                         if (!fstr.equals(oyear)) {
                             addNote(hm, "Source Year: " + oyear + ".");
-//			    System.out.println(fstr + " != " + oyear);
                         }
                     }
                 } else if (fabbr.equals("RL")) {
@@ -461,7 +460,6 @@ public class CsaImporter extends ImportFormat {
                     if (fstr.equals("")) {
                         continue;
                     }
-//		    System.out.println("SOURCE: \"" + fstr + "\"");
                 } else if (fabbr.equals("TI")) {
                     ftype = "title";
                 } else if (fabbr.equals("RE")) {

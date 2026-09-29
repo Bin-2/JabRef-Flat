@@ -136,11 +136,6 @@ public class PushToEmacs implements PushToApplication {
             Runnable errorListener = new Runnable() {
                 public void run() {
                     InputStream out = p.getErrorStream();
-//                    try {
-//                    	if (out.available() <= 0)
-//                    		out = p.getInputStream();
-//                    } catch (Exception e) {
-//                    }
                     int c;
                     StringBuilder sb = new StringBuilder();
                     try {

@@ -170,21 +170,17 @@ class KeyBindingsDialog extends JDialog {
                     return; // need a modifier except for function keys
                 }
             }
-            // second key cannot be a modifiers
-            //if ( evt.isActionKey()) {
-            //Util.pr(code);
-            if ( //code.equals("Escape")
-                    code.equals("Tab")
+
+            if (code.equals("Tab")
                     || code.equals("Backspace")
                     || code.equals("Enter")
-                    //|| code.equals("Delete")
                     || code.equals("Space")
                     || code.equals("Ctrl")
                     || code.equals("Shift")
                     || code.equals("Alt")) {
                 return;
             }
-            //}
+
             String newKey;
             if (!mod.equals("")) {
                 newKey = mod.toLowerCase().replaceAll("\\+", " ") + " " + code;
@@ -192,17 +188,14 @@ class KeyBindingsDialog extends JDialog {
                 newKey = code;
             }
             keyTF.setText(newKey);
-            //find which key is selected and set its value int the bindHM
+
             String selectedFunction = table.getOriginalName(selRow);
             table.setValueAt(newKey, selRow, 1);
             table.revalidate();
             table.repaint();
-            //Util.pr(selectedFunction);
-            //String selectedFunction = (String) list.getSelectedValue();
-            // log print
-            // System.out.println("selectedfunction " + selectedFunction + " new key: " + newKey);
+
             bindHM.put(selectedFunction, newKey);
-            //table.setValueAt(newKey, );
+
         }
     }
 
@@ -258,7 +251,6 @@ class KeyBindingsDialog extends JDialog {
         TableColumnModel cm = table.getColumnModel();
         cm.getColumn(0).setPreferredWidth(GUIGlobals.KEYBIND_COL_0);
         cm.getColumn(1).setPreferredWidth(GUIGlobals.KEYBIND_COL_1);
-//    table.setRowSelectionInterval(0, 0); //select the first entry
 
     }
 
@@ -283,7 +275,6 @@ class KeyBindingsDialog extends JDialog {
     private class KeystrokeTableModel extends AbstractTableModel {
 
         String[][] data;
-        //String[] trData;
 
         public KeystrokeTableModel(TreeMap<String, String[]> sorted) {
             data = new String[sorted.size()][3];
@@ -292,8 +283,7 @@ class KeyBindingsDialog extends JDialog {
             while (i.hasNext()) {
                 data[row++] = sorted.get(i.next());
             }
-            //for (int i=0; i<trData.length; i++)
-            //  trData[i] = Globals.lang(data[i][0]);
+
         }
 
         @Override
@@ -318,10 +308,7 @@ class KeyBindingsDialog extends JDialog {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            //if (columnIndex == 0)
             return data[rowIndex][columnIndex];
-            //else
-            //return data[rowIndex][0];
         }
 
         @Override
@@ -394,18 +381,4 @@ class KeyBindingsDialog extends JDialog {
         bindHM.put(name, defKey);
         return defKey;
     }
-
-    /*
-       public static void main(String args[])
-       {
-    HashMap h=new HashMap();
-    h.put("new-bibtex","ctrl N");
-    h.put("edit-bibtex","ctrl E");
-    h.put("exit-bibtex","ctrl Q");
-    KeyBindingsDialog d= new KeyBindingsDialog(h);
-    d.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    d.setSize(200,300);
-    d.setVisible(true);
-
-    }*/
 }

@@ -307,7 +307,6 @@ public class GroupSelector extends SidePaneComponent implements
 
         int butSize = newButton.getIcon().getIconHeight() + 5;
         Dimension butDim = new Dimension(butSize, butSize);
-        //Dimension butDimSmall = new Dimension(20, 20);
 
         newButton.setPreferredSize(butDim);
         newButton.setMinimumSize(butDim);
@@ -714,9 +713,6 @@ public class GroupSelector extends SidePaneComponent implements
         }
     }
 
-//    private void annotationEvent() {
-//        this.annotationEvent((GroupTreeNode) ((groupsTree.getSelectionPaths())[0].getLastPathComponent()));
-//    }
     public void valueChanged(TreeSelectionEvent e) {
         if (panel == null) // sorry, we're closed!
         {
@@ -736,8 +732,6 @@ public class GroupSelector extends SidePaneComponent implements
         }
 
         if (!editModeIndicator) {
-//            annotationEvent();
-//        } else {
             updateSelections();
         }
 
@@ -755,13 +749,6 @@ public class GroupSelector extends SidePaneComponent implements
         GroupingWorker worker = new GroupingWorker(searchRules, searchOptions);
         worker.getWorker().run();
         worker.getCallBack().update();
-        /*panel.setGroupMatcher(new SearchMatcher(searchRules, searchOptions));
-        DatabaseSearch search = new DatabaseSearch(this, searchOptions, searchRules,
-                panel, Globals.GROUPSEARCH, floatCb.isSelected(), Globals.prefs
-                        .getBoolean("grayOutNonHits"),
-                //true,
-                select.isSelected());
-        search.start();*/
     }
 
     class GroupingWorker extends AbstractWorker {

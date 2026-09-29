@@ -292,9 +292,6 @@ public class ManageJournalsPanel extends JPanel {
             }
 
         }
-
-        //efe = new ExternalFileEntry();
-        //externals.add(efe);
     }
 
     public void setupUserTable() {
@@ -546,10 +543,6 @@ public class ManageJournalsPanel extends JPanel {
 
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == add) {
-                //int sel = userTable.getSelectedRow();
-                //if (sel < 0)
-                //    sel = 0;
-
                 nameTf.setText("");
                 abbrTf.setText("");
                 if (JOptionPane.showConfirmDialog(dialog, journalEditPanel, Globals.lang("Edit journal"),

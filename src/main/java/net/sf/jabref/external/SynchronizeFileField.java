@@ -111,26 +111,6 @@ public class SynchronizeFileField extends AbstractWorker {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            /*
-                progress += weightAutoSet;
-                panel.frame().setProgressBarValue(progress);
-
-                Object old = sel[i].getField(fieldName);
-                FileListTableModel tableModel = new FileListTableModel();
-                if (old != null)
-                    tableModel.setContent((String)old);
-                Thread t = FileListEditor.autoSetLinks(sel[i], tableModel, null, null);
-
-                if (!tableModel.getStringRepresentation().equals(old)) {
-                    String toSet = tableModel.getStringRepresentation();
-                    if (toSet.length() == 0)
-                        toSet = null;
-                    ce.addEdit(new UndoableFieldChange(sel[i], fieldName, old, toSet));
-                    sel[i].setField(fieldName, toSet);
-                    entriesChanged++;
-                }
-            }    */
-
         }
         progress += sel.length * weightAutoSet;
         panel.frame().setProgressBarValue(progress);
@@ -259,8 +239,6 @@ public class SynchronizeFileField extends AbstractWorker {
             }
         }
 
-        //for (BibtexEntry entr : changedEntries)
-        //    System.out.println(entr.getCiteKey());
         if (!changedEntries.isEmpty()) {
             // Add the undo edit:
             ce.end();

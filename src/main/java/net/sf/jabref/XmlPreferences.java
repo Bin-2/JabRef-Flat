@@ -40,6 +40,7 @@ import org.xml.sax.SAXParseException;
 final class XmlPreferences extends AbstractPreferences {
 
     private static final class Storage {
+
         private final File file;
         private XmlPreferences root;
         private boolean loading;

@@ -37,13 +37,10 @@ public class AbbreviateAction extends AbstractWorker {
     }
 
     public void init() {
-        //  new FieldWeightDialog(frame).setVisible(true);
         panel.output("Abbreviating...");
     }
 
     public void run() {
-        //net.sf.jabref.journals.JournalList.downloadJournalList(frame);
-
         BibtexEntry[] entries = panel.getSelectedEntries();
         if (entries == null) {
             return;

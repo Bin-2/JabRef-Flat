@@ -424,33 +424,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 else*/
                 selectionListener.editSignalled();
             }
-            /*
-                  if (isShowingEditor()) {
-                      new FocusRequester(splitPane.getBottomComponent());
-                      return;
-                  }
-
-                  frame.block();
-                //(new Thread() {
-                //public void run() {
-                int clickedOn = -1;
-                // We demand that one and only one row is selected.
-                if (entryTable.getSelectedRowCount() == 1) {
-                  clickedOn = entryTable.getSelectedRow();
-                }
-                if (clickedOn >= 0) {
-                  String id = tableModel.getIdForRow(clickedOn);
-                  BibtexEntry be = database.getEntryById(id);
-                  showEntry(be);
-
-                  if (splitPane.getBottomComponent() != null) {
-                      new FocusRequester(splitPane.getBottomComponent());
-                  }
-
-                }
-        frame.unblock();
-              }
-             */
         });
 
         actions.put("test",// new AccessLinksForEntries.SaveWithLinkedFiles(this));
@@ -519,7 +492,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         ensureNotShowing(be);
                         ce.addEdit(new UndoableRemoveEntry(database, be, BasePanel.this));
                     }
-                    //entryTable.clearSelection();
+
                     frame.output(Globals.lang("Cut_pr") + " "
                             + (bes.length > 1 ? bes.length
                                     + " " + Globals.lang("entries")
@@ -528,11 +501,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                     undoManager.addEdit(ce);
                     markBaseChanged();
 
-                    // Reselect the entry in the first prev. selected position:
-                    /*if (row0 >= entryTable.getRowCount())
-                            row0 = entryTable.getRowCount()-1;
-                        if (row0 >= 0)
-                            entryTable.addRowSelectionInterval(row0, row0);*/
                 }
             }
         });
@@ -560,22 +528,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                                         : Globals.lang("entry")) + ".");
                         ce.end();
                         undoManager.addEdit(ce);
-                        //entryTable.clearSelection();
                     }
-
-                    // Reselect the entry in the first prev. selected position:
-                    /*if (row0 >= entryTable.getRowCount())
-                              row0 = entryTable.getRowCount()-1;
-                          if (row0 >= 0) {
-                             final int toSel = row0;
-                            //
-                              SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    entryTable.addRowSelectionInterval(toSel, toSel);
-                                    //entryTable.ensureVisible(toSel);
-                                }
-                              });
-                     */
                 }
 
             }
@@ -665,8 +618,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         }
                         ce.end();
                         undoManager.addEdit(ce);
-                        //entryTable.clearSelection();
-                        //entryTable.revalidate();
+
                         output(Globals.lang("Pasted") + " "
                                 + (bes.length > 1 ? bes.length + " "
                                         + Globals.lang("entries") : "1 " + Globals.lang("entry"))
@@ -794,33 +746,11 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                     DBStrings dbs = metaData.getDBStrings();
 
                     try {
-                        /*boolean okToExport = null!=metaData.getFile();
-                    	if (!okToExport)
-                    	{
-                    		okToExport = false;
-                    		int response = JOptionPane.showConfirmDialog(null, "You need to save your database in the disk \n" +
-                    				"before saving. Save it now?", "Database is not saved",
-                    		        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                    			if(response == JOptionPane.YES_OPTION)
-                    			{
-                    				try {
-                    					saveAction.saveAs();
-                    					okToExport = (null!=metaData.getFile());
-                    				} catch (Throwable e) {
-                    				e.printStackTrace();
-                    			}
-                    		}
-                    	}
-                    	if (okToExport)
-                    	{*/
                         frame.output(Globals.lang("Attempting SQL export..."));
                         DBExporterAndImporterFactory factory = new DBExporterAndImporterFactory();
                         DBExporter exporter = factory.getExporter(dbs.getServerType());
                         exporter.exportDatabaseToDBMS(database, metaData, null, dbs, frame);
                         dbs.isConfigValid(true);
-                        //}
-                        //else
-                        //	errorMessage = "Database was not exported. Your database must be saved \nbefore exporting to a SQL database";
                     } catch (Exception ex) {
                         String preamble = "Could not export to SQL database for the following reason:";
                         errorMessage = SQLUtil.getExceptionMessage(ex);
@@ -832,7 +762,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                     }
 
                     metaData.setDBStrings(dbs);
-
                 }
 
             }
@@ -884,7 +813,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             @Override
             public void init() {
                 entries = new ArrayList<BibtexEntry>(Arrays.asList(getSelectedEntries()));
-                //rows = entryTable.getSelectedRows() ;
+
                 numSelected = entries.size();
 
                 if (entries.isEmpty()) { // None selected. Inform the user to select entries first.
@@ -968,8 +897,8 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 numSelected = entries.size();
 
                 ////////////////////////////////////////////////////////////////////////////////
-//          Prevent selection loss for autogenerated BibTeX-Keys
-////////////////////////////////////////////////////////////////////////////////
+                //          Prevent selection loss for autogenerated BibTeX-Keys
+                ////////////////////////////////////////////////////////////////////////////////
                 for (final BibtexEntry bibEntry : entries) {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
@@ -1002,9 +931,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         actions.put("search", new BaseAction() {
             @Override
             public void action() {
-                //sidePaneManager.togglePanel("search");
                 sidePaneManager.show("search");
-                //boolean on = sidePaneManager.isPanelVisible("search");
                 frame.searchToggle.setSelected(true);
                 frame.getSearchManager().startSearch();
             }
@@ -1013,7 +940,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         actions.put("toggleSearch", new BaseAction() {
             @Override
             public void action() {
-                //sidePaneManager.togglePanel("search");
+                // sidePaneManager.togglePanel("search");
                 sidePaneManager.toggle("search");
                 boolean on = sidePaneManager.isComponentVisible("search");
                 frame.searchToggle.setSelected(on);
@@ -1081,7 +1008,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 BibtexEntry[] bes = mainTable.getSelectedEntries();
                 if ((bes != null) && (bes.length > 0)) {
                     storeCurrentEdit();
-                    //String[] keys = new String[bes.length];
+
                     List<Object> keys = new ArrayList<>();
                     // Collect all non-null keys.
                     for (BibtexEntry be : bes) {
@@ -1261,32 +1188,12 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                                             // TODO: add code for opening the file
                                         }
                                     }
-                                    /*String basefile;
-                                    Object key = bes[0].getField(BibtexFields.KEY_FIELD);
-                                    if (key != null) {
-                                        basefile = key.toString();
-                                        final ExternalFileType[] types = Globals.prefs.getExternalFileTypeSelection();
-                                        final String sep = System.getProperty("file.separator");
-                                        String dir = metaData.getFileDirectory(GUIGlobals.FILE_FIELD);
-                                        if ((dir != null) && (dir.length() > 0)) {
-                                            if (dir.endsWith(sep)) {
-                                                dir = dir.substring(0, dir.length() - sep.length());
-                                            }
-                                            for (int i = 0; i < types.length; i++) {
-                                                String found = Util.findPdf(basefile, types[i].getExtension(),
-                                                        dir, new OpenFileFilter("." + types[i].getExtension()));
-                                                if (found != null) {
-                                                    filepath = dir + sep + found;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }*/
+
                                 }
                             }
 
                             if (filepath != null) {
-                                //output(Globals.lang("Calling external viewer..."));
+                                // output(Globals.lang("Calling external viewer..."));
                                 try {
                                     Util.openExternalViewer(metaData(), filepath, field);
                                     output(Globals.lang("External viewer called") + ".");
@@ -1439,7 +1346,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         field = "url";
                     }
                     if (link != null) {
-                        //output(Globals.lang("Calling external viewer..."));
+                        // output(Globals.lang("Calling external viewer..."));
                         try {
                             Util.openExternalViewer(metaData(), link.toString(), field);
                             output(Globals.lang("External viewer called") + ".");
@@ -1490,7 +1397,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         link = SPIRESFetcher.constructUrlFromSlaccitation(bes[0].getField("slaccitation"));
                     }
                     if (link != null) {
-                        //output(Globals.lang("Calling external viewer..."));
+                        // output(Globals.lang("Calling external viewer..."));
                         try {
                             Util.openExternalViewer(metaData(), link.toString(), "url");
                             output(Globals.lang("External viewer called") + ".");
@@ -1506,34 +1413,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             }
         });
 
-        /*
-		 *  It looks like this action was not being supported for SPIRES anyway
-		 *  so we don't bother to implement it.
-        actions.put("openInspire", new BaseAction() {
-        	public void action() {
-        		BibtexEntry[] bes = mainTable.getSelectedEntries();
-                if ((bes != null) && (bes.length == 1)) {
-                	Object link = null;
-                    if (bes[0].getField("eprint") != null)
-                      link = INSPIREFetcher.constructUrlFromEprint(bes[0].getField("eprint").toString());
-                    else if (bes[0].getField("slaccitation") != null)
-                        link = INSPIREFetcher.constructUrlFromSlaccitation(bes[0].getField("slaccitation").toString());
-                    if (link != null) {
-                      //output(Globals.lang("Calling external viewer..."));
-                      try {
-                        Util.openExternalViewer(metaData(), link.toString(), "url");
-                        output(Globals.lang("External viewer called")+".");
-                      } catch (IOException ex) {
-                          output(Globals.lang("Error") + ": " + ex.getMessage());
-                      }
-                    }
-                    else
-                        output(Globals.lang("No url defined")+".");
-                } else
-                  output(Globals.lang("No entries or multiple entries selected."));
-            }
-        	});
-         */
         actions.put("replaceAll", new BaseAction() {
             @Override
             public void action() {
@@ -1573,12 +1452,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             }
         });
 
-        /*actions.put("strictDupliCheck", new BaseAction() {
-                public void action() {
-                  StrictDuplicateSearch ds = new StrictDuplicateSearch(BasePanel.this);
-                  ds.start();
-                }
-              });*/
         actions.put("plainTextImport", new BaseAction() {
             @Override
             public void action() {
@@ -1607,47 +1480,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             }
         });
 
-        // The action starts the "import from plain text" dialog
-        /*actions.put("importPlainText", new BaseAction() {
-                      public void action()
-                      {
-                        BibtexEntry bibEntry = null ;
-                        // try to get the first marked entry
-                        BibtexEntry[] bes = entryTable.getSelectedEntries();
-                        if ((bes != null) && (bes.length > 0))
-                          bibEntry = bes[0] ;
-
-                        if (bibEntry != null)
-                        {
-                          // Create an UndoableInsertEntry object.
-                          undoManager.addEdit(new UndoableInsertEntry(database, bibEntry, BasePanel.this));
-
-                          TextInputDialog tidialog = new TextInputDialog(frame, BasePanel.this,
-                                                                         "import", true,
-                                                                         bibEntry) ;
-                          Util.placeDialog(tidialog, BasePanel.this);
-                          tidialog.setVisible(true);
-
-                          if (tidialog.okPressed())
-                          {
-                            output(Globals.lang("changed ")+" '"
-                                   +bibEntry.getType().getName().toLowerCase()+"' "
-                                   +Globals.lang("entry")+".");
-                            refreshTable();
-                            int row = tableModel.getNumberFromName(bibEntry.getId());
-
-                            entryTable.clearSelection();
-                            entryTable.scrollTo(row);
-                            markBaseChanged(); // The database just changed.
-                            if (Globals.prefs.getBoolean("autoOpenForm"))
-                            {
-                                  showEntry(bibEntry);
-                            }
-                          }
-                        }
-                      }
-                  });
-         */
         actions.put("markEntries", new MarkEntriesAction(frame, 0));
 
         actions.put("unmarkEntries", new BaseAction() {
@@ -1833,7 +1665,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         actions.put("removeFromGroup", new GroupAddRemoveDialog(this, false, false));
         actions.put("moveToGroup", new GroupAddRemoveDialog(this, true, true));
 
-        //actions.put("downloadFullText", new FindFullTextAction(this));
     }
 
     // helper method for alternative PDF reader
@@ -2520,25 +2351,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
     }
 
-    /*
-    public void refreshTable() {
-        //System.out.println("hiding="+hidingNonHits+"\tlastHits="+lastSearchHits);
-        // This method is called by EntryTypeForm when a field value is
-        // stored. The table is scheduled for repaint.
-        entryTable.assureNotEditing();
-        //entryTable.invalidate();
-        BibtexEntry[] bes = entryTable.getSelectedEntries();
-    if (hidingNonHits)
-        tableModel.update(lastSearchHits);
-    else
-        tableModel.update();
-    //tableModel.remap();
-        if ((bes != null) && (bes.length > 0))
-            selectEntries(bes, 0);
-
-    //long toc = System.currentTimeMillis();
-    //	Util.pr("Refresh took: "+(toc-tic)+" ms");
-    } */
     public void updatePreamble() {
         if (preambleEditor != null) {
             preambleEditor.updatePreamble();
@@ -2942,39 +2754,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         mainTable.scrollToCenter(pos, 0);
     }
 
-    /* *
-     * Selects all entries with a non-zero value in the field
-     * @param field <code>String</code> field name.
-     */
- /*    public void selectResults(String field) {
-      LinkedList intervals = new LinkedList();
-      int prevStart = -1, prevToSel = 0;
-      // First we build a list of intervals to select, without touching the table.
-      for (int i = 0; i < entryTable.getRowCount(); i++) {
-        String value = (String) (database.getEntryById
-                                 (tableModel.getIdForRow(i)))
-            .getField(field);
-        if ( (value != null) && !value.equals("0")) {
-          if (prevStart < 0)
-            prevStart = i;
-          prevToSel = i;
-        }
-        else if (prevStart >= 0) {
-          intervals.add(new int[] {prevStart, prevToSel});
-          prevStart = -1;
-        }
-      }
-      // Then select those intervals, if any.
-      if (intervals.size() > 0) {
-        entryTable.setSelectionListenerEnabled(false);
-        entryTable.clearSelection();
-        for (Iterator i=intervals.iterator(); i.hasNext();) {
-          int[] interval = (int[])i.next();
-          entryTable.addRowSelectionInterval(interval[0], interval[1]);
-        }
-        entryTable.setSelectionListenerEnabled(true);
-      }
-     */
     public void setSearchMatcher(SearchMatcher matcher) {
         long totalStart = perfStart();
         searchFilterList.setMatcher(matcher);
@@ -3187,11 +2966,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 updateUndoRedoActions();
                 markChangedOrUnChanged();
             }
-            // After everything, enable/disable the undo/redo actions
-            // appropriately.
-            //updateUndoState();
-            //redoAction.updateRedoState();
-            // markChangedOrUnChanged();
+
         }
     }
 
@@ -3222,11 +2997,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                 updateUndoRedoActions();
                 markChangedOrUnChanged();
             }
-            // After everything, enable/disable the undo/redo actions
-            // appropriately.
-            //updateRedoState();
-            //undoAction.updateUndoState();
-            // markChangedOrUnChanged();
+
         }
     }
 
@@ -3268,11 +3039,8 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     public void fileUpdated() {
         if (saving) {
             return; // We are just saving the file, so this message is most likely due
-        }      //if (updatedExternally) {
-        //  return;
-        //}
-        // to bad timing. If not, we'll handle it on the next polling.
-        //Util.pr("File '"+file.getPath()+"' has been modified.");
+                    // to bad timing. If not, we'll handle it on the next polling.
+        }
         updatedExternally = true;
 
         final ChangeScanner scanner = new ChangeScanner(frame, BasePanel.this);
@@ -3320,7 +3088,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
             SwingUtilities.invokeLater(t);
         } else {
             setUpdatedExternally(false);
-            //System.out.println("No changes found.");
+            // System.out.println("No changes found.");
         }
     }
 
@@ -3533,7 +3301,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
                         == JOptionPane.OK_OPTION)) {
 
                     saveDatabase(expFile, true, Globals.prefs.get("defaultEncoding"), saveType);
-                    //runCommand("save");
+                    // runCommand("save");
                     frame.getFileHistory().newFile(expFile.getPath());
                     frame.output(Globals.lang("Saved selected to") + " '"
                             + expFile.getPath() + "'.");

@@ -204,24 +204,12 @@ public final class JabRef {
         openWindow(loaded);
     }
 
-    // Do not use this code in release version, it contains some memory leaks
-//    public static String getCurrentProcessExplicitAppUserModelID() {
-//        final PointerByReference r = new PointerByReference();
-//
-//        if (GetCurrentProcessExplicitAppUserModelID(r).longValue() == 0) {
-//            final Pointer p = r.getValue();
-//
-//            return p.getString(0, true); // here we leak native memory by lazyness
-//        }
-//        return "N/A";
-//    }
     public static void setCurrentProcessExplicitAppUserModelID(final String appID) {
         if (SetCurrentProcessExplicitAppUserModelID(new WString(appID)).longValue() != 0) {
             throw new RuntimeException("unable to set current process explicit AppUserModelID to: " + appID);
         }
     }
 
-//    private static native NativeLong GetCurrentProcessExplicitAppUserModelID(PointerByReference appID);
     private static native NativeLong SetCurrentProcessExplicitAppUserModelID(WString appID);
 
     static {
@@ -507,7 +495,6 @@ public final class JabRef {
             }
         }
 
-        //Util.pr(": Finished export");
         if (cli.isPreferencesExport()) {
             try {
                 Globals.prefs.exportPreferences(cli.getPreferencesExport());
@@ -749,10 +736,11 @@ public final class JabRef {
         // The Look & Feel and matching icon theme were initialized in
         // processArguments() before any input files were opened.
         //
-        // Global Mouse Listener for Click Events
+        // Global Mouse Listener for Click Events // ***************************
+        // tracking all objects tree // ****************************************
         // setupSimpleClickLogger(); // ****************************************
-        // tracking all objects tree
-        // SwingTracing.install(); //*******************************************
+        // SwingTracing.install();   //*****************************************
+        //
         // If the option is enabled, open the last edited databases, if any.
         if (!cli.isBlank() && Globals.prefs.getBoolean("openLastEdited") && (Globals.prefs.get("lastEdited") != null)) {
             if (splashScreen != null) {
@@ -796,7 +784,7 @@ public final class JabRef {
                 = new Font(Globals.prefs.get("fontFamily"), Globals.prefs.getInt("fontStyle"),
                         Globals.prefs.getInt("fontSize"));
 
-        //Util.pr(": Initializing frame");
+        // Util.pr(": Initializing frame");
         if (splashScreen != null) {
             splashScreen.setStatus("Creating main window...", 82);
         }

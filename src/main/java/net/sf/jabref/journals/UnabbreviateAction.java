@@ -35,12 +35,10 @@ public class UnabbreviateAction extends AbstractWorker {
     }
 
     public void init() {
-        //  new FieldWeightDialog(frame).setVisible(true);
         panel.output("Unabbreviating...");
     }
 
     public void run() {
-        //net.sf.jabref.journals.JournalList.downloadJournalList(frame);
 
         BibtexEntry[] entries = panel.getSelectedEntries();
         if (entries == null) {

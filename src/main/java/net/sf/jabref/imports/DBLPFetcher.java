@@ -117,9 +117,9 @@ public class DBLPFetcher implements EntryFetcher {
 
     /**
      * DBLP exports its record metadata update time in the field named
-     * "timestamp". JabRef uses that field for the local time an entry was
-     * added to the bibliography, so keep the DBLP value under a provider-
-     * specific field and leave "timestamp" available for JabRef.
+     * "timestamp". JabRef uses that field for the local time an entry was added
+     * to the bibliography, so keep the DBLP value under a provider- specific
+     * field and leave "timestamp" available for JabRef.
      */
     private void normalizeDblpMetadata(BibtexEntry entry) {
         String dblpTimestamp = entry.getField("timestamp");

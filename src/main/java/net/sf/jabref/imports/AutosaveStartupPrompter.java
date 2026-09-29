@@ -118,9 +118,5 @@ public class AutosaveStartupPrompter implements Runnable {
             }
         }
 
-        /*for (int i = 0; i < loaded.size(); i++) {
-            ParserResult pr = loaded.get(i);
-            
-        }*/
     }
 }

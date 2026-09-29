@@ -159,33 +159,20 @@ public class IntegrityCheck {
             {
                 messages.add(new IntegrityMessage(IntegrityMessage.NAME_START_WARNING,
                         entry, fieldName, null));
-//        back.add("beginning of " +fieldName +" field");
             }
 
             if (structure.charAt(structure.length() - 1) != 'N') // end without seperator
             {
                 messages.add(new IntegrityMessage(IntegrityMessage.NAME_END_WARNING,
                         entry, fieldName, null));
-//        back.add("bad end (" +fieldName +" field)");
             }
-            /*if (structure.indexOf("NN,NN") > -1)
-      {
-        messages.add( new IntegrityMessage( IntegrityMessage.NAME_SEMANTIC_WARNING,
-                                            entry, fieldName, null))  ;
-
-//        back.add("something could be wrong in " +fieldName +" field") ;
-      } */
         }
-//    messages.add( new IntegrityMessage( IntegrityMessage.NAME_END_WARNING,
-//                                        entry, fieldName, null))  ;
-
     }
 
     private void titleCheck(String title, String fieldName, BibtexEntry entry) {
         int len = title.length();
         int mode = 0;
         int upLowCounter = 0;
-//    boolean lastWasSpace = false ;
         for (int t = 0; t < len; t++) {
             char ch = title.charAt(t);
             switch (ch) {
@@ -197,21 +184,18 @@ public class IntegrityCheck {
                     } else // mode == 1
                     {
                         mode--;
-//            lastWasSpace = true ;
                     }
                     break;
 
-                case '{':  // open {
+                case '{':
                     mode++;
                     break;
 
                 case ' ':
-//          lastWasSpace = true ;
                     break;
 
                 default:
-                    if (mode == 0) // out of {}
-                    {
+                    if (mode == 0) {
                         if (Character.isUpperCase(ch) && (t > 1)) {
                             upLowCounter++;
                         }

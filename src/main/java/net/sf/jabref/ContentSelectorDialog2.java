@@ -103,9 +103,9 @@ public class ContentSelectorDialog2 extends JDialog {
         this.panel = panel;
         this.currentField = fieldName;
 
-        //help = new JButton(Globals.lang("Help"));
-        //help.addActionListener(new HelpAction(frame.helpDiag, GUIGlobals.contentSelectorHelp, "Help"));
-        //help = new HelpAction(frame.helpDiag, GUIGlobals.contentSelectorHelp, "Help");
+        // help = new JButton(Globals.lang("Help"));
+        // help.addActionListener(new HelpAction(frame.helpDiag, GUIGlobals.contentSelectorHelp, "Help"));
+        // help = new HelpAction(frame.helpDiag, GUIGlobals.contentSelectorHelp, "Help");
         initLayout();
         //  wordSelector.addItem(WORD_EMPTY_TEXT);
 
@@ -486,7 +486,7 @@ public class ContentSelectorDialog2 extends JDialog {
         wordPan.add(wPane);
         con.gridwidth = 1;
         con.gridx = 2;
-        //con.weightx = 0.7;
+        // con.weightx = 0.7;
         con.gridheight = 2;
         gbl.setConstraints(fieldNamePan, con);
         fieldPan.add(fieldNamePan);
@@ -505,7 +505,7 @@ public class ContentSelectorDialog2 extends JDialog {
         gbl.setConstraints(newWord, con);
         wordPan.add(newWord);
         con.gridx = 1;
-        //con.anchor = GridBagConstraints.EAST;
+        // con.anchor = GridBagConstraints.EAST;
         gbl.setConstraints(removeField, con);
         fieldPan.add(removeField);
         gbl.setConstraints(removeWord, con);

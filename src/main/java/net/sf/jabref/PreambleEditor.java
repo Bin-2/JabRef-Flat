@@ -73,7 +73,7 @@ public class PreambleEditor extends JDialog {
         String content = base.getPreamble();
 
         ed = new FieldTextArea(Globals.lang("Preamble"), ((content != null) ? content : ""));
-        //ed.addUndoableEditListener(panel.undoListener);
+        // ed.addUndoableEditListener(panel.undoListener);
         setupJTextComponent((FieldTextArea) ed);
 
         gbl.setConstraints(ed.getLabel(), con);
@@ -84,8 +84,8 @@ public class PreambleEditor extends JDialog {
         gbl.setConstraints(ed.getPane(), con);
         pan.add(ed.getPane());
 
-        //tlb.add(closeAction);
-        //conPane.add(tlb, BorderLayout.NORTH);
+        // tlb.add(closeAction);
+        // conPane.add(tlb, BorderLayout.NORTH);
         conPane.add(pan, BorderLayout.CENTER);
         setTitle(Globals.lang("Edit preamble"));
     }
@@ -151,17 +151,6 @@ public class PreambleEditor extends JDialog {
             if (set) {
                 panel.undoManager.addEdit(new UndoablePreambleChange(base, panel, base.getPreamble(), toSet));
                 base.setPreamble(toSet);
-//                if ((toSet != null) && (toSet.length() > 0)) {
-//                    ed.setLabelColor(GUIGlobals.entryEditorLabelColor);
-//                    ed.setValidBackgroundColor();
-//                } else {
-//                    ed.setLabelColor(GUIGlobals.nullFieldColor);
-//                    ed.setValidBackgroundColor();
-//                }
-//                if (ed.getTextComponent().hasFocus()) {
-//                    ed.setActiveBackgroundColor();
-//                }
-
                 panel.markBaseChanged();
             }
 
@@ -209,8 +198,6 @@ public class PreambleEditor extends JDialog {
 
         public CloseAction() {
             super(Globals.lang("Close window"));
-            //, new ImageIcon(GUIGlobals.closeIconFile));
-            //putValue(SHORT_DESCRIPTION, "Close window (Ctrl-Q)");
         }
 
         public void actionPerformed(ActionEvent e) {

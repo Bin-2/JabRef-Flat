@@ -221,8 +221,8 @@ class TableColumnsTab extends JPanel implements PrefsTab {
         tlb.addSeparator();
         tlb.add(moveUp);
         tlb.add(moveDown);
-        //tlb.addSeparator();
-        //tlb.add(new UpdateWidthsAction());
+        // tlb.addSeparator();
+        // tlb.add(new UpdateWidthsAction());
         tabPanel.add(tlb, BorderLayout.EAST);
 
         showOneLetterHeadingForIconColumns = new JCheckBox(Globals.lang("Show one letter heading for icon columns"));
@@ -349,9 +349,7 @@ class TableColumnsTab extends JPanel implements PrefsTab {
         builder.append(pan);
         builder.append(tabPanel);
         builder.nextLine();
-//	lab = new JLabel("<HTML>("+Globals.lang("this button will update the column width settings<BR>"
-//						+"to match the current widths in your table")+")</HTML>");
-//        lab = new JLabel("<HTML>("+Globals.lang("this_button_will_update") +")</HTML>") ;
+
         builder.append(pan);
         JButton buttonWidth = new JButton(new UpdateWidthsAction());
         JButton buttonOrder = new JButton(new UpdateOrderAction());

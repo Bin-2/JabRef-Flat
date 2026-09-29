@@ -21,9 +21,8 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 
 /**
- * Shared Java2D representation of the JabRef logo used by splash 
- * screen and About dialog.
- * The path geometry is copied from the legacy splash.svg artwork.
+ * Shared Java2D representation of the JabRef logo used by splash screen and
+ * About dialog. The path geometry is copied from the legacy splash.svg artwork.
  */
 public final class JabRefLogo {
 

@@ -43,12 +43,10 @@ public class TBuildInfo {
     private String BUILD_VERSION = "2.11 development";
     private String BUILD_NUMBER = "1";
 
-//  private TBuilderInfo runtime = new TBuildInfo() ;
     public TBuildInfo(String path) {
         readBuildVersionData(path);
     }
 
-// --------------------------------------------------------------------------
     // some informations from extern build file
     private void readBuildVersionData(String path) {
         String buf = null;
@@ -61,9 +59,6 @@ public class TBuildInfo {
             input = new BufferedReader(
                     new InputStreamReader(getClass().getResourceAsStream(path)), 100);
         } catch (Exception e1) {
-//      System.out.println( e1 ) ;
-//      e1.printStackTrace();
-//      Logger.global.info( e1.getMessage() ) ;
             return;
         }
 
@@ -88,19 +83,14 @@ public class TBuildInfo {
                 }
             } // while
         } catch (IOException iex) {
-//      System.err.println(iex.getMessage());
-//      Logger.global.info( iex.getMessage() ) ;
         }
 
         try {
             input.close();
         } catch (Exception e) {
-//      System.out.println(e.getMessage());
-//      Logger.global.info( e.getMessage() ) ;
         }
     }
 
-    // --------------------------------------------------------------------------
     public String getBUILD_DATE() {
         return BUILD_DATE;
     }
@@ -113,5 +103,4 @@ public class TBuildInfo {
         return BUILD_NUMBER;
     }
 
-// --------------------------------------------------------------------------
 }

@@ -162,11 +162,6 @@ public class GenFieldsCustomizer extends JDialog {
         Globals.prefs.purgeSeries(JabRefPreferences.CUSTOM_TAB_NAME, i);
         Globals.prefs.purgeSeries(JabRefPreferences.CUSTOM_TAB_FIELDS, i);
         Globals.prefs.updateEntryEditorTabList();
-        /*
-    String delimStr = fieldsArea.getText().replaceAll("\\s+","")
-        .replaceAll("\\n+","").trim();
-    parent.prefs.putStringArray("generalFields", Util.delimToStringArray(delimStr, ";"));
-         */
 
         parent.removeCachedEntryEditors();
         dispose();

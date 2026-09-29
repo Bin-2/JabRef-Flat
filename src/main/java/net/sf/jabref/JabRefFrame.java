@@ -318,19 +318,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             openUrl = new GeneralAction("openUrl", "Open URL or DOI",
                     Globals.lang("Open URL or DOI"),
                     prefs.getKey("Open URL or DOI")),
-            //            openSpires = new GeneralAction("openSpires", "Open SPIRES entry",
-            //                    Globals.lang("Open SPIRES entry"),
-            //                    prefs.getKey("Open SPIRES entry")),
-            /*
-	   * It looks like this wasn't being implemented for spires anyway so we
-	   * comment it out for now.
-	   *
-	  openInspire = new GeneralAction("openInspire", "Open INSPIRE entry",
-                                          Globals.lang("Open INSPIRE entry"),
-                                          prefs.getKey("Open INSPIRE entry")),
-             */
             dupliCheck = new GeneralAction("dupliCheck", "Find duplicates"),
-            //strictDupliCheck = new GeneralAction("strictDupliCheck", "Find and remove exact duplicates"),
             plainTextImport = new GeneralAction("plainTextImport",
                     "New entry from plain text",
                     prefs.getKey("New from plain text")),
@@ -338,7 +326,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             customImpAction = new CustomizeImportsAction(),
             customFileTypesAction = ExternalFileTypeEditor.getAction(this),
             exportToClipboard = new GeneralAction("exportToClipboard", "Export selected entries to clipboard"),
-            //expandEndnoteZip = new ExpandEndnoteFilters(this),
             autoSetPdf = new GeneralAction("autoSetPdf", Globals.lang("Synchronize %0 links", "PDF"), Globals.prefs.getKey("Synchronize PDF")),
             autoSetPs = new GeneralAction("autoSetPs", Globals.lang("Synchronize %0 links", "PS"), Globals.prefs.getKey("Synchronize PS")),
             autoSetFile = new GeneralAction("autoSetFile", Globals.lang("Synchronize file links"), Globals.prefs.getKey("Synchronize files")),
@@ -369,8 +356,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                     Globals.lang("Merge entries"),
                     GUIGlobals.getMenuIcon("mergeentries")),
             dbImport = new DbImportAction(this).getAction(),
-            //downloadFullText = new GeneralAction("downloadFullText", "Look up full text document",
-            //        Globals.lang("Follow DOI or URL link and try to locate PDF full text document")),
             increaseFontSize = new IncreaseTableFontSizeAction(),
             decreseFontSize = new DecreaseTableFontSizeAction(),
             installPlugin = new PluginInstallerAction(this),
@@ -526,19 +511,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
             int posX = prefs.getInt("posX");
             int posY = prefs.getInt("posY");
 
-            /*
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] gs = ge.getScreenDevices();
-
-
-        // Get size of each screen
-        for (int i=0; i<gs.length; i++) {
-            DisplayMode dm = gs[i].getDisplayMode();
-            int screenWidth = dm.getWidth();
-            int screenHeight = dm.getHeight();
-            System.out.println(gs[i].getDefaultConfiguration().getBounds());
-        }*/
-            //
             // Fix for [ 1738920 ] Windows Position in Multi-Monitor environment
             //
             // Do not put a window outside the screen if the preference values are wrong.
@@ -586,8 +558,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
 
         tabbedPane.setBorder(null);
-        // tabbedPane.setForeground(GUIGlobals.inActiveTabbed);
-        // tabbedPane.setForeground(inactive);
 
         /*
          * The following state listener makes sure focus is registered with the
@@ -997,26 +967,22 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
     private void initLayout() {
         // Set FlatLaf compatible backgrounds
-//        getContentPane().setBackground(UIManager.getColor("Panel.background"));
-//
-//        tabbedPane.setBackground(UIManager.getColor("TabbedPane.background"));
-//        tabbedPane.setForeground(UIManager.getColor("TabbedPane.foreground"));
-//
-//        // Style the toolbar
-//        tlb.setBackground(UIManager.getColor("ToolBar.background"));
-//        tlb.setBorder(UIManager.getBorder("ToolBar.border"));
-//
+        // getContentPane().setBackground(UIManager.getColor("Panel.background"));
 
+        // tabbedPane.setBackground(UIManager.getColor("TabbedPane.background"));
+        // tabbedPane.setForeground(UIManager.getColor("TabbedPane.foreground"));
+        // Style the toolbar
+        // tlb.setBackground(UIManager.getColor("ToolBar.background"));
+        // tlb.setBorder(UIManager.getBorder("ToolBar.border"));
         // Style the status bar
-//        statusLine.setBackground(UIManager.getColor("Label.background"));
-//        statusLine.setForeground(UIManager.getColor("Label.foreground"));
+        // statusLine.setBackground(UIManager.getColor("Label.background"));
+        // statusLine.setForeground(UIManager.getColor("Label.foreground"));
         statusLabel.setBackground(UIManager.getColor("Label.background"));
         statusLabel.setForeground(UIManager.getColor("Label.foreground"));
 
-//
-//        // Style the menu bar
-//        mb.setBackground(UIManager.getColor("MenuBar.background"));
-//        mb.setBorder(UIManager.getBorder("MenuBar.border"));
+        // Style the menu bar
+        // mb.setBackground(UIManager.getColor("MenuBar.background"));
+        // mb.setBorder(UIManager.getBorder("MenuBar.border"));
         tabbedPane.putClientProperty(Options.NO_CONTENT_BORDER_KEY, Boolean.TRUE);
 
         setProgressBarVisible(false);
@@ -1030,18 +996,18 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         getContentPane().setLayout(gbl);
         contentPane.setDividerSize(2);
         contentPane.setBorder(null);
-        //getContentPane().setBackground(GUIGlobals.lightGray);
+
         con.fill = GridBagConstraints.HORIZONTAL;
         con.anchor = GridBagConstraints.WEST;
         con.weightx = 1;
         con.weighty = 0;
         con.gridwidth = GridBagConstraints.REMAINDER;
 
-        //gbl.setConstraints(mb, con);
-        //getContentPane().add(mb);
+        // gbl.setConstraints(mb, con);
+        // getContentPane().add(mb);
         setJMenuBar(mb);
         con.anchor = GridBagConstraints.NORTH;
-        //con.gridwidth = 1;//GridBagConstraints.REMAINDER;;
+        // con.gridwidth = 1;//GridBagConstraints.REMAINDER;;
         gbl.setConstraints(tlb, con);
         getContentPane().add(tlb);
 
@@ -1057,8 +1023,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         lim = Box.createGlue();
         gbl.setConstraints(lim, con);
         getContentPane().add(lim);
-        //tabbedPane.setVisible(false);
-        //tabbedPane.setForeground(GUIGlobals.lightGray);
+
         con.weighty = 1;
         gbl.setConstraints(contentPane, con);
         getContentPane().add(contentPane);
@@ -1086,7 +1051,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         status.add(progressBar);
         con.weightx = 1;
         con.gridwidth = GridBagConstraints.REMAINDER;
-//        statusLabel.setForeground(GUIGlobals.entryEditorLabelColor.darker());
+
         con.insets = new Insets(0, 0, 0, 0);
         gbl.setConstraints(status, con);
         getContentPane().add(status);
@@ -1534,10 +1499,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         //tools.add(downloadFullText);
         tools.add(createMenuAction(newSubDatabaseAction, "new"));
         tools.add(createMenuAction(writeXmpAction, "xmp"));
-//        OpenOfficePanel otp = OpenOfficePanel.getInstance();
-//        otp.init(this, sidePaneManager);
-//        tools.add(otp.getMenuItem());
-//        tools.add(pushExternalButton.getMenuAction());//***********************
+
+        // OpenOfficePanel otp = OpenOfficePanel.getInstance();
+        // otp.init(this, sidePaneManager);
+        // tools.add(otp.getMenuItem());
+        // tools.add(pushExternalButton.getMenuAction());//***********************
         tools.addSeparator();                         //***********************
         tools.add(manageSelectors);                   //***********************
         tools.addSeparator();                         //***********************
@@ -1561,7 +1527,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         mb.add(tools);
 
         pluginMenu.add(installPlugin);
-        //pluginMenu.setEnabled(false);
+        // pluginMenu.setEnabled(false);
         mb.add(pluginMenu);
 
         options.add(createMenuAction(showPrefs, "preferences"));
@@ -2003,9 +1969,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.setRollover(true);
         tlb.setFloatable(false);
 
-        // tlb.setBorderPainted(true);
-        // tlb.setBackground(GUIGlobals.lightGray);
-        // tlb.setForeground(GUIGlobals.lightGray);
         tlb.addAction(createToolbarAction(newDatabaseAction, "new"));
         tlb.addAction(createToolbarAction(open, "open"));
 
@@ -2105,20 +2068,17 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         // Removing the separate push-to buttons, replacing them by the
         // multipurpose button:
-        //tlb.addAction(emacsPushAction);
-        //tlb.addAction(lyxPushAction);
-        //tlb.addAction(winEdtPushAction);
         if (pushExternalButton != null) {
             tlb.add(pushExternalButton.getComponent()); //***********************
-//            tlb.add(createToolbarPushButton());
+            // tlb.add(createToolbarPushButton());
             tlb.addSeparator();
         }
 
         tlb.addAction(createToolbarAction(openFolder, "openFolder"));
         tlb.addAction(createToolbarAction(openFile, "openFile"));
         tlb.addAction(createToolbarAction(openPdfAlternate, "openFileAlternate"));
-        //tlb.addAction(openPdf);
-        //tlb.addAction(openUrl);
+        // tlb.addAction(openPdf);
+        // tlb.addAction(openUrl);
         tlb.addSeparator();
         tlb.addAction(createToolbarAction(showPrefs, "preferences"));
 
@@ -2133,13 +2093,9 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.add(new ToolbarSizeButton());
 
         tlb.add(Box.createHorizontalGlue());
-        //tlb.add(new JabRefLabel(GUIGlobals.frameTitle+" "+GUIGlobals.version));
+        // tlb.add(new JabRefLabel(GUIGlobals.frameTitle+" "+GUIGlobals.version));
 
-        // tlb.addAction(closeDatabaseAction);
         tlb.addAction(createActionWithIcon(closeDatabaseAction, "close"));//closeDatabaseAction
-        //Insets margin = new Insets(0, 0, 0, 0);
-        //for (int i=0; i<tlb.getComponentCount(); i++)
-        //  ((JButton)tlb.getComponentAtIndex(i)).setMargin(margin);
     }
 
     /**
@@ -2176,7 +2132,6 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                         if (pushIcon != null) {
                             button.setIcon(pushIcon);
                         }
-//                        System.out.println(button);
                     } else {
                         // This is the dropdown arrow button
                         Icon arrowIcon = GUIGlobals.getToolbarIconOnly("OverflowDropdown");

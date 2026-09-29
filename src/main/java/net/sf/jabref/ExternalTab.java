@@ -130,14 +130,11 @@ public class ExternalTab extends JPanel implements PrefsTab {
         builder.append(useRegExpComboBox);
         builder.append(regExpTextField);
 
-//        HelpAction helpAction = new HelpAction(helpDialog, GUIGlobals.regularExpressionSearchHelp,
-//                Globals.lang("Help on Regular Expression Search"), GUIGlobals.getIconUrl("helpSmall"));
-//        builder.append(helpAction.getIconButton());
         HelpAction helpAction = new HelpAction(helpDialog, GUIGlobals.regularExpressionSearchHelp,
                 Globals.lang("Help on Regular Expression Search"));
         JButton helpButton = helpAction.getIconButton();
         Dimension helpButtonSize = new Dimension(22, 22);
-        // System.out.println(helpButtonSize);
+
         helpButton.setPreferredSize(helpButtonSize);
         helpButton.setMinimumSize(helpButtonSize);
         builder.append(helpButton);
@@ -253,11 +250,6 @@ public class ExternalTab extends JPanel implements PrefsTab {
     }
 
     private void addSettingsButton(final PushToApplication pt, JPanel p) {
-        //if (b.getColumn() < 2)
-        //    b.append(new JPanel());
-        //JPanel pan = new JPanel();
-        //pan.setLayout(new BorderLayout());
-        //pan.add(new JLabel(Globals.lang("Settings for %0", pt.getApplicationName())), BorderLayout.CENTER);
         JButton button = new JButton(Globals.lang("Settings for %0", pt.getApplicationName()),
                 pt.getIcon());
         button.addActionListener(new ActionListener() {
@@ -265,12 +257,7 @@ public class ExternalTab extends JPanel implements PrefsTab {
                 PushToApplicationButton.showSettingsDialog(_frame, pt, pt.getSettingsPanel());
             }
         });
-        p.add(button);//, BorderLayout.CENTER);
-        //b.append(button);
-        //b.nextLine();
-        //b.append(pan);
-        //if (b.getColumn() >= 6)
-        //    b.nextLine();
+        p.add(button);
     }
 
     @Override

@@ -179,9 +179,7 @@ public class JournalAbbreviations {
                     String abbrNameLC = abbrName.toLowerCase();
                     String abbrNoDots = dotsToNodots(abbrName);
                     String abbrNoDotsLC = abbrNoDots.toLowerCase();
-                    //System.out.println(abbrNoDots);
                     if ((fullName.length() > 0) && (abbrName.length() > 0)) {
-                        //System.out.println("'"+fullName+"' : '"+abbrNoDots+"'");
                         fullNameKeyed.put(fullNameLC, abbrName);
                         abbrNameKeyed.put(abbrNameLC, fullName);
                         abbrNoDotsToAbbr.put(abbrNoDotsLC, abbrName);

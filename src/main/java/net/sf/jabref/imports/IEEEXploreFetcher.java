@@ -276,7 +276,6 @@ public class IEEEXploreFetcher implements EntryFetcher {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            //for
         } else {
             BibtexEntry entry;
             while (((entry = parseNextEntry(text, piv)) != null) && shouldContinue) {
@@ -435,10 +434,7 @@ public class IEEEXploreFetcher implements EntryFetcher {
                     date = "#" + mm.group(2).substring(0, 3) + "# " + mm.group(1) + "--#" + mm.group(4).substring(0, 3) + "# " + mm.group(3) + ",";
                 }
             }
-            //date = date.trim();
-            //if (!date.isEmpty()) {
             entry.setField("month", date);
-            //}
         }
 
         // clean up pages

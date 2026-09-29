@@ -436,16 +436,6 @@ public class OpenOfficePanel extends AbstractWorker implements SidePanePlugin, P
     }
 
     public void connect(boolean auto) {
-        /*if (ooBase != null) {
-            try {
-                java.util.List<XTextDocument> list = ooBase.getTextDocuments();
-                // TODO: how to find the title of the documents?
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            return;
-        }*/
-
         String unoilDir, ooBaseDirectory;
         if (auto) {
             AutoDetectPaths adp = new AutoDetectPaths(diag);

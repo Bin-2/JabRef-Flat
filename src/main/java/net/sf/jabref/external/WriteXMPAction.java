@@ -232,7 +232,6 @@ public class WriteXMPAction extends AbstractWorker {
 
             panel.setSize(d);
 
-//			progressArea.setBackground(Color.WHITE);
             progressArea.setEditable(false);
             progressArea.setBorder(BorderFactory.createEmptyBorder(3, 3, 3,
                     3));
@@ -242,7 +241,6 @@ public class WriteXMPAction extends AbstractWorker {
             panel.setBorder(BorderFactory.createEmptyBorder(3, 2, 3, 2));
             panel.add(scrollPane);
 
-            // progressArea.setPreferredSize(new Dimension(300, 300));
             ButtonBarBuilder bb = new ButtonBarBuilder();
             bb.addGlue();
             bb.addButton(okButton);

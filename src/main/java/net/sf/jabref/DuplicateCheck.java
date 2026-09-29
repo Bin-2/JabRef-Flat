@@ -92,7 +92,7 @@ public class DuplicateCheck {
             }
             totWeights += weight;
             int result = compareSingleField(field, one, two);
-            //System.out.println("Field: "+fields[i]+": "+result);
+            // System.out.println("Field: "+fields[i]+": "+result);
             if (result == Util.EQUAL) {
                 res += weight;
             } else if (result == Util.EMPTY_IN_BOTH) {
@@ -193,9 +193,7 @@ public class DuplicateCheck {
         }
         if (score == allFields.size()) {
             return 1.01; // Just to make sure we can
-        } // use score>1 without
-        // trouble.
-        else {
+        } else {
             return ((double) score) / allFields.size();
         }
     }

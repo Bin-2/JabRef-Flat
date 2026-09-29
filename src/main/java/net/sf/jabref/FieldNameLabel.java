@@ -27,8 +27,6 @@ public class FieldNameLabel extends JLabel {
     public FieldNameLabel(String name) {
         super(name, JLabel.LEFT);
         setVerticalAlignment(TOP);
-//        setForeground(GUIGlobals.entryEditorLabelColor);
-//        setBorder(BorderFactory.createEmptyBorder());
     }
 
     @Override

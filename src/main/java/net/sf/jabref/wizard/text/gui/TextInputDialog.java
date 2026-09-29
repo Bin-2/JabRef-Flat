@@ -223,7 +223,6 @@ public class TextInputDialog
         });
     }
 
-// ---------------------------------------------------------------------------
     // Panel with text import functionality
     private void initRawPanel() {
 
@@ -273,7 +272,6 @@ public class TextInputDialog
         leftPanel.add(toolBar, BorderLayout.NORTH);
         leftPanel.add(testPanel, BorderLayout.CENTER);
 
-        // ----------------------------------------------------------------
         JPanel inputPanel = new JPanel();
 
         // Panel Layout
@@ -291,7 +289,6 @@ public class TextInputDialog
                         new Color(153, 153, 153), 2),
                 Globals.lang("Input"));
         inputPanel.setBorder(titledBorder1);
-        //inputPanel.setPreferredSize( new Dimension( 200, 255 ) ) ;
         inputPanel.setMinimumSize(new Dimension(10, 10));
 
         fieldList = new JList<>(getAllFields());
@@ -304,8 +301,6 @@ public class TextInputDialog
         JScrollPane fieldScroller = new JScrollPane(fieldList);
         fieldScroller.setVerticalScrollBarPolicy(
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        //fieldScroller.setPreferredSize( new Dimension( 180, 190 ) ) ;
-        //fieldScroller.setMinimumSize( new Dimension( 180, 190 ) ) ;
 
         // insert buttons
         insertButton.setText(Globals.lang("Insert"));
@@ -358,7 +353,6 @@ public class TextInputDialog
         gbl.setConstraints(insertButton, con);
         inputPanel.add(insertButton);
 
-        // ----------------------------------------------------------------------
         rawPanel.add(leftPanel, BorderLayout.CENTER);
         rawPanel.add(inputPanel, BorderLayout.EAST);
 
@@ -368,17 +362,9 @@ public class TextInputDialog
                 + "</p></html>");
         desc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-
-        /*infoText.setEditable(false);
-    infoText.setBackground(GUIGlobals.infoField);
-    infoText.setBorder(new EtchedBorder(EtchedBorder.LOWERED));
-    infoText.setPreferredSize( new Dimension(220, 50));
-    infoText.setMinimumSize( new Dimension(180, 50));*/
         rawPanel.add(desc, BorderLayout.SOUTH);
     }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
     private void initButtonPanel() {
 
         okButton.setText(Globals.lang("Accept"));
@@ -396,10 +382,8 @@ public class TextInputDialog
 
     }
 
-// ---------------------------------------------------------------------------
     // Panel with bibtex source code
     private void initSourcePanel() {
-//    preview =  new PreviewPanel(entry) ;
         preview = new JTextArea();
         preview.setEditable(false);
 
@@ -413,8 +397,6 @@ public class TextInputDialog
         sourcePanel.add(paneScrollPane, BorderLayout.CENTER);
     }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
     protected void addStylesToDocument(StyledDocument doc) {
         //Initialize some styles.
         Style def = StyleContext.getDefaultStyleContext().
@@ -443,7 +425,6 @@ public class TextInputDialog
         StyleConstants.setFontSize(s, 16);
     }
 
-// ---------------------------------------------------------------------------
     private void insertTextForTag() {
         String type = (String) fieldList.getSelectedValue();
         if (type != null) {
@@ -493,15 +474,12 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
     public boolean okPressed() {
         return okPressed;
     }
 
-// ---------------------------------------------------------------------------
-//  ActionListener
-//  handling of buttons-click actions
+    //  ActionListener
+    //  handling of buttons-click actions
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
 
@@ -549,7 +527,6 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
     // update the bibtex source view and available List
     private void updateSourceView() {
         StringWriter sw = new StringWriter(200);
@@ -563,7 +540,6 @@ public class TextInputDialog
         fieldList.clearSelection();
     }
 
-// ---------------------------------------------------------------------------
     private String[] getAllFields() {
         ArrayList<String> f = new ArrayList<String>();
         String[] req = entry.getRequiredFields();
@@ -579,7 +555,6 @@ public class TextInputDialog
         return f.toArray(new String[f.size()]);
     }
 
-// ---------------------------------------------------------------------------
     class PasteAction
             extends BasicAction {
 
@@ -604,7 +579,6 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
     class LoadAction
             extends BasicAction {
 
@@ -631,7 +605,6 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
     class ClearAction
             extends BasicAction {
 
@@ -644,7 +617,6 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
     class MenuHeaderAction
             extends BasicAction {
 
@@ -657,7 +629,6 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
     class FieldListSelectionHandler
             implements ListSelectionListener {
 
@@ -673,7 +644,6 @@ public class TextInputDialog
 
                 if (!isAdjusting) // if selection is finished
                 {
-//            System.out.println( "Event for index" + index ) ;
                     if (lastIndex > -1) {
                         String tag1 = (String) fieldList.getModel().getElementAt(lastIndex);
                         marked.setStyleForTag(tag1, "used", doc);
@@ -688,7 +658,6 @@ public class TextInputDialog
         }
     }
 
-// ---------------------------------------------------------------------------
     // simple JList Renderer
     // based on : Advanced JList Programming at developers.sun.com
     class SimpleCellRenderer
@@ -737,7 +706,6 @@ public class TextInputDialog
         }
     }
 
-//---------------------------------------------------------------
     class FieldListMouseListener
             extends MouseAdapter {
 
@@ -749,7 +717,6 @@ public class TextInputDialog
     }
 }
 
-//---------------------------------------------------------------
 class PopupListener
         extends MouseAdapter {
 
@@ -769,15 +736,11 @@ class PopupListener
 
     private void maybeShowPopup(MouseEvent e) {
         if (e.isPopupTrigger()) {
-//      System.out.println("show "
-//                         + e.getComponent() +"  x =" + e.getX() +"y =" + e.getY() ) ;
-//      popMenu.setVisible(true);
             popMenu.show(e.getComponent(), e.getX(), e.getY());
         }
     }
 }
 
-//---------------------------------------------------------------
 abstract class BasicAction
         extends AbstractAction {
 
@@ -803,7 +766,5 @@ abstract class BasicAction
 
     public abstract void actionPerformed(ActionEvent e);
 }
-//---------------------------------------------------------------
 
-//---------------------------------------------------------------
 

@@ -72,9 +72,7 @@ public class INSPIREBibtexFilterReader extends FilterReader {
         if (in == null) {
             return null;
         }
-        //System.out.println(in);
         if (in.matches("@Article\\{.*,")) {
-            //System.out.println(in.replace(' ','_'));
             return in.replace(' ', '_');
         } else {
             return in;

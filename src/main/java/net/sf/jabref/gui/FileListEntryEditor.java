@@ -122,10 +122,6 @@ public class FileListEntryEditor {
             }
         };
         types = new JComboBox<>();
-        // Set FlatLaf compatible styling for combo box
-//        types.setBackground(UIManager.getColor("ComboBox.background"));//
-//        types.setForeground(UIManager.getColor("ComboBox.foreground"));
-//        types.setFont(UIManager.getFont("ComboBox.font"));
 
         types.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent itemEvent) {
@@ -142,15 +138,11 @@ public class FileListEntryEditor {
         JLabel descLabel = new JLabel(Globals.lang("Description"));
         JLabel typeLabel = new JLabel(Globals.lang("File type"));
 
-//        styleLabel(linkLabel);
-//        styleLabel(descLabel);
-//        styleLabel(typeLabel);
         builder.append(linkLabel);
         builder.append(link);
 
         final BrowseListener browse = new BrowseListener(frame, link);
         final JButton browseBut = new JButton(Globals.lang("Browse"));
-//        styleButton(browseBut);
 
         browseBut.addActionListener(browse);
         builder.append(browseBut);
@@ -162,7 +154,6 @@ public class FileListEntryEditor {
         builder.append(description, 3);
 
         JPanel formPanel = builder.getPanel();
-//        formPanel.setBackground(UIManager.getColor("Panel.background"));
         formPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         builder.nextLine();
@@ -171,22 +162,16 @@ public class FileListEntryEditor {
 
         if (showProgressBar) {
             builder.nextLine();
-//            styleLabel(downloadLabel);
             builder.append(downloadLabel);
             builder.append(prog, 3);
         }
 
         ButtonBarBuilder bb = new ButtonBarBuilder();
-//        bb.getPanel().setBackground(UIManager.getColor("Panel.background"));
         bb.addGlue();
         //bb.addButton(open);
         //bb.addRelatedGap();
         bb.addRelatedGap();
 
-        // Style buttons
-//        styleButton(ok);
-//        styleButton(cancel);
-//        styleButton(open);
         bb.addButton(ok);
         bb.addButton(cancel);
         bb.addGlue();
@@ -259,21 +244,7 @@ public class FileListEntryEditor {
      * Initialize components with FlatLaf compatible styling
      */
     private void initializeComponents() {
-        // Style text fields
-//        styleTextField(link);
-//        styleTextField(description);
-
-        // Style buttons
-//        styleButton(ok);
-//        styleButton(cancel);
-//        styleButton(open);
-        // Style progress bar
-//        prog.setBackground(UIManager.getColor("ProgressBar.background"));
-//        prog.setForeground(UIManager.getColor("ProgressBar.foreground"));
         prog.setStringPainted(true);
-
-        // Style download label
-//        styleLabel(downloadLabel);
     }
 
     /**

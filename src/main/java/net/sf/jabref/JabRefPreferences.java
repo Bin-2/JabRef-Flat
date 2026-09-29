@@ -536,9 +536,7 @@ public final class JabRefPreferences {
                 + "pdf;comment;owner");
 
         defaults.put("useCustomIconTheme", Boolean.FALSE);
-        // defaults.put("customIconThemeFile", "/home/alver/div/crystaltheme_16/Icons.properties");
 
-        //defaults.put("recentFiles", "/home/alver/Documents/bibk_dok/hovedbase.bib");
         defaults.put("historySize", 8);
         defaults.put("fontStyle", java.awt.Font.PLAIN);
         defaults.put("fontSize", 12);
@@ -667,7 +665,6 @@ public final class JabRefPreferences {
         defaults.put("useTimeStamp", Boolean.FALSE);
         defaults.put("overwriteTimeStamp", Boolean.FALSE);
         defaults.put("timeStampFormat", "yyyy.MM.dd");
-//        defaults.put("timeStampField", "timestamp");
         defaults.put("timeStampField", BibtexFields.TIMESTAMP);
         defaults.put(UPDATE_TIMESTAMP, Boolean.FALSE);
         defaults.put("generateKeysBeforeSaving", Boolean.FALSE);

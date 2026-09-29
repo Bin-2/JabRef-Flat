@@ -148,12 +148,7 @@ public class ScienceDirectFetcher implements EntryFetcher {
         } else {
             return null;
         }
-        /*m = nextPagePattern.matcher(entirePage);
-        if (m.find()) {
-            String newQuery = WEBSITE_URL +m.group(1);
-            return newQuery;
-        }
-        else*/
+
         return null;
     }
 

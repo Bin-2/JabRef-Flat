@@ -104,19 +104,11 @@ public class ExternalFileTypeEditor extends JDialog {
         // The toDefaults resets the entire list to its default values.
         toDefaults.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                /*int reply = JOptionPane.showConfirmDialog(ExternalFileTypeEditor.this,
-                        Globals.lang("All custom file types will be lost. Proceed?"),
-                        Globals.lang("Reset file type definitons"), JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE);*/
-                //if (reply == JOptionPane.YES_OPTION) {
                 java.util.List<ExternalFileType> list = Globals.prefs.getDefaultExternalFileTypes();
                 fileTypes.clear();
                 fileTypes.addAll(list);
                 Collections.sort(fileTypes);
-                //Globals.prefs.resetExternalFileTypesToDefault();
-                //setValues();
                 tableModel.fireTableDataChanged();
-                //}
             }
         });
 

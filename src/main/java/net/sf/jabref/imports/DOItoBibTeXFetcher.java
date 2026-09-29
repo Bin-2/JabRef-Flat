@@ -227,7 +227,9 @@ public class DOItoBibTeXFetcher implements EntryFetcher {
                 || cp == '-' || cp == '.' || cp == '_' || cp == '~';
     }
 
-    /** Percent-decodes without treating '+' as a space. */
+    /**
+     * Percent-decodes without treating '+' as a space.
+     */
     private static String percentDecode(String value) {
         StringBuilder result = new StringBuilder(value.length());
         ByteArrayOutputStream encoded = new ByteArrayOutputStream();

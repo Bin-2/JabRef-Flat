@@ -32,7 +32,6 @@ public class BrowseAction extends AbstractAction implements ActionListener {
 
     JComponent focusTarget = null;
     JFrame frame = null;
-    //JDialog dialog=null;
     JTextField comp;
     boolean dir;
 
@@ -44,13 +43,6 @@ public class BrowseAction extends AbstractAction implements ActionListener {
 
     }
 
-    /*public BrowseAction(JDialog dialog, JTextField tc, boolean dir) {
-        super(Globals.lang("Browse"));
-        this.dialog = dialog;
-        this.dir = dir;
-        comp = tc;
-
-    } */
     public void setFocusTarget(JComponent focusTarget) {
         this.focusTarget = focusTarget;
     }

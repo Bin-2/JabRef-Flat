@@ -113,8 +113,6 @@ public class EntryComparator implements Comparator<BibtexEntry> {
 
         int result = 0;
 
-        //String ours = ((String)e1.getField(sortField)).toLowerCase(),
-        //    theirs = ((String)e2.getField(sortField)).toLowerCase();
         if ((f1 instanceof Integer) && (f2 instanceof Integer)) {
             result = -(((Integer) f1).compareTo((Integer) f2));
         } else if (f2 instanceof Integer) {

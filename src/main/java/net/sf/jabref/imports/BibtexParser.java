@@ -758,7 +758,6 @@ public class BibtexParser {
         }
     }
 
-////////////////////////////////////////////////////////////////////////////
     private String parseFieldContentOptimized(String key) throws IOException {
         long start = PROFILE ? System.nanoTime() : 0L;
         try {
@@ -926,7 +925,6 @@ public class BibtexParser {
 
         return value.toString();
     }
-////////////////////////////////////////////////////////////////////////////
 
     /**
      * Originalinhalt nach parseFieldContent(String) verschoben.
@@ -934,9 +932,6 @@ public class BibtexParser {
      * @return
      * @throws IOException
      */
-//	private String parseFieldContent() throws IOException {
-//		return parseFieldContent(null);
-//	}
     /**
      * Check if a string at any point has had more ending braces (}) than
      * opening ones ({). Will e.g. return true for the string "DNA} blahblal

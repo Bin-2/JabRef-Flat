@@ -70,15 +70,6 @@ public class EntryFromPDFCreator extends EntryFromFileCreator {
         ImportPdfFilesResult res = pi.importPdfFiles(fileNames, JabRef.jrf);
         assert (res.entries.size() == 1);
         return res.entries.get(0);
-
-        /*addEntryDataFromPDDocumentInformation(pdfFile, entry);
-		addEntyDataFromXMP(pdfFile, entry);
-
-		if (entry.getField("title") == null) {
-			entry.setField("title", pdfFile.getName());
-		}
-
-		return entry;*/
     }
 
     /**

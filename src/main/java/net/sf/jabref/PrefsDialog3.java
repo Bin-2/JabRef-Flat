@@ -165,7 +165,6 @@ public class PrefsDialog3 extends JDialog {
         Iterator<PrefsTab> it = tabs.iterator();
         String[] names = new String[tabs.size()];
         int i = 0;
-        //ArrayList<Component> comps = new ArrayList<Component>();
         while (it.hasNext()) {
             PrefsTab tab = it.next();
             names[i++] = tab.getTabName();
@@ -501,8 +500,6 @@ public class PrefsDialog3 extends JDialog {
                         groupsMs = elapsedMillis(groupsStart);
                     } else {
                         long renderersStart = System.nanoTime();
-//                        MainTable.updateRenderers();
-//                        renderersMs = elapsedMillis(renderersStart);
 
                         long themeStart = System.nanoTime();
                         ThemeWatcher.notifyThemeChanged();

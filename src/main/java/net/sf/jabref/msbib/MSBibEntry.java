@@ -351,13 +351,16 @@ public class MSBibEntry {
 
         standardNumber = "";
         if (bibtex.getField("isbn") != null) /* SM: 2010.10: lower case */ {
-            standardNumber += " ISBN: " + bibtex.getField("isbn"); /* SM: 2010.10: lower case */
+            standardNumber += " ISBN: " + bibtex.getField("isbn");
+            /* SM: 2010.10: lower case */
         }
         if (bibtex.getField("issn") != null) /* SM: 2010.10: lower case */ {
-            standardNumber += " ISSN: " + bibtex.getField("issn"); /* SM: 2010.10: lower case */
+            standardNumber += " ISSN: " + bibtex.getField("issn");
+            /* SM: 2010.10: lower case */
         }
         if (bibtex.getField("lccn") != null) /* SM: 2010.10: lower case */ {
-            standardNumber += " LCCN: " + bibtex.getField("lccn"); /* SM: 2010.10: lower case */
+            standardNumber += " LCCN: " + bibtex.getField("lccn");
+            /* SM: 2010.10: lower case */
         }
         if (bibtex.getField("mrnumber") != null) {
             standardNumber += " MRN: " + bibtex.getField("mrnumber");
@@ -434,7 +437,8 @@ public class MSBibEntry {
             dateAccessed = bibtex.getField(MSBIB + "accessed");
         }
         if (bibtex.getField("url") != null) /* SM: 2010.10: lower case */ {
-            url = bibtex.getField("url"); /* SM: 2010.10: lower case */
+            url = bibtex.getField("url");
+            /* SM: 2010.10: lower case */
         }
         if (bibtex.getField(MSBIB + "productioncompany") != null) {
             productionCompany = bibtex.getField(MSBIB + "productioncompany");
@@ -957,49 +961,6 @@ public class MSBibEntry {
         hm.put(type, allAuthors);
     }
 
-//	public String mapMSBibToBibtexTypeString(String msbib) {		
-//		String bibtex = "other";
-//		if(msbib.equals("Book"))
-//			bibtex = "book";
-//		else if(msbib.equals("BookSection"))
-//			bibtex = "inbook";
-//		else if(msbib.equals("JournalArticle"))
-//			bibtex = "article";
-//		else if(msbib.equals("ArticleInAPeriodical"))
-//			bibtex = "article";
-//		else if(msbib.equals("ConferenceProceedings"))
-//			bibtex = "conference";
-//		else if(msbib.equals("Report"))
-//			bibtex = "techreport";
-//		else if(msbib.equals("InternetSite"))
-//			bibtex = "other";
-//		else if(msbib.equals("DocumentFromInternetSite"))
-//			bibtex = "other";
-//		else if(msbib.equals("DocumentFromInternetSite"))
-//			bibtex = "other";
-//		else if(msbib.equals("ElectronicSource"))
-//			bibtex = "other";
-//		else if(msbib.equals("Art"))
-//			bibtex = "other";
-//		else if(msbib.equals("SoundRecording"))
-//			bibtex = "other";
-//		else if(msbib.equals("Performance"))
-//			bibtex = "other";
-//		else if(msbib.equals("Film"))
-//			bibtex = "other";
-//		else if(msbib.equals("Interview"))
-//			bibtex = "other";
-//		else if(msbib.equals("Patent"))
-//			bibtex = "other";
-//		else if(msbib.equals("Case"))
-//			bibtex = "other";
-//		else if(msbib.equals("Misc"))
-//			bibtex = "misc";
-//		else
-//			bibtex = "misc";
-//
-//		return bibtex;
-//	}
     public BibtexEntryType mapMSBibToBibtexType(String msbib) {
         BibtexEntryType bibtex = BibtexEntryType.OTHER;
         if (msbib.equals("Book")) {
@@ -1046,11 +1007,6 @@ public class MSBibEntry {
     }
 
     public BibtexEntry getBibtexRepresentation() {
-//		BibtexEntry entry = new BibtexEntry(BibtexFields.DEFAULT_BIBTEXENTRY_ID, 
-//				Globals.getEntryType(mapMSBibToBibtexTypeString(sourceType)));
-
-//		BibtexEntry entry = new BibtexEntry(BibtexFields.DEFAULT_BIBTEXENTRY_ID, 
-//				mapMSBibToBibtexType(sourceType));
         BibtexEntry entry = null;
         if (tag == null) {
             entry = new BibtexEntry(BibtexFields.DEFAULT_BIBTEXENTRY_ID,
@@ -1105,8 +1061,6 @@ public class MSBibEntry {
         if (tag != null) {
             hm.put("bibtexkey", tag);
         }
-//		if(GUID != null)
-//			hm.put("GUID",GUID);
         if (LCID >= 0) {
             hm.put("language", getLanguage(LCID));
         }
@@ -1192,10 +1146,6 @@ public class MSBibEntry {
         if (institution != null) {
             hm.put("institution", institution);
         }
-//		if(thesisType !=null )
-//			hm.put("type",thesisType);
-//		if(internetSiteTitle !=null )
-//			hm.put("title",internetSiteTitle);
         if (dateAccessed != null) {
             hm.put(MSBIB + "accessed", dateAccessed);
         }
@@ -1205,13 +1155,9 @@ public class MSBibEntry {
         if (productionCompany != null) {
             hm.put(MSBIB + "productioncompany", productionCompany);
         }
-//		if(publicationTitle !=null )
-//			hm.put("title",publicationTitle);
         if (medium != null) {
             hm.put(MSBIB + "medium", medium);
         }
-//		if(albumTitle !=null )
-//			hm.put("title",albumTitle);
         if (recordingNumber != null) {
             hm.put(MSBIB + "recordingnumber", recordingNumber);
         }
@@ -1221,8 +1167,6 @@ public class MSBibEntry {
         if (distributor != null) {
             hm.put(MSBIB + "distributor", distributor);
         }
-//		if(broadcastTitle !=null )
-//			hm.put("title",broadcastTitle);
         if (broadcaster != null) {
             hm.put(MSBIB + "broadcaster", broadcaster);
         }

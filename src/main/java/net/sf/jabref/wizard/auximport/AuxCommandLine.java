@@ -54,7 +54,6 @@ public class AuxCommandLine {
             back = auxParser.getGeneratedDatabase();
 
             // print statistics
-//      System.out.println(Globals.lang( "Results" ));
             System.out.println(Globals.lang("keys_in_database") + " " + bib.getEntryCount());
             System.out.println(Globals.lang("found_in_aux_file") + " " + auxParser.getFoundKeysInAux());
             System.out.println(Globals.lang("resolved") + " " + auxParser.getResolvedKeysCount());

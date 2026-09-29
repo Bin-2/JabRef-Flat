@@ -55,12 +55,8 @@ import net.sf.jabref.gui.ThemeAwareComponent;
 /**
  * Static variables for graphics files and keyboard shortcuts.
  */
-//public class GUIGlobals implements ThemeAwareComponent {
-//
-//    // keeps ThemeAwareComponent listeners
-//    private static final GUIGlobals THEME_LISTENER = new GUIGlobals();
-//
 public class GUIGlobals {
+
     // Frame titles.
     public static String frameTitle = "JabRef",
             version = Globals.VERSION,
@@ -109,8 +105,6 @@ public class GUIGlobals {
             fontPath = "/images/font/";
 
     static HashMap<String, JLabel> tableIcons = new HashMap<String, JLabel>(); // Contains table icon mappings. Set up
-    // further below.
-//    public static Color activeEditor = new Color(230, 230, 255);
 
     static HashMap<String, String> iconMap;
 
@@ -141,7 +135,6 @@ public class GUIGlobals {
     public static final int TOOLBAR_ICON_SMALL = 16;
     public static final int TOOLBAR_ICON_MEDIUM = 24;
     public static final int TOOLBAR_ICON_LARGE = 32;
-    // public static final int TOOLBAR_ICON_SIZE = 32;
     public static int CURRENT_TOOLBAR_ICON_SIZE = TOOLBAR_ICON_MEDIUM; // Default
 
     public static final int MENU_ICON_SIZE = 16;       // Menu icons: 16x16  
@@ -174,12 +167,6 @@ public class GUIGlobals {
         return getIcon(name, MENU_ICON_SIZE, MENU_ICON_SIZE);
     }
 
-    /**
-     * Get icon for tables (16x16)
-     */
-//    public static Icon getTableIcon(String name) {
-//        return getIcon(name, TABLE_ICON_SIZE, TABLE_ICON_SIZE);
-//    }
     /**
      * Get icon for window title bar (48x48)
      */
@@ -352,39 +339,6 @@ public class GUIGlobals {
             pluginHelp = "Plugin.html",
             autosaveHelp = "Autosave.html";
 
-    //	Colors.
-    //    public static Color lightGray = new Color(230, 30, 30), // Light gray background
-    //            entryEditorLabelColor = new Color(100, 100, 150), // Empty field, blue.
-    //            nullFieldColor = new Color(75, 130, 95), // Valid field, green.
-    //            gradientGray = new Color(112, 121, 165), // Title bar gradient color, sidepaneheader
-    //            gradientBlue = new Color(0, 27, 102), // Title bar gradient color, sidepaneheader
-    //            //activeTabbed = Color.black,  // active Database (JTabbedPane)
-    //            //inActiveTabbed = Color.gray.darker(),  // inactive Database
-    //            activeTabbed = entryEditorLabelColor.darker(), // active Database (JTabbedPane)
-    //            inActiveTabbed = Color.black, // inactive Database
-    //            infoField = new Color(254, 255, 225) // color for an info field
-    //            ;
-    //    public static final Color lightGray = new Color(245, 246, 248); // neutral light background
-    //    public static final Color entryEditorLabelColor = new Color(96, 110, 140); // muted blue-gray for labels
-    //    public static final Color nullFieldColor = new Color(56, 158, 115);    // fresh but subdued green
-    //    public static final Color gradientGray = new Color(164, 172, 189);   // lighter neutral for gradients
-    //    public static final Color gradientBlue = new Color(42, 75, 145);     // modern desaturated blue
-    //    public static final Color activeTabbed = new Color(96, 110, 140);    // same as label; keeps consistency
-    //    public static final Color inActiveTabbed = new Color(130, 130, 130);   // neutral gray for inactive
-    //    public static final Color infoField = new Color(250, 252, 240);   // very light yellow-green tint
-    //    public static final Color activeTabbedTitle = new Color(0, 0, 0);       // strong black text for selected tab
-    //    public static final Color inactiveTabbedTitle = new Color(96, 110, 140);  // muted blue-gray text for other tabs
-    /////////////////////////////////////
-    //    public static final Color activeTabbedTitle = UIManager.getColor("TabbedPane.selectedForeground");
-    //    public static final Color inactiveTabbedTitle = UIManager.getColor("TabbedPane.foreground");
-    //    public static final Color gradientBlue = UIManager.getColor("Component.accentColor");
-    //    public static final Color gradientGray = UIManager.getColor("Component.borderColor");
-    //    public static final Color lightGray = UIManager.getColor("Panel.background");
-    //    public static final Color entryEditorLabelColor = UIManager.getColor("Label.foreground");
-    //    public static final Color nullFieldColor = UIManager.getColor("Component.accentColor"); // FlatLaf 3.2+
-    //    public static final Color activeTabbed = UIManager.getColor("TabbedPane.selectedBackground");
-    //    public static final Color inActiveTabbed = UIManager.getColor("TabbedPane.background");
-    //    public static final Color infoField = UIManager.getColor("Component.innerFocusColor");
     public static Color editorTextColor = null, validFieldBackgroundColor = null,
             activeBackground = null, invalidFieldBackgroundColor = null;
 
@@ -412,11 +366,11 @@ public class GUIGlobals {
 
     public static final double PE_HEIGHT = 2;
 
-//	Size constants for EntryTypeForm; small, medium and large.
+    // Size constants for EntryTypeForm; small, medium and large.
     public static int[] FORM_WIDTH = new int[]{500, 650, 820};
     public static int[] FORM_HEIGHT = new int[]{90, 110, 130};
 
-//	Constants controlling formatted bibtex output.
+    // Constants controlling formatted bibtex output.
     public static final int INDENT = 4,
             LINE_LENGTH = 65; // Maximum
 
@@ -657,10 +611,6 @@ public class GUIGlobals {
      * @param name The name of the icon, such as "open", "save", "saveAs" etc.
      * @return The ImageIcon for the function.
      */
-//    public static ImageIcon getImage(String name) {
-//        URL u = getIconUrl(name);
-//        return u != null ? new ImageIcon(getIconUrl(name)) : null;
-//    }
     /**
      * Get a Map of all application icons mapped from their keys.
      *
@@ -778,7 +728,7 @@ public class GUIGlobals {
         // Ranking item in the menu uses one star
         lab = new JLabel(Rank.getInstance().getRepresentingIcon());
         lab.setToolTipText(Rank.getInstance().getToolTip());
-//        lab.setName("0");
+        // lab.setName("0");
         tableIcons.put(SpecialFieldsUtils.FIELDNAME_RANKING, lab);
 
         // Priority icon used for the menu

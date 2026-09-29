@@ -17,8 +17,8 @@ import net.sf.jabref.net.URLDownload;
 
 /**
  * Shared access to the NCBI Entrez E-utilities used by the PubMed/Medline
- * fetcher. Requests are serialized and paced below NCBI's unauthenticated
- * limit of three requests per second.
+ * fetcher. Requests are serialized and paced below NCBI's unauthenticated limit
+ * of three requests per second.
  */
 final class NcbiEutils {
 

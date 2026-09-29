@@ -52,12 +52,6 @@ public class AutoCompleteListener extends KeyAdapter implements FocusListener {
     protected FocusListener nextFocusListener = null;
 
     public AutoCompleteListener(AbstractAutoCompleter completer) {
-//    	if (logger.getHandlers().length == 0) {
-//	    	logger.setLevel(Level.FINEST);
-//	    	ConsoleHandler ch = new ConsoleHandler();
-//	    	ch.setLevel(Level.FINEST);
-//	    	logger.addHandler(ch);
-//    	}
         this.completer = completer;
     }
 
@@ -106,13 +100,7 @@ public class AutoCompleteListener extends KeyAdapter implements FocusListener {
         } else if ((e.getKeyCode() == KeyEvent.VK_PAGE_UP) && (toSetIn != null)) {
             cycle((JTextComponent) e.getSource(), -1);
             e.consume();
-        } //        else if ((e.getKeyCode() == KeyEvent.VK_BACK_SPACE)) {
-        //        	StringBuffer currentword = getCurrentWord((JTextComponent) e.getSource());
-        //        	// delete last char to obey semantics of back space
-        //        	currentword.deleteCharAt(currentword.length()-1);
-        //        	doCompletion(currentword, e);
-        //        }
-        else if (e.getKeyChar() == KeyEvent.CHAR_UNDEFINED) {
+        } else if (e.getKeyChar() == KeyEvent.CHAR_UNDEFINED) {
             if (e.getKeyCode() != KeyEvent.VK_SHIFT) {
                 // shift is OK, everyhting else leads to a reset
                 resetAutoCompletion();
@@ -151,9 +139,9 @@ public class AutoCompleteListener extends KeyAdapter implements FocusListener {
         //int cp = oldSelectionEnd - deletedChars;
         alltext.insert(oldSelectionStart, toSetIn.substring(1));
 
-        //Util.pr(alltext.toString());
+        // Util.pr(alltext.toString());
         comp.setText(alltext.toString());
-        //comp.setCaretPosition(cp+toSetIn.length()-1);
+        // comp.setCaretPosition(cp+toSetIn.length()-1);
         comp.select(oldSelectionStart, oldSelectionStart + toSetIn.length() - 1);
         lastCaretPosition = comp.getCaretPosition();
         //System.out.println("ToSetIn: '"+toSetIn+"'");

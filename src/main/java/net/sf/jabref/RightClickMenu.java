@@ -440,7 +440,8 @@ public class RightClickMenu extends JPopupMenu
             return null;
         }
 
-        /*groupAddMenu.setEnabled(true);
+        /*
+        groupAddMenu.setEnabled(true);
         groupMoveMenu.setEnabled(true);
         groupRemoveMenu.setEnabled(true);
         groupAddMenu.removeAll();
@@ -453,11 +454,14 @@ public class RightClickMenu extends JPopupMenu
 
         groupAddMenu.setEnabled(false);
         groupMoveMenu.setEnabled(false);
-        groupRemoveMenu.setEnabled(false);*/
+        groupRemoveMenu.setEnabled(false);
+         */
 
- /*insertNodes(groupAddMenu,metaData.getGroups(),bes,true,false);
+ /*
+        insertNodes(groupAddMenu,metaData.getGroups(),bes,true,false);
         insertNodes(groupMoveMenu,metaData.getGroups(),bes,true,true);
-        insertNodes(groupRemoveMenu,metaData.getGroups(),bes,false,false);*/
+        insertNodes(groupRemoveMenu,metaData.getGroups(),bes,false,false);
+         */
         insertNodes(groupMenu, metaData.getGroups(), bes, add, move);
 
         return groupMenu;

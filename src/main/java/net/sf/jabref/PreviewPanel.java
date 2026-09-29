@@ -175,11 +175,6 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
             // returns 0 at this point
             splitPane.setDividerLocation(oneThird * 2);
 
-            // Provide minimum sizes for the two components in the split pane
-//			Dimension minimumSize = new Dimension(oneThird * 2, 50);
-//			scrollPane.setMinimumSize(minimumSize);
-//			minimumSize = new Dimension(oneThird, 50);
-//			pdfScrollPane.setMinimumSize(minimumSize);
             add(splitPane);
         } else {
             add(scrollPane, BorderLayout.CENTER);
@@ -231,29 +226,6 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
         repaint();
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-//    private final Globals.PreferenceChangeListener themePrefListener = (key, newValue) -> {
-//        if ("Theme".equals(key)) {
-//            SwingUtilities.invokeLater(() -> {
-//                scrollPane.setBorder(null);
-//                revalidate();
-//                repaint();
-//            });
-//        }
-//    };
-//
-//    @Override
-//    public void addNotify() {
-//        super.addNotify();
-//        Globals.addPreferenceChangeListener(themePrefListener);
-//    }
-//
-//    @Override
-//    public void removeNotify() {
-//        Globals.removePreferenceChangeListener(themePrefListener);
-//        super.removeNotify();
-//    }
-    ////////////////////////////////////////////////////////////////////////////
     class PrintAction extends AbstractAction {
 
         public PrintAction() {
@@ -387,10 +359,6 @@ public final class PreviewPanel extends JPanel implements VetoableChangeListener
 
         };
 
-        // Set explicit background colors
-        // previewPane.setBackground(new Color(249, 250, 251));
-        // previewPane.setOpaque(true);
-        //
         previewPane.setComponentPopupMenu(createPopupMenu());
 
         previewPane.setEditable(false);

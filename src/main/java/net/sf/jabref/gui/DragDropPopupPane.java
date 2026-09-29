@@ -40,17 +40,6 @@ public class DragDropPopupPane extends DragDropPane {
     private JPopupMenu popupMenu = null;
     private final Action copyFullPathAction;
 
-//    public DragDropPopupPane(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
-//        super();
-//
-//        addMouseListener(new java.awt.event.MouseAdapter() {
-//            public void mouseClicked(MouseEvent e) {
-//                tabClicked(e);
-//            }
-//        });
-//
-//        initPopupMenu(manageSelectorsAction, databasePropertiesAction, bibtexKeyPatternAction);
-//    }
     public DragDropPopupPane(
             AbstractAction manageSelectorsAction,
             AbstractAction databasePropertiesAction,
@@ -76,33 +65,6 @@ public class DragDropPopupPane extends DragDropPane {
                 copyFullPathAction);
     }
 
-//    private void initPopupMenu(AbstractAction manageSelectorsAction, AbstractAction databasePropertiesAction, AbstractAction bibtexKeyPatternAction) {
-//        popupMenu = new JPopupMenu();
-//
-//        JMenuItem databasePropertiesBtn = new JMenuItem(Globals.lang("Database properties"));
-//        databasePropertiesBtn.addActionListener(databasePropertiesAction);
-//        popupMenu.add(databasePropertiesBtn);
-//
-//        JMenuItem bibtexKeyPatternBtn = new JMenuItem(Globals.lang("Bibtex key patterns"));
-//        bibtexKeyPatternBtn.addActionListener(bibtexKeyPatternAction);
-//        popupMenu.add(bibtexKeyPatternBtn);
-//
-//        JMenuItem manageSelectorsBtn = new JMenuItem(Globals.lang("Manage content selectors"));
-//        manageSelectorsBtn.addActionListener(manageSelectorsAction);
-//        popupMenu.add(manageSelectorsBtn);
-//
-//        JMenuItem closeBtn = new JMenuItem(Globals.lang("Close"), GUIGlobals.getImage("close"));
-//        closeBtn.addActionListener(new ActionListener() {
-//            public void actionPerformed(ActionEvent e) {
-//                SwingUtilities.invokeLater(new Runnable() {
-//                    public void run() {
-//                        closeSelectedTab();
-//                    }
-//                });
-//            }
-//        });
-//        popupMenu.add(closeBtn);
-//    }
     private void initPopupMenu(
             AbstractAction manageSelectorsAction,
             AbstractAction databasePropertiesAction,
@@ -158,8 +120,4 @@ public class DragDropPopupPane extends DragDropPane {
         }
     }
 
-//    private void closeSelectedTab() {
-//        // remove selected tab
-//        remove(getSelectedIndex());
-//    }
 }

@@ -106,11 +106,8 @@ public class DuplicateResolverDialog extends JDialog {
         ta1.setEditable(false);
         ta2.setEditable(false);
 
-        //ta1.setPreferredSize(dim);
-        //ta2.setPreferredSize(dim);
         setSourceView(one, two);
 
-        //getContentPane().setLayout();
         main.setLayout(gbl);
         source.setLayout(gbl);
         con.insets = new Insets(10, 10, 0, 10);

@@ -57,8 +57,7 @@ public class GroupAddRemoveDialog extends BaseAction {
         tree.setCellRenderer(new AddRemoveGroupTreeCellRenderer());
         tree.setVisibleRowCount(22);
 
-//        tree.setPreferredSize(new Dimension(200, tree.getPreferredSize().height));
-//      The scrollbar appears when the preferred size of a component is greater than the size of the viewport. If one hard coded the preferred size, it will never change according to the expansion/collapse. Thus the scrollbar cannot appear accordingly. 
+        // The scrollbar appears when the preferred size of a component is greater than the size of the viewport. If one hard coded the preferred size, it will never change according to the expansion/collapse. Thus the scrollbar cannot appear accordingly.
         //tree.setSelectionModel(new VetoableTreeSelectionModel());
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         tree.addTreeSelectionListener(new SelectionListener());
@@ -201,31 +200,6 @@ public class GroupAddRemoveDialog extends BaseAction {
                 : group.supportsRemove() && group.containsAny(selection));
     }
 
-
-    /*    private class VetoableTreeSelectionModel extends DefaultTreeSelectionModel {
-
-        @Override
-        public void addSelectionPath(TreePath path) {
-            if (checkPath(path))
-                super.addSelectionPath(path);
-        }
-
-        public void setSelectionPath(TreePath path){
-            if (checkPath(path))
-                super.setSelectionPath(path);
-
-        }
-
-        private boolean checkPath(TreePath path) {
-            GroupTreeNode node = (GroupTreeNode)path.getLastPathComponent();
-            AbstractGroup group = node.getGroup();
-            return (add ? group.supportsAdd() && !group.containsAll(GroupAddRemoveDialog.this.selection)
-                    : group.supportsRemove() && group.containsAny(GroupAddRemoveDialog.this.selection));
-        }
-    }
-    {
-
-    } */
     class AddRemoveGroupTreeCellRenderer extends GroupTreeCellRenderer {
 
         @Override

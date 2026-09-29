@@ -263,24 +263,14 @@ public class FileUpdateMonitor extends Thread {
         public void notifyFileRemoved() {
             listener.fileRemoved();
         }
-
-        /*public void finalize() {
-      try {
-        tmpFile.delete();
-      } catch (Throwable e) {
-        Globals.logger("Cannot delete temporary file '"+tmpFile.getPath()+"'");
-      }
-    }*/
     }
 
     static synchronized File getTempFile() {
         File f = null;
         // Globals.prefs.get("tempDir")
-        //while ((f = File.createTempFile("jabref"+(tmpNum++), null)).exists());
         try {
             f = File.createTempFile("jabref", null);
             f.deleteOnExit();
-            //System.out.println(f.getPath());
         } catch (IOException ex) {
             ex.printStackTrace();
         }

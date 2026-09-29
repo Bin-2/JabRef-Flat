@@ -478,11 +478,6 @@ public class PdfContentImporter extends ImportFormat {
                             }
                         }
                     }
-
-//					String lower = curString.toLowerCase();
-//					if (institution == null) {
-//						
-//					}
                 }
             }
 

@@ -78,7 +78,7 @@ public class SearchManagerNoGUI {
         base = ImportFormatReader.createDatabase(matchEntries);
 
         return base;
-    }//end getDBfromMatches()
+    }
 
     private boolean specifiedYears() {
         return searchTerm.matches("year=[0-9]{4}-[0-9]{4}");

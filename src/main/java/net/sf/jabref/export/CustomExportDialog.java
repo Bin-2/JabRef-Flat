@@ -75,11 +75,6 @@ class CustomExportDialog extends JDialog {
                         || (name.getText().equals(""))
                         || (extension.getText().equals(""))
                         || (!layoutFile.getText().endsWith(".layout"))) {
-                    //JOptionPane.showMessageDialog
-                    //    (parent, Globals.lang("You must provide a name, a search "
-                    //			  +"string and a field name for this group."),
-                    //			  Globals.lang("Create group"),
-                    //     JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 

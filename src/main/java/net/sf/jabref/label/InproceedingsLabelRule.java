@@ -75,7 +75,6 @@ public class InproceedingsLabelRule extends DefaultLabelRule {
             System.err.println(t);
         }
 
-        //	oldEntry.setField(Globals.KEY_FIELD,newLabel) ;
         return newLabel;
     }
 

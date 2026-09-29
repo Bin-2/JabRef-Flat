@@ -58,8 +58,6 @@ public class ExpandEndnoteFilters extends MnemonicAwareAction implements Worker 
             return;
         }
 
-        //if (!filename.substring(4).equalsIgnoreCase(".zip"))
-        //    filename += ".zip";
         file = new File(filename);
         if (file.exists()) {
             int confirm = JOptionPane.showConfirmDialog(frame, "'" + file.getName() + "' "

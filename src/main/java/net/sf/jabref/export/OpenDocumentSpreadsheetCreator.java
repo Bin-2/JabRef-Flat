@@ -109,8 +109,6 @@ public class OpenDocumentSpreadsheetCreator extends ExportFormat {
         try {
             Writer ps = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF8");
             try {
-
-                //            Writer ps = new FileWriter(tmpFile);
                 DOMSource source = new DOMSource(od.getDOMrepresentation());
                 StreamResult result = new StreamResult(ps);
                 Transformer trans = TransformerFactory.newInstance().newTransformer();

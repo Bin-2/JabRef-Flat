@@ -61,10 +61,14 @@ public class MedlineFetcher implements EntryFetcher {
         }
     }
 
-    /** Ask before importing more than this many references. */
+    /**
+     * Ask before importing more than this many references.
+     */
     public static final int PROMPT_THRESHOLD = 20;
 
-    /** Number of PubMed records requested per ESearch/EFetch batch. */
+    /**
+     * Number of PubMed records requested per ESearch/EFetch batch.
+     */
     public static final int FETCH_BATCH_SIZE = 100;
 
     boolean shouldContinue;

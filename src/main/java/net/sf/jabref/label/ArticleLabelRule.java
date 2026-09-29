@@ -57,57 +57,9 @@ public class ArticleLabelRule extends DefaultLabelRule {
             System.out.println("error getting year: " + t);
         }
 
-// now check for uniqueness
-// i need access to basepanes: checkForDuplicateKey
-//oldEntry.setField(Globals.KEY_FIELD,newLabel) ;
+        // now check for uniqueness
+        // i need access to basepanes: checkForDuplicateKey
+        // oldEntry.setField(Globals.KEY_FIELD,newLabel) ;
         return newLabel;
-
-
-        /*
-// use the journal name
-// return the first token 4 wrds or longer, that's not journal
-// , society, or the like (using the Keyword class)
-try{
-
-if(oldEntry.getField("journal") != null) {
-authorTokens = new StringTokenizer( ((String) oldEntry.getField("journal")).replaceAll(","," ").replaceAll("/"," ")) ;
-String tempString = authorTokens.nextToken() ;
-tempString = tempString.replaceAll(",","") ;
-boolean done = false ;
-while(tempString!=null && !done ){
-tempString = tempString.replaceAll(",","").trim() ;
-if(tempString.trim().length() > 3 && !KeyWord.isKeyWord(tempString))  {
-done = true ;
-}
-else{
-
-if(authorTokens.hasMoreTokens()){
-tempString = authorTokens.nextToken() ;
-}else{
-done = true ;
-}
-}
-}
-
-if(tempString!=null && (tempString.indexOf("null")<0) ){
-newLabel += String.valueOf( tempString.toLowerCase()) ;
-}
-}
-}
-catch(Throwable t){  System.err.println(t) ; }
-         */
     }
-
-//    public static void main(String args[]){
-//
-//        System.out.println(args[0]) ;
-//        BibtexEntry entry = new BibtexEntry("1",BibtexEntryType.ARTICLE) ;
-//        entry.setField("journal",args[0]) ;
-//        entry.setField("author","jones, b") ;
-//        entry.setField("year","1984") ;
-//        ArticleLabelRule rule = new ArticleLabelRule() ;
-//        entry = rule.applyRule(entry) ;
-//        System.out.println(entry.getField(BibtexBaseFrame.KEY_PROPERTY) );
-//
-//    }
 }

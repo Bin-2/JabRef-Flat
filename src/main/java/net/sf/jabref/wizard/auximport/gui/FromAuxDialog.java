@@ -301,7 +301,6 @@ public class FromAuxDialog
         return auxParser.getGeneratedDatabase();
     }
 
-// ---------------------------------------------------------------------------
     /**
      * Action used to produce a "Browse" button for one of the text fields.
      */

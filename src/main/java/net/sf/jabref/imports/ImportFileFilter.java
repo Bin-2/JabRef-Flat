@@ -38,10 +38,6 @@ public class ImportFileFilter extends FileFilter implements Comparable<ImportFil
 
     public boolean accept(File file) {
         return true;
-        /*if (file.isDirectory())
-            return true;
-        else
-            return file.getPath().toLowerCase().endsWith(extension);*/
     }
 
     public String getDescription() {

@@ -264,10 +264,7 @@ class ZipFileChooser extends JDialog {
 
         // Key bindings:
         JPanel mainPanel = new JPanel();
-        //ActionMap am = mainPanel.getActionMap();
-        //InputMap im = mainPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        //im.put(prefs.getKey("Close dialog"), "close");
-        //am.put("close", closeAction);
+
         mainPanel.setLayout(new BorderLayout());
         mainPanel.add(sp, BorderLayout.CENTER);
 

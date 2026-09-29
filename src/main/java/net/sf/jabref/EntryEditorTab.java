@@ -163,7 +163,7 @@ public class EntryEditorTab {
             if (i == 0) {
                 activeField = ta;
             }
-            //System.out.println(fields[i]+": "+BibtexFields.getFieldWeight(fields[i]));
+            // System.out.println(fields[i]+": "+BibtexFields.getFieldWeight(fields[i]));
             if (!compressed) {
                 ta.getPane().setPreferredSize(new Dimension(100, Math.max(defaultHeight, wHeight)));
             }

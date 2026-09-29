@@ -139,18 +139,6 @@ public class SPIRESFetcher implements EntryFetcher {
         return null;
     }
 
-    // public void addSpiresURL(BibtexEntry entry) {
-    // String url = "http://"+spiresHost+"/spires/find/hep/www?texkey+";
-    // url = url+entry.getCiteKey();
-    // entry.setField("url", url);
-    // }
-    //
-    // public void addSpiresURLtoDatabase(BibtexDatabase db) {
-    // Iterator<BibtexEntry> iter = db.getEntries().iterator();
-    // while (iter.hasNext())
-    // addSpiresURL(iter.next());
-    // }
-
     /*
 	 * @see net.sf.jabref.imports.EntryFetcher
      */

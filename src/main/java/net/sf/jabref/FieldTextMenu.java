@@ -61,8 +61,6 @@ public class FieldTextMenu implements MouseListener {
         inputMenu.add(copyAct);
         inputMenu.addSeparator();
         inputMenu.add(new ReplaceAction());
-        // inputMenu.add(new UrlAction());
-        // inputMenu.addSeparator();
         inputMenu.add(new CleanUpTextAction()); // Add the new menu item here
 
         if (myFieldName.getTextComponent() instanceof JTextComponent) {
@@ -132,20 +130,7 @@ public class FieldTextMenu implements MouseListener {
 
         public abstract void actionPerformed(ActionEvent e);
     }
-//---------------------------------------------------------------
 
-    /*class MenuHeaderAction extends BasicAction
-  {
-    public MenuHeaderAction(String comment)
-    {
-      super("Edit -" +comment);
-      this.setEnabled(false);
-    }
-
-    public void actionPerformed(ActionEvent e) { }
-  }
-     */
-// ---------------------------------------------------------------------------
     class PasteAction extends BasicAction {
 
         public PasteAction() {
@@ -167,7 +152,6 @@ public class FieldTextMenu implements MouseListener {
             }
         }
     }
-// ---------------------------------------------------------------------------
 
     class CopyAction extends BasicAction {
 
@@ -177,8 +161,6 @@ public class FieldTextMenu implements MouseListener {
 
         public void actionPerformed(ActionEvent e) {
             try {
-//        String data = ( String ) systemClip.getContents( null ).getTransferData(
-//            DataFlavor.stringFlavor ) ;
                 if (myFieldName != null) {
                     String data = myFieldName.getSelectedText();
                     if (data != null) {
@@ -203,9 +185,7 @@ public class FieldTextMenu implements MouseListener {
             if (myFieldName.getText().equals("")) {
                 return;
             }
-            //myFieldName.selectAll();
             String input = myFieldName.getText();
-            //myFieldName.setText(input.replaceAll(","," and"));
             myFieldName.setText(NameListNormalizer.normalizeAuthorList(input));
         }
     }

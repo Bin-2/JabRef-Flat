@@ -94,8 +94,8 @@ public class MedlineImporter extends ImportFormat {
 
     /**
      * Fetch and parse one or more PubMed records. Network failures are
-     * propagated so the Web Search UI can distinguish them from an empty
-     * result set.
+     * propagated so the Web Search UI can distinguish them from an empty result
+     * set.
      */
     public static List<BibtexEntry> fetchMedlineChecked(String id, OutputPrinter status) throws IOException {
         String xml = NcbiEutils.efetch(id);

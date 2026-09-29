@@ -51,8 +51,8 @@ public class CrossrefFetcher implements EntryFetcher {
      * issues/volumes, peer reviews, grants and databases are intentionally
      * excluded.
      */
-    private static final String SEARCH_TYPE_FILTER =
-            "type:journal-article"
+    private static final String SEARCH_TYPE_FILTER
+            = "type:journal-article"
             + ",type:proceedings-article"
             + ",type:proceedings"
             + ",type:book"

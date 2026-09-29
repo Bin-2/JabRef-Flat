@@ -66,8 +66,6 @@ public class AppendDatabaseAction extends BaseAction {
         if (md.isOkPressed()) {
             String[] chosen = FileDialogs.getMultipleFiles(frame, new File(Globals.prefs.get("workingDirectory")),
                     null, false);
-            //String chosenFile = Globals.getNewFile(frame, new File(Globals.prefs.get("workingDirectory")),
-            //                                       null, JFileChooser.OPEN_DIALOG, false);
             if (chosen == null) {
                 return;
             }
@@ -83,7 +81,6 @@ public class AppendDatabaseAction extends BaseAction {
                             md.importGroups(), md.importSelectorWords());
                 }
             }).start();
-            //frame.getFileHistory().newFile(panel.fileToOpen.getPath());
         }
 
     }

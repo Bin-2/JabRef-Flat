@@ -457,14 +457,6 @@ public class BibtexFields {
         return runtime.PUBLIC_FIELDS.length;
     }
 
-    /*
-     public static int getPreferredFieldLength(String name) {
-     int l = DEFAULT_FIELD_LENGTH;
-     Object o = fieldLength.get(name.toLowerCase());
-     if (o != null)
-     l = ((Integer)o).intValue();
-     return l;
-     }*/
     // --------------------------------------------------------------------------
     // a container class for all properties of a bibtex-field
     // --------------------------------------------------------------------------

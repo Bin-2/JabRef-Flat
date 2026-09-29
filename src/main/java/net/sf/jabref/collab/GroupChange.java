@@ -81,6 +81,5 @@ public class GroupChange extends Change {
                 + "Accepting the change replaces the complete "
                 + "groups tree with the externally modified groups tree." : "")
                 + "</html>");
-        // JZTODO lyrics
     }
 }

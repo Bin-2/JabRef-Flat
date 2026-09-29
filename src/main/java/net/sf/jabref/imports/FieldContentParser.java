@@ -36,15 +36,6 @@ public class FieldContentParser {
      */
     public StringBuffer format(StringBuffer content, String key) {
 
-        /*System.out.println("Content: '"+content+"'");
-        byte[] bt = content.toString().getBytes();
-        for (int i = 0; i < bt.length; i++) {
-            byte b = bt[i];
-            System.out.print(b+" ");
-        }
-        System.out.println("");
-         */
-        //boolean rep = false;
         int i = 0;
 
         // Remove windows newlines and insert unix ones:

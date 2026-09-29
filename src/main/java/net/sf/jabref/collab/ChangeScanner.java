@@ -287,11 +287,6 @@ public class ChangeScanner extends Thread {
                 } else {
                     EntryDeleteChange ec = new EntryDeleteChange(bestFit(tmp, mem, piv1), tmp.getEntryAt(piv1));
                     changes.add(ec);
-                    /*NamedCompound ce = new NamedCompound("Removed entry");
-          ce.addEdit(new UndoableInsertEntry(inMem, tmp.getEntryAt(piv1), panel));
-          ce.end();
-          changes.add(ce);*/
-
                 }
 
             }
@@ -317,13 +312,8 @@ public class ChangeScanner extends Thread {
                         EntryAddChange ec = new EntryAddChange(disk.getEntryAt(i));
                         changes.add(ec);
                     }
-                    /*NamedCompound ce = new NamedCompound("Added entry");
-          ce.addEdit(new UndoableRemoveEntry(inMem, disk.getEntryAt(i), panel));
-          ce.end();
-          changes.add(ce);*/
                 }
             }
-            //System.out.println("Suspected new entries in file: "+(disk.getEntryCount()-used.size()));
         }
     }
 

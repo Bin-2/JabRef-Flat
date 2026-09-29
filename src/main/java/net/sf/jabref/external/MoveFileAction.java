@@ -162,8 +162,6 @@ public class MoveFileAction extends AbstractAction {
                             flEntry.setLink(newFile.getCanonicalPath());
                         }
                         eEditor.updateField(editor);
-                        //JOptionPane.showMessageDialog(frame, Globals.lang("File moved"),
-                        //        Globals.lang("Move/Rename file"), JOptionPane.INFORMATION_MESSAGE);
                         frame.output(Globals.lang("File moved"));
                     } else {
                         JOptionPane.showMessageDialog(frame, Globals.lang("Move file failed"),

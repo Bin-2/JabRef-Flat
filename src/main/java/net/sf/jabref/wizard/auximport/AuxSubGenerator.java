@@ -162,7 +162,6 @@ public class AuxSubGenerator {
         while (fileIndex < fileList.size()) {
             String fName = fileList.get(fileIndex);
             try {
-//        System.out.println("read #"+fName +"#") ;
                 br = new BufferedReader(new FileReader(fName));
                 weiter = true;
                 loopFileOpen = true;
@@ -200,7 +199,6 @@ public class AuxSubGenerator {
                                     if (dummyStr != null) {
                                         // delete all unnecessary blanks and save key into an set
                                         mySet.add(dummyStr.trim());
-//                System.out.println("found " +str +" in AUX") ;
                                     }
                                 }
                             }

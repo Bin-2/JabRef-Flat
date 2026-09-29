@@ -95,11 +95,6 @@ public class EntryChange extends Change {
             }
         }
 
-        /*panel.database().removeEntry(memEntry.getId());
-    try {
-      diskEntry.setId(Util.createNeutralId());
-    } catch (KeyCollisionException ex) {}
-    panel.database().removeEntry(memEntry.getId());*/
         return allAccepted;
     }
 
@@ -141,8 +136,9 @@ public class EntryChange extends Change {
             } else {
                 // No value in memory.
                 /*if ((onTmp != null) && !onTmp.equals(inMem))
-          text.append("<H2>"+Globals.lang("You have cleared this field. Original value")+":</H2>"
-                      +" "+onTmp);*/
+                    text.append("<H2>"+Globals.lang("You have cleared this field. Original value")+":</H2>"
+                                +" "+onTmp);
+                 */
             }
             tp.setContentType("text/html");
             tp.setText(text.toString());

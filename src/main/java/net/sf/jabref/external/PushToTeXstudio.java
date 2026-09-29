@@ -106,11 +106,6 @@ public class PushToTeXstudio implements PushToApplication {
                     new String[]{programPath, "--insert-cite", citeCom + "{" + keys + "}"}
                     : new String[]{programPath, "--insert-cite", citeCom + "{" + keys + "}"};
 
-            /*for (int i = 0; i < com.length; i++) {
-                String s = com[i];
-                System.out.print(s + " ");
-            }
-            System.out.println("");*/
             final Process p = Runtime.getRuntime().exec(com);
             System.out.println(keys);
             Runnable errorListener = new Runnable() {

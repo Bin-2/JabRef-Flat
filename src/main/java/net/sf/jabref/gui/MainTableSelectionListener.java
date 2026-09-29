@@ -396,23 +396,9 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
                             }
                         } else {
                             openNonFileExternalLink(link, fieldName);
-
-                            /*ExternalFileType type = Globals.prefs.getExternalFileTypeByMimeType("text/html");
-                            ExternalFileMenuItem item = new ExternalFileMenuItem
-                                    (panel.frame(), entry, "",
-                                    (String)link, type.getIcon(),
-                                    panel.metaData(), type);
-                            boolean success = item.openLink();
-                            if (!success) {
-                                panel.output(Globals.lang("Unable to open link."));
-                            } */
-                            //Util.openExternalViewer(panel.metaData(), (String)link, fieldName);
                         }
 
                     }
-                    //catch (IOException ex) {
-                    //    panel.output(Globals.lang("Error") + ": " + ex.getMessage());
-                    //}
                 }
 
             }).start();
@@ -491,9 +477,6 @@ public class MainTableSelectionListener implements ListEventListener<BibtexEntry
         } else {
             SpecialField field = SpecialFieldsUtils.getSpecialFieldInstanceFromFieldName(iconType[0]);
             if (field != null) {
-//                for (SpecialFieldValue val: field.getValues()) {
-//                	menu.add(val.getMenuAction(panel.frame()));
-//                }
                 // full pop should be shown as left click already shows short popup
                 showDefaultPopup = true;
             } else {

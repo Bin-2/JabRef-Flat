@@ -75,7 +75,6 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
 
     public void actionPerformed(ActionEvent e) {
         List<File> filesToOpen = new ArrayList<File>();
-        //File fileToOpen = null;
 
         if (showDialog) {
 
@@ -89,14 +88,6 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                 }
             }
 
-            /*
-            String chosenFile = Globals.getNewFile(frame,
-                    new File(Globals.prefs.get("workingDirectory")), ".bib",
-                    JFileChooser.OPEN_DIALOG, true);
-
-            if (chosenFile != null) {
-                fileToOpen = new File(chosenFile);
-            }*/
         } else {
             Util.pr(NAME);
             Util.pr(e.getActionCommand());

@@ -183,8 +183,8 @@ public class TabLabelPattern extends LabelPatternPanel implements PrefsTab {
         KeyPatternRegex.setText(Globals.prefs.get("KeyPatternRegex"));
         KeyPatternReplacement.setText(Globals.prefs.get("KeyPatternReplacement"));
 
-        //basenamePatternRegex.setText(Globals.prefs.get("basenamePatternRegex"));
-        //basenamePatternReplacement.setText(Globals.prefs.get("basenamePatternReplacement"));
+        // basenamePatternRegex.setText(Globals.prefs.get("basenamePatternRegex"));
+        // basenamePatternReplacement.setText(Globals.prefs.get("basenamePatternReplacement"));
     }
 
     public String getTabName() {

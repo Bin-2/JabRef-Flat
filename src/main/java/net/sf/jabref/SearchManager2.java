@@ -108,12 +108,10 @@ public class SearchManager2 extends SidePaneComponent
     // that the search is inactive.
 
     public SearchManager2(JabRefFrame frame, SidePaneManager manager) {
-//        super(manager, GUIGlobals.getIconUrl("search"), Globals.lang("Search"));
         super(manager, GUIGlobals.getIcon("search", GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE), Globals.lang("Search"));
         this.frame = frame;
         incSearcher = new IncrementalSearcher(Globals.prefs);
 
-        //setBorder(BorderFactory.createMatteBorder(1,1,1,1,Color.magenta));
         searchReq = new JCheckBoxMenuItem(Globals.lang("Search required fields"),
                 Globals.prefs.getBoolean("searchReq"));
         searchOpt = new JCheckBoxMenuItem(Globals.lang("Search optional fields"),
@@ -250,7 +248,7 @@ public class SearchManager2 extends SidePaneComponent
             }
         });
         Insets margin = new Insets(0, 2, 0, 2);
-        //search.setMargin(margin);
+        // search.setMargin(margin);
         escape.setMargin(margin);
         openset.setMargin(margin);
         JButton help = new JButton(GUIGlobals.getImage("help"));
@@ -334,7 +332,6 @@ public class SearchManager2 extends SidePaneComponent
             @Override
             public void actionPerformed(ActionEvent e) {
                 hideAway();
-                //SearchManager2.this.actionPerformed(new ActionEvent(escape, 0, ""));
             }
         });
         setSearchButtonSizes();
@@ -592,38 +589,6 @@ public class SearchManager2 extends SidePaneComponent
         }
     }
 
-//    /**
-//     * Get SVG search icon converted to ImageIcon for MnemonicAwareAction
-//     * compatibility
-//     */
-//    private static ImageIcon getSearchImageIcon() {
-//        // First try to get SVG icon and convert to ImageIcon
-//        Icon svgIcon = GUIGlobals.getIcon("search", GUIGlobals.MENU_ICON_SIZE, GUIGlobals.MENU_ICON_SIZE);
-//        if (svgIcon != null) {
-//            return convertIconToImageIcon(svgIcon);
-//        } else {
-//            // Fallback to legacy PNG icon
-//            System.err.println("Warning: SVG help icon not found, falling back to legacy icon");
-//            return GUIGlobals.getImageIcon("search");
-//        }
-//    }
-//
-//    /**
-//     * Convert any Icon to ImageIcon for compatibility with MnemonicAwareAction
-//     */
-//    private static ImageIcon convertIconToImageIcon(Icon icon) {
-//        if (icon == null) {
-//            return null;
-//        }
-//
-//        if (icon instanceof ImageIcon) {
-//            return (ImageIcon) icon;
-//        } else {
-//            // Convert generic Icon to ImageIcon
-//            java.awt.Image image = GUIGlobals.iconToImage(icon);
-//            return image != null ? new ImageIcon(image) : null;
-//        }
-//    }
     private String getSearchModeName() {
         if (searchAllBases.isSelected()) {
             return "global";
