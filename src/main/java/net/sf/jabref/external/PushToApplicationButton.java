@@ -47,7 +47,7 @@ import javax.swing.border.Border;
  */
 public class PushToApplicationButton implements ActionListener {
 
-    public static List<PushToApplication> applications;
+    private static List<PushToApplication> applications;
 
     private JabRefFrame frame;
     public List<PushToApplication> pushActions;
@@ -65,9 +65,14 @@ public class PushToApplicationButton implements ActionListener {
     private JMenuItem settings = new JMenuItem(Globals.lang("Settings"));
 
     /**
-     * Set up the current available choices:
+     * Lazily create the legacy push-to-application integrations. Keeping this
+     * initialization lazy avoids loading the OpenOffice module and the old
+     * application integrations when legacy support is disabled.
      */
-    static {
+    public static synchronized List<PushToApplication> getApplications() {
+        if (applications != null) {
+            return applications;
+        }
 
         applications = new ArrayList<PushToApplication>();
 
@@ -77,18 +82,17 @@ public class PushToApplicationButton implements ActionListener {
             for (_JabRefPlugin.PushToApplicationExtension extension : plugins) {
                 applications.add(extension.getPushToApp());
             }
-
-            applications.add(new PushToLatexEditor());
-            applications.add(new PushToTeXstudio());
-            applications.add(new PushToLyx());
-            applications.add(new PushToEmacs());
-            applications.add(new PushToWinEdt());
-            applications.add(new PushToVim());
-            applications.add(OpenOfficePanel.getInstance());
-
-            // Finally, sort the entries:
-            //Collections.sort(applications, new PushToApplicationComparator());
         }
+
+        applications.add(new PushToLatexEditor());
+        applications.add(new PushToTeXstudio());
+        applications.add(new PushToLyx());
+        applications.add(new PushToEmacs());
+        applications.add(new PushToWinEdt());
+        applications.add(new PushToVim());
+        applications.add(OpenOfficePanel.getInstance());
+
+        return applications;
     }
 
     public PushToApplicationButton(JabRefFrame frame, List<PushToApplication> pushActions) {

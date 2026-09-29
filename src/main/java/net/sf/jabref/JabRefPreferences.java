@@ -723,6 +723,7 @@ public final class JabRefPreferences {
         defaults.put("keyGenAlwaysAddLetter", Boolean.FALSE);
         defaults.put(JabRefPreferences.EMAIL_SUBJECT, Globals.lang("References"));
         defaults.put(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES, Boolean.FALSE);
+        defaults.put(SHOW_LEGACY_EXTERNAL_PROGRAMS, Boolean.FALSE);
         defaults.put("allowFileAutoOpenBrowse", Boolean.TRUE);
         defaults.put("webSearchVisible", Boolean.FALSE);
         defaults.put("selectedFetcherIndex", 0);
@@ -804,6 +805,7 @@ public final class JabRefPreferences {
 
     public static final String EMAIL_SUBJECT = "emailSubject";
     public static final String OPEN_FOLDERS_OF_ATTACHED_FILES = "openFoldersOfAttachedFiles";
+    public static final String SHOW_LEGACY_EXTERNAL_PROGRAMS = "showLegacyExternalPrograms";
 
     public static final String GROUP_SHOW_NUMBER_OF_ELEMENTS = "groupShowNumberOfElements";
 

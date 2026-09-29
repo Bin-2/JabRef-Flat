@@ -43,7 +43,9 @@ public class ExternalTab extends JPanel implements PrefsTab {
     JTextField pdfDir, regExpTextField, fileDir, psDir, emailSubject, alternatePdfViewer;
 
     JCheckBox bibLocationAsFileDir, bibLocAsPrimaryDir, runAutoFileSearch,
-            allowFileAutoOpenBrowse, openFoldersOfAttachedFiles;
+            allowFileAutoOpenBrowse, openFoldersOfAttachedFiles, showLegacyExternalPrograms;
+    JPanel legacyExternalProgramsPanel;
+    boolean legacyExternalProgramsPanelInitialized;
     JButton editFileTypes;
     ItemListener regExpListener;
 
@@ -184,20 +186,25 @@ public class ExternalTab extends JPanel implements PrefsTab {
         browse = new BrowseAction(_frame, psDir, true);
         builder.append(new JButton(browse));
         builder.nextLine();
-        builder.appendSeparator(Globals.lang("External programs"));
+        builder.appendSeparator(Globals.lang("Legacy external programs"));
 
+        showLegacyExternalPrograms = new JCheckBox(
+                Globals.lang("Show legacy external application integrations"));
+        showLegacyExternalPrograms.setToolTipText(Globals.lang(
+                "Includes LyX, Emacs, WinEdt, Vim, LEd, TeXstudio and OpenOffice/LibreOffice."));
+        showLegacyExternalPrograms.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                updateLegacyExternalProgramsVisibility();
+            }
+        });
+        builder.append(new JPanel());
+        builder.append(showLegacyExternalPrograms, 3);
         builder.nextLine();
 
-        JPanel butpan = new JPanel();
-        butpan.setLayout(new GridLayout(2, 3));
-        addSettingsButton(new PushToLyx(), butpan);
-        addSettingsButton(new PushToEmacs(), butpan);
-        addSettingsButton(new PushToWinEdt(), butpan);
-        addSettingsButton(new PushToVim(), butpan);
-        addSettingsButton(new PushToLatexEditor(), butpan);
-        addSettingsButton(new PushToTeXstudio(), butpan);
+        legacyExternalProgramsPanel = new JPanel(new GridLayout(2, 3));
+        legacyExternalProgramsPanel.setVisible(false);
         builder.append(new JPanel());
-        builder.append(butpan, 3);
+        builder.append(legacyExternalProgramsPanel, 3);
 
         builder.nextLine();
         builder.append(pan);
@@ -227,6 +234,22 @@ public class ExternalTab extends JPanel implements PrefsTab {
 
         builder.append(alternateViewerBrowseButton);
         builder.nextLine();
+    }
+
+    private void updateLegacyExternalProgramsVisibility() {
+        boolean visible = showLegacyExternalPrograms.isSelected();
+        if (visible && !legacyExternalProgramsPanelInitialized) {
+            addSettingsButton(new PushToLyx(), legacyExternalProgramsPanel);
+            addSettingsButton(new PushToEmacs(), legacyExternalProgramsPanel);
+            addSettingsButton(new PushToWinEdt(), legacyExternalProgramsPanel);
+            addSettingsButton(new PushToVim(), legacyExternalProgramsPanel);
+            addSettingsButton(new PushToLatexEditor(), legacyExternalProgramsPanel);
+            addSettingsButton(new PushToTeXstudio(), legacyExternalProgramsPanel);
+            legacyExternalProgramsPanelInitialized = true;
+        }
+        legacyExternalProgramsPanel.setVisible(visible);
+        revalidate();
+        repaint();
     }
 
     private void addSettingsButton(final PushToApplication pt, JPanel p) {
@@ -266,6 +289,8 @@ public class ExternalTab extends JPanel implements PrefsTab {
 
         emailSubject.setText(_prefs.get(JabRefPreferences.EMAIL_SUBJECT));
         openFoldersOfAttachedFiles.setSelected(_prefs.getBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES));
+        showLegacyExternalPrograms.setSelected(_prefs.getBoolean(JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS));
+        updateLegacyExternalProgramsVisibility();
 
         if (_prefs.getBoolean(JabRefPreferences.USE_REG_EXP_SEARCH_KEY)) {
             useRegExpComboBox.setSelected(true);
@@ -301,6 +326,7 @@ public class ExternalTab extends JPanel implements PrefsTab {
         _prefs.putBoolean("allowFileAutoOpenBrowse", allowFileAutoOpenBrowse.isSelected());
         _prefs.put(JabRefPreferences.EMAIL_SUBJECT, emailSubject.getText());
         _prefs.putBoolean(JabRefPreferences.OPEN_FOLDERS_OF_ATTACHED_FILES, openFoldersOfAttachedFiles.isSelected());
+        _prefs.putBoolean(JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS, showLegacyExternalPrograms.isSelected());
     }
 
     @Override

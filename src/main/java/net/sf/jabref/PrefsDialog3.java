@@ -380,6 +380,14 @@ public class PrefsDialog3 extends JDialog {
         return isOnlyPreferenceChange(changedEntries, GROUP_ONLY_PREFERENCE_KEYS);
     }
 
+    private boolean hasPreferenceChanged(Set<String> changedEntries, String key) {
+        if (changedEntries == null) {
+            return true;
+        }
+        String rootKeyPrefix = "key:" + Globals.prefs.prefs.absolutePath() + "\u0000";
+        return changedEntries.contains(rootKeyPrefix + key);
+    }
+
     private String changedPreferenceKeySummary(Set<String> changedEntries) {
         if (changedEntries == null) {
             return "unknown";
@@ -418,6 +426,7 @@ public class PrefsDialog3 extends JDialog {
                 boolean preferencesChanged = true;
                 boolean appearanceOnlyChange = false;
                 boolean groupOnlyChange = false;
+                boolean legacyExternalProgramsChanged = false;
                 Set<String> changedPreferenceEntries;
 
                 public void run() {
@@ -448,6 +457,9 @@ public class PrefsDialog3 extends JDialog {
                             && isAppearanceOnlyPreferenceChange(changedPreferenceEntries);
                     groupOnlyChange = preferencesChanged
                             && isGroupOnlyPreferenceChange(changedPreferenceEntries);
+                    legacyExternalProgramsChanged = preferencesChanged
+                            && hasPreferenceChanged(changedPreferenceEntries,
+                                    JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS);
 
                     long flushStart = System.nanoTime();
                     Globals.prefs.flush();
@@ -516,6 +528,10 @@ public class PrefsDialog3 extends JDialog {
                         long alternateViewerStart = System.nanoTime();
                         frame.updateAlternatePdfViewerAction();
                         alternateViewerMs = elapsedMillis(alternateViewerStart);
+                    }
+
+                    if (legacyExternalProgramsChanged) {
+                        frame.refreshToolbarIcons();
                     }
 
                     long updateMs = elapsedMillis(updateStart);

@@ -1021,8 +1021,10 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         setProgressBarVisible(false);
 
-        pushExternalButton = new PushToApplicationButton(this,
-                PushToApplicationButton.applications);
+        if (prefs.getBoolean(JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS)) {
+            pushExternalButton = new PushToApplicationButton(this,
+                    PushToApplicationButton.getApplications());
+        }
         fillMenu();
         createToolBar();
         getContentPane().setLayout(gbl);
@@ -1836,8 +1838,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
 
         private void addPopupItem(ButtonGroup group,
-                                  JRadioButtonMenuItem item,
-                                  final int iconSize) {
+                JRadioButtonMenuItem item,
+                final int iconSize) {
             group.add(item);
             popupMenu.add(item);
             item.addActionListener(new ActionListener() {
@@ -1892,7 +1894,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
     }
 
-    private void refreshToolbarIcons() {
+    void refreshToolbarIcons() {
         clearToolbarIconCaches();
         menuIconOnlyCache.clear();
 
@@ -1907,13 +1909,17 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         // Remove all toolbar components
         tlb.removeAll();
 
-        // Recreate the push external button entirely
-        pushExternalButton = new PushToApplicationButton(
-                this,
-                PushToApplicationButton.applications);
+        // The entire PushToApplication mechanism is legacy and disabled by default.
+        if (prefs.getBoolean(JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS)) {
+            pushExternalButton = new PushToApplicationButton(
+                    this,
+                    PushToApplicationButton.getApplications());
+        } else {
+            pushExternalButton = null;
+        }
 
         // Restore previous selection if it exists
-        if (currentApp != null) {
+        if ((currentApp != null) && (pushExternalButton != null)) {
             for (int i = 0; i < pushExternalButton.pushActions.size(); i++) {
                 if (pushExternalButton.pushActions.get(i)
                         .getName()
@@ -2102,9 +2108,11 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         //tlb.addAction(emacsPushAction);
         //tlb.addAction(lyxPushAction);
         //tlb.addAction(winEdtPushAction);
-        tlb.add(pushExternalButton.getComponent()); //***********************
-//        tlb.add(createToolbarPushButton());
-        tlb.addSeparator();
+        if (pushExternalButton != null) {
+            tlb.add(pushExternalButton.getComponent()); //***********************
+//            tlb.add(createToolbarPushButton());
+            tlb.addSeparator();
+        }
 
         tlb.addAction(createToolbarAction(openFolder, "openFolder"));
         tlb.addAction(createToolbarAction(openFile, "openFile"));
