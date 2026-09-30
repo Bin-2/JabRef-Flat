@@ -2280,7 +2280,9 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         searchAutoCompleterHM.put("x", searchCompleter);
         int count = 0;
         for (BibtexEntry entry : database.getEntries()) {
-            Util.updateCompletersForEntry(searchAutoCompleterHM, entry);
+            // There is exactly one search completer. Calling it directly avoids
+            // allocating a HashMap iterator for every bibliography entry.
+            searchCompleter.addBibtexEntry(entry);
             count++;
         }
         searchCompleteListener = new AutoCompleteListener(searchCompleter);
@@ -2292,14 +2294,17 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         long totalStart = perfStart();
         autoCompleters.clear();
         String[] completeFields = Globals.prefs.getStringArray("autoCompleteFields");
+        Collection<BibtexEntry> entries = database.getEntries();
+        int count = entries.size();
+
+        // Build one field at a time. The previous entry-first loop created a
+        // HashMap iterator for every bibliography entry.
         for (String field : completeFields) {
             AbstractAutoCompleter autoCompleter = AutoCompleterFactory.getFor(field);
             autoCompleters.put(field, autoCompleter);
-        }
-        int count = 0;
-        for (BibtexEntry entry : database.getEntries()) {
-            Util.updateCompletersForEntry(autoCompleters, entry);
-            count++;
+            for (BibtexEntry entry : entries) {
+                autoCompleter.addBibtexEntry(entry);
+            }
         }
 
         long journalStart = perfStart();

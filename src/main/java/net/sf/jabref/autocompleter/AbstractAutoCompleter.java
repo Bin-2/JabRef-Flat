@@ -17,6 +17,7 @@ package net.sf.jabref.autocompleter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -49,6 +50,14 @@ public abstract class AbstractAutoCompleter {
     // stores for a lowercase string the possible expanded strings
     private HashMap<String, TreeSet<String>> _possibleStringsForSearchString = new HashMap<String, TreeSet<String>>();
 
+    // While an autocompleter is being populated, collect unique words in a
+    // hash set and postpone construction of the ordered search indexes until
+    // the first lookup. Startup imports can add hundreds of thousands of
+    // repeated words, and maintaining three TreeSet-based structures for each
+    // occurrence is unnecessarily expensive.
+    private HashSet<String> pendingWords = new HashSet<String>();
+    private boolean indexMaterialized = false;
+
     /**
      * Add a BibtexEntry to this autocompleter. The autocompleter (respectively
      * to the concrete implementations of {@link AbstractAutoCompleter}) itself
@@ -80,6 +89,7 @@ public abstract class AbstractAutoCompleter {
         if (stringMinLength(str)) {
             return null;
         }
+        materializeIndex();
         String lstr = str.toLowerCase();
 
         if (lstr.equals(str)) {
@@ -119,24 +129,51 @@ public abstract class AbstractAutoCompleter {
     }
 
     public void addWordToIndex(String word) {
-        if (word.length() >= SHORTEST_WORD) {
-            _index_casesensitive.add(word);
+        if (word.length() < SHORTEST_WORD) {
+            return;
+        }
 
-            // insensitive treatment
-            // first, add the lower cased word to search index
-            // second, add a mapping from the lower cased word to the real word
-            String word_lcase = word.toLowerCase();
-            _index_caseinsensitive.add(word_lcase);
-            TreeSet<String> set = _possibleStringsForSearchString.get(word_lcase);
-            if (set == null) {
-                set = new TreeSet<String>();
-            }
-            set.add(word);
+        if (!indexMaterialized) {
+            pendingWords.add(word);
+            return;
+        }
+
+        addWordToMaterializedIndex(word);
+    }
+
+    private void materializeIndex() {
+        if (indexMaterialized) {
+            return;
+        }
+
+        for (String word : pendingWords) {
+            addWordToMaterializedIndex(word);
+        }
+        pendingWords = null;
+        indexMaterialized = true;
+    }
+
+    private void addWordToMaterializedIndex(String word) {
+        // An exact duplicate is already represented in all secondary indexes.
+        if (!_index_casesensitive.add(word)) {
+            return;
+        }
+
+        // insensitive treatment
+        // first, add the lower cased word to search index
+        // second, add a mapping from the lower cased word to the real word
+        String word_lcase = word.toLowerCase();
+        _index_caseinsensitive.add(word_lcase);
+        TreeSet<String> set = _possibleStringsForSearchString.get(word_lcase);
+        if (set == null) {
+            set = new TreeSet<String>();
             _possibleStringsForSearchString.put(word_lcase, set);
         }
+        set.add(word);
     }
 
     public boolean indexContainsWord(String word) {
+        materializeIndex();
         return _index_caseinsensitive.contains(word.toLowerCase());
     }
 
