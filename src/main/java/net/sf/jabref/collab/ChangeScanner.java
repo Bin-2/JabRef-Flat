@@ -74,12 +74,12 @@ public class ChangeScanner extends Thread {
 
             // Parse the temporary file.
             File tempFile = Globals.fileUpdateMonitor.getTempFile(panel.fileMonitorHandle());
-            ParserResult pr = OpenDatabaseAction.loadDatabase(tempFile,
+            ParserResult pr = OpenDatabaseAction.loadDatabaseFromBib(tempFile,
                     Globals.prefs.get("defaultEncoding"));
             inTemp = pr.getDatabase();
             mdInTemp = pr.getMetaData();
             // Parse the modified file.
-            pr = OpenDatabaseAction.loadDatabase(f, Globals.prefs.get("defaultEncoding"));
+            pr = OpenDatabaseAction.loadDatabaseFromBib(f, Globals.prefs.get("defaultEncoding"));
             BibtexDatabase onDisk = pr.getDatabase();
             MetaData mdOnDisk = pr.getMetaData();
 

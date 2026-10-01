@@ -81,20 +81,26 @@ public class BibtexEntryWriter {
 
     public void write(BibtexEntry entry, Writer out) throws IOException {
         long start = System.nanoTime();
+        StringBuilder entryOutput = new StringBuilder(1024);
         switch (writeFieldSortStype) {
             case 0:
-                writeSorted(entry, out);
+                writeSorted(entry, entryOutput);
                 break;
             case 1:
-                writeUnsorted(entry, out);
+                writeUnsorted(entry, entryOutput);
                 break;
             case 2:
-                writeUserDefinedOrder(entry, out);
+                writeUserDefinedOrder(entry, entryOutput);
                 break;
             default:
-                writeSorted(entry, out);
+                writeSorted(entry, entryOutput);
                 break;
         }
+
+        long writeStart = System.nanoTime();
+        out.write(entryOutput.toString());
+        outputWriteNanos += System.nanoTime() - writeStart;
+
         long elapsed = System.nanoTime() - start;
         entriesWritten++;
         writeEntryNanos += elapsed;
@@ -114,10 +120,10 @@ public class BibtexEntryWriter {
      * @param out
      * @throws IOException
      */
-    private void writeSorted(BibtexEntry entry, Writer out) throws IOException {
+    private void writeSorted(BibtexEntry entry, StringBuilder out) throws IOException {
         // Write header with type and bibtex-key.
         String str = Util.shaveString(entry.getField(BibtexFields.KEY_FIELD));
-        out.write("@" + entry.getType().getName() + "{" + ((str == null) ? "" : str) + "," + Globals.NEWLINE);
+        out.append("@").append(entry.getType().getName()).append("{").append((str == null) ? "" : str).append(",").append(Globals.NEWLINE);
 
         Set<String> written = new HashSet<>();
         written.add(BibtexFields.KEY_FIELD);
@@ -170,7 +176,7 @@ public class BibtexEntryWriter {
         }
 
         // Finally, end the entry.
-        out.write((hasWritten ? Globals.NEWLINE : "") + "}" + Globals.NEWLINE);
+        out.append(hasWritten ? Globals.NEWLINE : "").append("}").append(Globals.NEWLINE);
     }
 
     /**
@@ -181,10 +187,10 @@ public class BibtexEntryWriter {
      * @param out
      * @throws IOException
      */
-    private void writeUnsorted(BibtexEntry entry, Writer out) throws IOException {
+    private void writeUnsorted(BibtexEntry entry, StringBuilder out) throws IOException {
         // Write header with type and bibtex-key.
         String str = Util.shaveString(entry.getField(BibtexFields.KEY_FIELD));
-        out.write("@" + entry.getType().getName().toUpperCase(Locale.US) + "{" + ((str == null) ? "" : str) + "," + Globals.NEWLINE);
+        out.append("@").append(entry.getType().getName().toUpperCase(Locale.US)).append("{").append((str == null) ? "" : str).append(",").append(Globals.NEWLINE);
 
         Set<String> written = new HashSet<>();
         written.add(BibtexFields.KEY_FIELD);
@@ -227,13 +233,13 @@ public class BibtexEntryWriter {
         }
 
         // Finally, end the entry.
-        out.write((hasWritten ? Globals.NEWLINE : "") + "}" + Globals.NEWLINE);
+        out.append(hasWritten ? Globals.NEWLINE : "").append("}").append(Globals.NEWLINE);
     }
 
-    private void writeUserDefinedOrder(BibtexEntry entry, Writer out) throws IOException {
+    private void writeUserDefinedOrder(BibtexEntry entry, StringBuilder out) throws IOException {
         // Write header with type and bibtex-key.
         String str = Util.shaveString(entry.getField(BibtexFields.KEY_FIELD));
-        out.write("@" + entry.getType().getName() + "{" + ((str == null) ? "" : str) + "," + Globals.NEWLINE);
+        out.append("@").append(entry.getType().getName()).append("{").append((str == null) ? "" : str).append(",").append(Globals.NEWLINE);
 
         Set<String> written = new HashSet<>();
         written.add(BibtexFields.KEY_FIELD);
@@ -273,7 +279,7 @@ public class BibtexEntryWriter {
         }
 
         // Finally, end the entry.
-        out.write((hasWritten ? Globals.NEWLINE : "") + "}" + Globals.NEWLINE);
+        out.append(hasWritten ? Globals.NEWLINE : "").append("}").append(Globals.NEWLINE);
     }
 
     /**
@@ -287,7 +293,7 @@ public class BibtexEntryWriter {
      * this field was written, false if it was skipped because it was not set
      * @throws IOException In case of an IO error
      */
-    private boolean writeField(BibtexEntry entry, Writer out, String name, boolean isNotFirst, boolean isNextGroup) throws IOException {
+    private boolean writeField(BibtexEntry entry, StringBuilder out, String name, boolean isNotFirst, boolean isNextGroup) throws IOException {
         writeFieldAttempts++;
         String o = entry.getField(name);
         if (o != null || includeEmptyFields) {
@@ -303,19 +309,14 @@ public class BibtexEntryWriter {
                 throw new IOException(Globals.lang("Error in field") + " '" + name + "': " + ex.getMessage());
             }
 
-            StringBuilder fieldOutput = new StringBuilder((formatted == null ? 0 : formatted.length()) + 32);
             if (isNotFirst) {
-                fieldOutput.append(',').append(Globals.NEWLINE);
+                out.append(',').append(Globals.NEWLINE);
             }
             if (isNextGroup) {
-                fieldOutput.append(Globals.NEWLINE);
+                out.append(Globals.NEWLINE);
             }
-            fieldOutput.append("  ").append(getFieldDisplayName(name)).append(" = ");
-            fieldOutput.append(formatted);
-
-            long writeStart = System.nanoTime();
-            out.write(fieldOutput.toString());
-            outputWriteNanos += System.nanoTime() - writeStart;
+            out.append("  ").append(getFieldDisplayName(name)).append(" = ");
+            out.append(formatted);
 
             fieldsWritten++;
             return true;

@@ -171,6 +171,24 @@ public class BibtexDatabase {
         return _entries.values();
     }
 
+    /**
+     * Returns a stable snapshot of all entries. This avoids exposing the live
+     * HashMap values view to callers that need to iterate after the database
+     * monitor has been released.
+     */
+    public synchronized List<BibtexEntry> getEntriesSnapshot() {
+        return new ArrayList<BibtexEntry>(_entries.values());
+    }
+
+    /**
+     * Returns a stable copy of the cite-key lookup table. Values still refer to
+     * the live entry objects; callers that need an immutable snapshot must copy
+     * the entry data before releasing their own save operation.
+     */
+    public synchronized Map<String, BibtexEntry> getKeyToEntryMapSnapshot() {
+        return new HashMap<String, BibtexEntry>(_keyToEntryMap);
+    }
+
     public synchronized BibtexEntry getEntryByKey(String key) {
         return _keyToEntryMap.get(key);
     }
@@ -326,6 +344,10 @@ public class BibtexDatabase {
      */
     public Collection<BibtexString> getStringValues() {
         return _strings.values();
+    }
+
+    public synchronized List<BibtexString> getStringValuesSnapshot() {
+        return new ArrayList<BibtexString>(_strings.values());
     }
 
     /**

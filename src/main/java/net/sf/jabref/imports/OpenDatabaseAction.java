@@ -250,9 +250,11 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                 }
 
                 final ParserResult prf = pr;
+                final File loadedSourceFile = fileToLoad;
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         performPostOpenActions(panel, prf, true);
+                        scheduleCacheVerification(panel, loadedSourceFile);
                     }
                 });
             }
@@ -327,7 +329,42 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
 
     public static ParserResult loadDatabase(File fileToOpen, String encoding)
             throws IOException {
+        ParserResult pr = null;
+        try {
+            pr = BinaryDatabaseCache.loadIfValid(fileToOpen);
+            if (pr != null) {
+                logger.info("Loaded binary database cache: "
+                        + BinaryDatabaseCache.getCacheFile(fileToOpen).getPath());
+            }
+        } catch (IOException ex) {
+            logger.warning("Ignoring binary database cache for '"
+                    + fileToOpen.getPath() + "': " + ex.getMessage());
+        }
 
+        if (pr == null) {
+            pr = loadDatabaseFromBib(fileToOpen, encoding);
+            try {
+                BinaryDatabaseCache.write(fileToOpen, pr);
+                logger.info("Wrote binary database cache: "
+                        + BinaryDatabaseCache.getCacheFile(fileToOpen).getPath());
+            } catch (IOException ex) {
+                logger.warning("Could not write binary database cache for '"
+                        + fileToOpen.getPath() + "': " + ex.getMessage());
+            }
+            return pr;
+        }
+
+        finishLoadedDatabase(pr);
+        return pr;
+    }
+
+    /**
+     * Parses the BibTeX file directly. This method deliberately
+     * bypasses .jbc both for reading and writing and is used by consistency
+     * checks such as ChangeScanner.
+     */
+    public static ParserResult loadDatabaseFromBib(File fileToOpen, String encoding)
+            throws IOException {
         Reader reader;
         String suppliedEncoding = detectEncodingFromHeader(fileToOpen);
 
@@ -343,11 +380,14 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
         }
 
         BibtexParser bp = new BibtexParser(reader);
-
         ParserResult pr = bp.parse();
         pr.setEncoding(encoding);
         pr.setFile(fileToOpen);
+        finishLoadedDatabase(pr);
+        return pr;
+    }
 
+    private static void finishLoadedDatabase(ParserResult pr) {
         if (SpecialFieldsUtils.keywordSyncEnabled()) {
             for (BibtexEntry entry : pr.getDatabase().getEntries()) {
                 if (entry.getField("keywords") != null) {
@@ -360,8 +400,42 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
         if (!pr.getMetaData().isGroupTreeValid()) {
             pr.addWarning(Globals.lang("Group tree could not be parsed. If you save the BibTeX database, all groups will be lost."));
         }
+    }
 
-        return pr;
+    private void scheduleCacheVerification(final BasePanel panel, final File sourceFile) {
+        BinaryDatabaseCache.startBackgroundVerification(sourceFile,
+                new BinaryDatabaseCache.VerificationListener() {
+            @Override
+            public void verificationCompleted(final File bibFile,
+                    final BinaryDatabaseCache.VerificationStatus status,
+                    final String message) {
+                if (status == BinaryDatabaseCache.VerificationStatus.VERIFIED) {
+                    logger.info("Verified binary database cache against the file: "
+                            + bibFile.getPath());
+                    return;
+                }
+
+                if (status == BinaryDatabaseCache.VerificationStatus.STALE) {
+                    panel.setUpdatedExternally(true);
+                    logger.warning("Binary database cache is stale for '"
+                            + bibFile.getPath() + "': " + message);
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            frame.output("Binary cache verification failed; .bib file differs: "
+                                    + bibFile.getPath());
+                        }
+                    });
+                    // Reuse JabRef's existing external-change code. The
+                    // ChangeScanner path is cache-bypassed, so this compares
+                    // the in-memory cache data with the .bib file.
+                    panel.fileUpdated();
+                } else if (status == BinaryDatabaseCache.VerificationStatus.FAILED) {
+                    logger.warning("Could not verify binary database cache for '"
+                            + bibFile.getPath() + "': " + message);
+                }
+            }
+        });
     }
 
     private static String detectEncodingFromHeader(File file) throws IOException {

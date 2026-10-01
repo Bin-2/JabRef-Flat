@@ -19,6 +19,7 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 import net.sf.jabref.*;
 import net.sf.jabref.gui.FileDialogs;
+import net.sf.jabref.imports.BinaryDatabaseCache;
 import net.sf.jabref.collab.ChangeScanner;
 
 import javax.swing.*;
@@ -26,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Action for the "Save" and "Save as" operations called from BasePanel. This
@@ -38,9 +40,15 @@ import java.util.List;
  */
 public class SaveDatabaseAction extends AbstractWorker {
 
+    private static final Logger logger = Logger.getLogger(SaveDatabaseAction.class.getName());
+
+
     private BasePanel panel;
     private JabRefFrame frame;
     private boolean success = false, cancelled = false, fileLockedError = false;
+    private boolean cacheVerificationBlocked = false;
+    private String cacheVerificationMessage = null;
+    private boolean externalOverwriteConfirmed = false;
 
     private boolean saveAsHandledInInit = false;
 
@@ -54,6 +62,9 @@ public class SaveDatabaseAction extends AbstractWorker {
         success = false;
         cancelled = false;
         fileLockedError = false;
+        cacheVerificationBlocked = false;
+        cacheVerificationMessage = null;
+        externalOverwriteConfirmed = false;
         saveAsHandledInInit = false;
         if (panel.getFile() == null) {
             saveAs();
@@ -121,6 +132,7 @@ public class SaveDatabaseAction extends AbstractWorker {
                                 Globals.lang("Protected database"), JOptionPane.ERROR_MESSAGE);
                         cancelled = true;
                     } else {
+                        externalOverwriteConfirmed = true;
                         panel.setUpdatedExternally(false);
                         panel.getSidePaneManager().hide("fileUpdate");
                     }
@@ -140,6 +152,17 @@ public class SaveDatabaseAction extends AbstractWorker {
         }
 
         panel.setSaving(false);
+
+        if (cacheVerificationBlocked) {
+            final String message = cacheVerificationMessage != null
+                    ? cacheVerificationMessage
+                    : "The .bib file file could not be verified against the binary cache.";
+            JOptionPane.showMessageDialog(frame, message + "\n\n"
+                    + "The save was cancelled to avoid overwriting a newer or different .bib file.",
+                    Globals.lang("File updated externally"), JOptionPane.WARNING_MESSAGE);
+            frame.output("Save cancelled: .bib file verification failed.");
+            return;
+        }
 
         if (success) {
             panel.undoManager.markUnchanged();
@@ -169,15 +192,33 @@ public class SaveDatabaseAction extends AbstractWorker {
         }
 
         try {
-            panel.storeCurrentEdit();
-            panel.autoGenerateKeysBeforeSaving();
-
-            if (!Util.waitForFileLock(panel.getFile(), 10)) {
+            boolean lockAvailable = Util.waitForFileLock(panel.getFile(), 10);
+            if (!lockAvailable) {
                 success = false;
                 fileLockedError = true;
                 return;
             }
 
+            if (!externalOverwriteConfirmed) {
+                try {
+                    boolean cacheVerified = BinaryDatabaseCache.verifyBeforeSave(panel.getFile());
+                    if (!cacheVerified) {
+                        panel.setUpdatedExternally(true);
+                        cacheVerificationBlocked = true;
+                        cacheVerificationMessage = "The .bib file differs from the data represented by the binary cache.";
+                        cancelled = true;
+                        return;
+                    }
+                } catch (IOException ex) {
+                    cacheVerificationBlocked = true;
+                    cacheVerificationMessage = "The .bib file could not be verified: " + ex.getMessage();
+                    cancelled = true;
+                    return;
+                }
+            }
+
+            panel.storeCurrentEdit();
+            panel.autoGenerateKeysBeforeSaving();
             success = saveDatabase(panel.getFile(), false, panel.getEncoding());
 
             if (!success) {
@@ -189,6 +230,16 @@ public class SaveDatabaseAction extends AbstractWorker {
                         panel.getFileMonitorHandle());
             } catch (IllegalArgumentException ex) {
                 // The file may not yet be registered when performing Save As.
+            }
+
+            try {
+                BinaryDatabaseCache.writeAsync(panel.getFile(), panel.database(),
+                        panel.metaData(), panel.getEncoding());
+            } catch (IOException ex) {
+                // The .bib file is already committed. Cache failure is
+                // non-fatal and must never turn a successful save into a failure.
+                logger.warning("Could not schedule binary database cache for '"
+                        + panel.getFile().getPath() + "': " + ex.getMessage());
             }
 
             AutoSaveManager.deleteAutoSaveFile(panel);

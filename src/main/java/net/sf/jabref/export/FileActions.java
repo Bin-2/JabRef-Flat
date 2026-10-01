@@ -707,21 +707,26 @@ public class FileActions {
                 "comparators=" + comparators.size());
 
         long keySetStart = perfStart();
-        if (keySet == null) {
-            keySet = database.getKeySet();
-        }
-        int keyCount = (keySet == null) ? 0 : keySet.size();
-        logPerf("getSortedEntries getKeySet", keySetStart, "keys=" + keyCount);
+        final boolean fullDatabase = (keySet == null);
+        int keyCount = fullDatabase ? 0 : keySet.size();
+        logPerf("getSortedEntries determine entry source", keySetStart,
+                "fullDatabase=" + fullDatabase + ", keys=" + keyCount);
 
         long buildListStart = perfStart();
-        List<BibtexEntry> sorter = new ArrayList<BibtexEntry>(keyCount);
+        List<BibtexEntry> sorter;
         int nullEntries = 0;
 
-        if (keySet != null) {
+        if (fullDatabase) {
+            // A normal database save needs every entry. Take one synchronized
+            // snapshot instead of doing one synchronized HashMap lookup per ID.
+            sorter = database.getEntriesSnapshot();
+            keyCount = sorter.size();
+        } else {
+            sorter = new ArrayList<BibtexEntry>(keyCount);
             Iterator<String> i = keySet.iterator();
 
             for (; i.hasNext();) {
-                BibtexEntry entry = database.getEntryById((i.next()));
+                BibtexEntry entry = database.getEntryById(i.next());
                 if (entry == null) {
                     nullEntries++;
                 }
@@ -729,7 +734,8 @@ public class FileActions {
             }
         }
         logPerf("getSortedEntries build entry list", buildListStart,
-                "keys=" + keyCount + ", entries=" + sorter.size() + ", nullEntries=" + nullEntries);
+                "fullDatabase=" + fullDatabase + ", keys=" + keyCount
+                + ", entries=" + sorter.size() + ", nullEntries=" + nullEntries);
 
         long sortStart = perfStart();
         Collections.sort(sorter, comparatorStack);

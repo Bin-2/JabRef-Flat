@@ -1518,10 +1518,10 @@ public class Util {
 
             in = new BufferedInputStream(new FileInputStream(source));
             out = new BufferedOutputStream(new FileOutputStream(dest));
-            int el;
-            // int tell = 0;
-            while ((el = in.read()) >= 0) {
-                out.write(el);
+            byte[] buffer = new byte[64 * 1024];
+            int count;
+            while ((count = in.read(buffer)) >= 0) {
+                out.write(buffer, 0, count);
             }
         } finally {
             if (out != null) {
