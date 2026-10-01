@@ -1011,6 +1011,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
         // gbl.setConstraints(mb, con);
         // getContentPane().add(mb);
+        updateMenuBarEmbeddingPreference();
         setJMenuBar(mb);
         con.anchor = GridBagConstraints.NORTH;
         // con.gridwidth = 1;//GridBagConstraints.REMAINDER;;
@@ -2402,6 +2403,17 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
     public long setupAllTablesWithTiming() {
         return setupAllTables(true);
+    }
+
+    /**
+     * Apply the menu bar embedding preference to this frame.
+     */
+    public void updateMenuBarEmbeddingPreference() {
+        getRootPane().putClientProperty(
+                "JRootPane.menuBarEmbedded",
+                Boolean.valueOf(prefs.getBoolean(JabRefPreferences.USE_EMBEDDED_MENU_BAR)));
+        getRootPane().revalidate();
+        getRootPane().repaint();
     }
 
     /**

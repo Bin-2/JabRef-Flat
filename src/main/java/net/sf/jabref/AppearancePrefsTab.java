@@ -41,6 +41,7 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
     JabRefPreferences _prefs;
     private final JCheckBox colorCodes;
     private final JCheckBox overrideFonts;//, useCustomIconTheme;
+    private final JCheckBox useEmbeddedMenuBar;
     private final JCheckBox showGrid;//, useCustomIconTheme;
     private final ColorSetupPanel colorPanel = new ColorSetupPanel();
     private Font font = GUIGlobals.CURRENTFONT;
@@ -78,6 +79,8 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
                   ("Use antialiasing font"));*/
         overrideFonts = new JCheckBox(Globals.lang("Override default font settings"));
 
+        useEmbeddedMenuBar = new JCheckBox(Globals.lang("Use embedded menu bar"));
+
         showGrid = new JCheckBox(Globals.lang("Show gridlines"));
 
         useThemeSemanticColors = new JCheckBox(
@@ -94,6 +97,8 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
         p1.add(lab);
         p1.add(fontSize);
         builder.append(p1);
+        builder.nextLine();
+        builder.append(useEmbeddedMenuBar);
         builder.nextLine();
         builder.append(overrideFonts);
         builder.nextLine();
@@ -286,6 +291,8 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
         rowPadding.setText("" + _prefs.getInt("tableRowPadding"));
         oldMenuFontSize = _prefs.getInt("menuFontSize");
         overrideFonts.setSelected(_prefs.getBoolean("overrideDefaultFonts"));
+        useEmbeddedMenuBar.setSelected(
+                _prefs.getBoolean(JabRefPreferences.USE_EMBEDDED_MENU_BAR));
         oldOverrideFontSize = overrideFonts.isSelected();
         fontSize.setEnabled(overrideFonts.isSelected());
         showGrid.setSelected(_prefs.getBoolean("tableShowGrid"));
@@ -315,6 +322,9 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
         _prefs.putInt("fontStyle", font.getStyle());
         _prefs.putInt("fontSize", font.getSize());
         _prefs.putBoolean("overrideDefaultFonts", overrideFonts.isSelected());
+        _prefs.putBoolean(
+                JabRefPreferences.USE_EMBEDDED_MENU_BAR,
+                useEmbeddedMenuBar.isSelected());
         GUIGlobals.CURRENTFONT = font;
         colorPanel.storeSettings();
         _prefs.putBoolean("tableShowGrid", showGrid.isSelected());

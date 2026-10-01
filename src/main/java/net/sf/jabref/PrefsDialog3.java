@@ -81,6 +81,7 @@ public class PrefsDialog3 extends JDialog {
                     "fontStyle",
                     "fontSize",
                     "overrideDefaultFonts",
+                    JabRefPreferences.USE_EMBEDDED_MENU_BAR,
                     "tableShowGrid",
                     JabRefPreferences.USE_THEME_SEMANTIC_COLORS,
                     "menuFontSize",
@@ -267,6 +268,7 @@ public class PrefsDialog3 extends JDialog {
                     prefs.importPreferences(filename);
                     setValues();
                     appearancePrefsTab.applyImportedTheme(frame);
+                    frame.updateMenuBarEmbeddingPreference();
                     BibtexEntryType.loadCustomEntryTypes(prefs);
                     ExportFormats.initAllExports();
                     frame.removeCachedEntryEditors();
@@ -425,6 +427,7 @@ public class PrefsDialog3 extends JDialog {
                 boolean preferencesChanged = true;
                 boolean appearanceOnlyChange = false;
                 boolean groupOnlyChange = false;
+                boolean menuBarEmbeddingChanged = false;
                 boolean legacyExternalProgramsChanged = false;
                 Set<String> changedPreferenceEntries;
 
@@ -456,6 +459,9 @@ public class PrefsDialog3 extends JDialog {
                             && isAppearanceOnlyPreferenceChange(changedPreferenceEntries);
                     groupOnlyChange = preferencesChanged
                             && isGroupOnlyPreferenceChange(changedPreferenceEntries);
+                    menuBarEmbeddingChanged = preferencesChanged
+                            && hasPreferenceChanged(changedPreferenceEntries,
+                                    JabRefPreferences.USE_EMBEDDED_MENU_BAR);
                     legacyExternalProgramsChanged = preferencesChanged
                             && hasPreferenceChanged(changedPreferenceEntries,
                                     JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS);
@@ -504,6 +510,10 @@ public class PrefsDialog3 extends JDialog {
                         long themeStart = System.nanoTime();
                         ThemeWatcher.notifyThemeChanged();
                         themeMs = elapsedMillis(themeStart);
+
+                        if (menuBarEmbeddingChanged) {
+                            frame.updateMenuBarEmbeddingPreference();
+                        }
 
                         long editorColorsStart = System.nanoTime();
                         GUIGlobals.updateEntryEditorColors();

@@ -541,6 +541,7 @@ public final class JabRefPreferences {
         defaults.put("fontStyle", java.awt.Font.PLAIN);
         defaults.put("fontSize", 12);
         defaults.put("overrideDefaultFonts", Boolean.FALSE);
+        defaults.put(USE_EMBEDDED_MENU_BAR, Boolean.TRUE);
         defaults.put("menuFontFamily", "Times");
         defaults.put("menuFontStyle", java.awt.Font.PLAIN);
         defaults.put("menuFontSize", 11);
@@ -807,6 +808,7 @@ public final class JabRefPreferences {
     public static final String GROUP_SHOW_NUMBER_OF_ELEMENTS = "groupShowNumberOfElements";
 
     public static final String USE_THEME_SEMANTIC_COLORS = "useThemeSemanticColors";
+    public static final String USE_EMBEDDED_MENU_BAR = "useEmbeddedMenuBar";
 
     public boolean putBracesAroundCapitals(String fieldName) {
         return putBracesAroundCapitalsFields.contains(fieldName);

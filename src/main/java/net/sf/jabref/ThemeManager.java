@@ -91,6 +91,10 @@ public final class ThemeManager {
                 UIManager.setLookAndFeel(theme);
                 break;
         }
+
+        // Keep JMenuBar below the title bar instead of embedding it
+        // into FlatLaf's window title pane.
+        UIManager.put("TitlePane.menuBarEmbedded", Boolean.FALSE);
     }
 
     public static ThemeType getThemeType() {
