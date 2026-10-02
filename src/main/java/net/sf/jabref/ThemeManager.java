@@ -94,7 +94,25 @@ public final class ThemeManager {
 
         // Keep JMenuBar below the title bar instead of embedding it
         // into FlatLaf's window title pane.
-        UIManager.put("TitlePane.menuBarEmbedded", Boolean.FALSE);
+        // UIManager.put("TitlePane.menuBarEmbedded", Boolean.FALSE); //*** This is not helpful !!!
+        //
+        // fix Window Title alignment issue
+        UIManager.put("TitlePane.centerTitle", Boolean.FALSE);
+        UIManager.put("TitlePane.centerTitleIfMenuBarEmbedded", Boolean.FALSE);
+
+        // fix Window Title (too) pale foreground
+        Color titleForeground = UIManager.getColor("MenuBar.foreground");
+        Color titleBackground = UIManager.getColor("MenuBar.background");
+
+        if (titleForeground == null) {
+            titleForeground = UIManager.getColor("Label.foreground");
+        }
+
+        UIManager.put("TitlePane.foreground", titleForeground);
+        UIManager.put("TitlePane.embeddedForeground", titleForeground);
+        UIManager.put(
+                "TitlePane.inactiveForeground",
+                blend(titleForeground, titleBackground, 0.75));
     }
 
     public static ThemeType getThemeType() {
@@ -117,5 +135,18 @@ public final class ThemeManager {
 
     public static boolean isDarkTheme() {
         return getThemeType() == ThemeType.DARK;
+    }
+
+    // blend color for inactive setting
+    private static Color blend(Color foreground, Color background, double foregroundWeight) {
+        double backgroundWeight = 1.0 - foregroundWeight;
+
+        return new Color(
+                (int) Math.round(foreground.getRed() * foregroundWeight
+                        + background.getRed() * backgroundWeight),
+                (int) Math.round(foreground.getGreen() * foregroundWeight
+                        + background.getGreen() * backgroundWeight),
+                (int) Math.round(foreground.getBlue() * foregroundWeight
+                        + background.getBlue() * backgroundWeight));
     }
 }
