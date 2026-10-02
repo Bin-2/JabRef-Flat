@@ -19,8 +19,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -98,8 +97,6 @@ public class GroupSelector extends SidePaneComponent implements
     DefaultTreeModel groupsTreeModel;
     GroupTreeNode groupsRoot;
     JScrollPane sp;
-    GridBagLayout gbl = new GridBagLayout();
-    GridBagConstraints con = new GridBagConstraints();
     JabRefFrame frame;
     String searchField;
     JPopupMenu groupsContextMenu = new JPopupMenu();
@@ -360,35 +357,19 @@ public class GroupSelector extends SidePaneComponent implements
         visMode.add(floatCb);
         visMode.add(highlCb);
 
-        JPanel main = new JPanel();
-        main.setLayout(gbl);
+        JPanel main = new JPanel(new BorderLayout());
 
-        con.fill = GridBagConstraints.BOTH;
-        //con.insets = new Insets(0, 0, 2, 0);
-        con.weightx = 1;
-        con.gridwidth = 1;
-        con.gridx = 0;
-        con.gridy = 0;
-        //con.insets = new Insets(1, 1, 1, 1);
-        gbl.setConstraints(newButton, con);
-        main.add(newButton);
-        con.gridx = 1;
-        gbl.setConstraints(refresh, con);
-        main.add(refresh);
-        con.gridx = 2;
-        gbl.setConstraints(autoGroup, con);
-        main.add(autoGroup);
-        con.gridx = 3;
-        con.gridwidth = GridBagConstraints.REMAINDER;
+        JPanel topButtons = new JPanel(new GridLayout(1, 4));
+        topButtons.add(newButton);
+        topButtons.add(refresh);
+        topButtons.add(autoGroup);
         HelpAction helpAction = new HelpAction(frame.helpDiag,
                 GUIGlobals.groupsHelp, "Help on groups");
         helpButton.addActionListener(helpAction);
         helpButton.setToolTipText(Globals.lang("Help on groups"));
-        gbl.setConstraints(helpButton, con);
-        main.add(helpButton);
+        topButtons.add(helpButton);
+        main.add(topButtons, BorderLayout.NORTH);
 
-        // header.setBorder(BorderFactory.createMatteBorder(1,1,1,1,Color.red));
-        // helpButton.setBorder(BorderFactory.createMatteBorder(1,1,1,1,Color.red));
         groupsTree = new GroupsTree(this);
         groupsTree.addTreeSelectionListener(this);
         groupsTree.setModel(groupsTreeModel = new DefaultTreeModel(groupsRoot));
@@ -396,48 +377,14 @@ public class GroupSelector extends SidePaneComponent implements
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         revalidateGroups();
-        con.gridwidth = GridBagConstraints.REMAINDER;
-        con.weighty = 1;
-        con.gridx = 0;
-        con.gridwidth = 4;
-        con.gridy = 1;
-        gbl.setConstraints(sp, con);
-        main.add(sp);
+        main.add(sp, BorderLayout.CENTER);
 
-        JPanel pan = new JPanel();
-        GridBagLayout gb = new GridBagLayout();
-        con.weighty = 0;
-        gbl.setConstraints(pan, con);
-        pan.setLayout(gb);
-        con.insets = new Insets(0, 0, 0, 0);
-        con.gridx = 0;
-        con.gridy = 0;
-        con.weightx = 1;
-        con.gridwidth = 4;
-        con.fill = GridBagConstraints.HORIZONTAL;
-        gb.setConstraints(openset, con);
-        pan.add(openset);
+        JPanel bottomButtons = new JPanel(new GridLayout(1, 3));
+        bottomButtons.add(openset);
+        bottomButtons.add(expand);
+        bottomButtons.add(reduce);
+        main.add(bottomButtons, BorderLayout.SOUTH);
 
-        con.gridwidth = 1;
-        con.gridx = 4;
-        con.gridy = 0;
-        gb.setConstraints(expand, con);
-        pan.add(expand);
-
-        con.gridx = 5;
-        gb.setConstraints(reduce, con);
-        pan.add(reduce);
-
-        con.gridwidth = 6;
-        con.gridy = 1;
-        con.gridx = 0;
-        con.fill = GridBagConstraints.HORIZONTAL;
-
-        con.gridy = 2;
-        con.gridx = 0;
-        con.gridwidth = 4;
-        gbl.setConstraints(pan, con);
-        main.add(pan);
         main.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
         add(main, BorderLayout.CENTER);
         updateBorder(editModeIndicator);
