@@ -999,6 +999,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
         fillMenu();
         createToolBar();
+        stabilizeToolbarHeight();
         getContentPane().setLayout(gbl);
         contentPane.setDividerSize(2);
         contentPane.setBorder(null);
@@ -1907,8 +1908,22 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         createToolBar();
 
         SwingUtilities.updateComponentTreeUI(tlb);
+        stabilizeToolbarHeight();
         tlb.revalidate();
         tlb.repaint();
+    }
+
+    /* The main table could shift upward by a few pixels after startup or when 
+       enabling the preview pane. The preview changes the preferred size of 
+       the main content, causing GridBagLayout to compress the toolbar height 
+       and move the entire tab content upward. 
+     */
+    private void stabilizeToolbarHeight() {
+        Dimension preferred = tlb.getPreferredSize();
+        Dimension minimum = tlb.getMinimumSize();
+        if ((preferred != null) && (minimum != null) && (minimum.height < preferred.height)) {
+            tlb.setMinimumSize(new Dimension(minimum.width, preferred.height));
+        }
     }
 
     public void updateSaveIconState() {
