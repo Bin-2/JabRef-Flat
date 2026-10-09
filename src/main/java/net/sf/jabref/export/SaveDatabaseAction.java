@@ -233,8 +233,7 @@ public class SaveDatabaseAction extends AbstractWorker {
             }
 
             try {
-                BinaryDatabaseCache.writeAsync(panel.getFile(), panel.database(),
-                        panel.metaData(), panel.getEncoding());
+                BinaryDatabaseCache.writeAsync(panel.getFile(), panel.getEncoding());
             } catch (IOException ex) {
                 // The .bib file is already committed. Cache failure is
                 // non-fatal and must never turn a successful save into a failure.

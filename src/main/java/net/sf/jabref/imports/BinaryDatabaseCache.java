@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 import net.sf.jabref.BibtexDatabase;
@@ -38,7 +36,6 @@ import net.sf.jabref.BibtexEntryType;
 import net.sf.jabref.BibtexFields;
 import net.sf.jabref.BibtexString;
 import net.sf.jabref.CustomEntryType;
-import net.sf.jabref.GUIGlobals;
 import net.sf.jabref.Globals;
 import net.sf.jabref.KeyCollisionException;
 import net.sf.jabref.MetaData;
@@ -66,7 +63,7 @@ import net.sf.jabref.groups.VersionHandling;
  * {@link DataOutputStream})</h2>
  * <pre>
  *   int32   MAGIC                 0x4A424331 ("JBC1")
- *   int32   FORMAT_VERSION        currently 2
+ *   int32   FORMAT_VERSION        currently 3
  *   int64   source length         of the .bib file at snapshot time
  *   int64   source lastModified   of the .bib file at snapshot time
  *   byte[32] source SHA-256       of the .bib file at snapshot time
@@ -139,7 +136,7 @@ import net.sf.jabref.groups.VersionHandling;
 public final class BinaryDatabaseCache {
 
     /*
-     * Format v2, in order:
+     * Format v3, in order:
      *   magic/version, source size/mtime/SHA-256, parser preferences,
      *   parser-result header, custom entry types, preamble, BibTeX strings,
      *   entries, metadata, optional group tree.
@@ -156,7 +153,8 @@ public final class BinaryDatabaseCache {
      * Binary layout version. Increment this whenever the serialized field order
      * or interpretation changes; older caches will then be ignored and rebuilt.
      */
-    private static final int FORMAT_VERSION = 2;
+    // V3 rejects older post-save caches built from unsaved in-memory fields.
+    private static final int FORMAT_VERSION = 3;
     private static final int SHA256_LENGTH = 32;
 
     /* Defensive limits for values read from a corrupt or incompatible cache. */
@@ -168,9 +166,6 @@ public final class BinaryDatabaseCache {
     private static final int MAX_WARNINGS = 1_000_000;
     private static final int MAX_METADATA_KEYS = 100_000;
     private static final int MAX_METADATA_VALUES = 1_000_000;
-
-    private static final Pattern VERSION_PATTERN = Pattern.compile("([0-9]+)\\.([0-9]+).*");
-    private static final Pattern VERSION_PATTERN_2 = Pattern.compile("([0-9]+)\\.([0-9]+)\\.([0-9]+).*");
 
     /*
      * Per-file verification state survives the fast cache load and coordinates
@@ -372,21 +367,18 @@ public final class BinaryDatabaseCache {
     }
 
     /**
-     * Queues cache regeneration after a successful normal {@code .bib} save.
+     * Regenerates the cache after the .bib file has been saved successfully.
      *
-     * <p>The source file has already been committed when this method is called.
-     * A compact immutable snapshot of the in-memory database is prepared
-     * synchronously; hashing and cache I/O then continue on a low-priority
-     * daemon thread.</p>
+     * <p>Reparse the committed .bib file on a background thread rather than
+     * copying the in-memory database. The BibTeX writer can omit fields or
+     * transform values, so the saved bytes are the only reliable source for
+     * a cache that must behave like a fresh file open.</p>
      *
-     * <p>The previous cache is invalidated before snapshot preparation. A
-     * {@code .jbc.invalid} marker therefore survives a crash or shutdown until
-     * the replacement cache has been completely written. Generation numbers
-     * ensure that a cache task started by an older save cannot replace one from
-     * a newer save.</p>
+     * <p>Invalidate the previous cache before starting. A marker remains if
+     * parsing or writing fails. Generation checks prevent an earlier save's
+     * worker from publishing an obsolete cache.</p>
      */
-    public static void writeAsync(File bibFile, BibtexDatabase database,
-            MetaData metaData, String encoding) throws IOException {
+    public static void writeAsync(File bibFile, String encoding) throws IOException {
         if ((bibFile == null) || !bibFile.isFile()) {
             throw new IOException("Source BibTeX file does not exist");
         }
@@ -396,9 +388,6 @@ public final class BinaryDatabaseCache {
         final CacheVerification verification = new CacheVerification(
                 0L, 0L, null, VerificationStatus.VERIFYING);
 
-        // Invalidate the previous cache before doing anything that can fail.
-        // Once the .bib has been committed, an older .jbc must never be used
-        // on the next startup, even if preparing the replacement cache fails.
         synchronized (ASYNC_WRITE_LOCK) {
             invalidateExistingCache(bibFile);
             generation = ASYNC_WRITE_SEQUENCE.incrementAndGet();
@@ -406,34 +395,11 @@ public final class BinaryDatabaseCache {
             VERIFICATIONS.put(key, verification);
         }
 
-        // Snapshot the in-memory model on the calling thread; this is the
-        // only part that touches live JabRef objects.
-        CacheWriteData preparedData = null;
-        IOException preparationError = null;
-        try {
-            if ((database == null) || (metaData == null)) {
-                throw new IOException("Cannot cache a null database or metadata object");
-            }
-            if (!metaData.isGroupTreeValid()) {
-                throw new IOException("Metadata group tree is invalid; cache not written");
-            }
-            preparedData = createWriteData(database, metaData, encoding);
-        } catch (IOException ex) {
-            preparationError = ex;
-        } catch (RuntimeException ex) {
-            preparationError = new IOException("Could not snapshot database for binary cache", ex);
-        }
-
-        final CacheWriteData data = preparedData;
-        final IOException snapshotError = preparationError;
-
         Thread writer = new Thread(new Runnable() {
             @Override
             public void run() {
                 SourceSnapshot snapshot;
                 try {
-                    // Hash the just-committed .bib. This is the source of
-                    // truth the cache will be validated against later.
                     snapshot = createStableSnapshot(bibFile);
                     publishVerifiedSnapshot(verification, snapshot);
                 } catch (IOException ex) {
@@ -444,17 +410,24 @@ public final class BinaryDatabaseCache {
                     return;
                 }
 
-                // A newer write superseded us while we were hashing.
                 if (!isCurrentAsyncGeneration(key, generation)) {
-                    return;
-                }
-                if (snapshotError != null) {
-                    LOGGER.warning("Binary database cache remains invalid for '"
-                            + bibFile.getPath() + "': " + snapshotError.getMessage());
                     return;
                 }
 
                 try {
+                    // This bypasses .jbc and uses the same encoding resolution,
+                    // parsing, and post-parse processing as a normal file load.
+                    ParserResult parsed = OpenDatabaseAction.loadDatabaseFromBib(
+                            bibFile, encoding);
+                    if (!isCurrentAsyncGeneration(key, generation)) {
+                        return;
+                    }
+                    if (!sourceStillMatchesSnapshot(bibFile, snapshot)) {
+                        throw new SourceChangedException(
+                                "Source BibTeX file changed while cache was being prepared");
+                    }
+
+                    CacheWriteData data = createWriteData(parsed);
                     writePreparedInternal(bibFile, data, snapshot, key, generation);
                     if (isCurrentAsyncGeneration(key, generation)) {
                         LOGGER.info("Wrote binary database cache: "
@@ -469,6 +442,11 @@ public final class BinaryDatabaseCache {
                 } catch (IOException ex) {
                     LOGGER.warning("Could not write binary database cache for '"
                             + bibFile.getPath() + "': " + ex.getMessage());
+                } catch (RuntimeException ex) {
+                    // A parser failure must leave the invalidation marker in
+                    // place rather than restore a cache of different data.
+                    LOGGER.warning("Could not parse saved BibTeX file for cache '"
+                            + bibFile.getPath() + "': " + ex.getMessage());
                 }
             }
         }, "JBC writer: " + bibFile.getName());
@@ -477,18 +455,25 @@ public final class BinaryDatabaseCache {
         writer.start();
     }
 
-    /**
-     * Captures the mutable database state needed by the background writer.
-     * Strings are immutable, so the snapshot mainly copies collection structure
-     * and references rather than duplicating all bibliography text.
-     */
-    private static CacheWriteData createWriteData(BibtexDatabase database,
-            MetaData metaData, String encoding) throws IOException {
+    /** Captures a parsed file in an immutable form for the background writer. */
+    private static CacheWriteData createWriteData(ParserResult parsed) throws IOException {
+        if ((parsed == null) || parsed.isInvalid() || (parsed.getDatabase() == null)
+                || (parsed.getMetaData() == null)) {
+            throw new IOException("Cannot cache an incomplete parser result");
+        }
+        BibtexDatabase database = parsed.getDatabase();
+        MetaData metaData = parsed.getMetaData();
+        if (!metaData.isGroupTreeValid()) {
+            throw new IOException("Metadata group tree is invalid; cache not written");
+        }
+
         CacheHeaderData header = new CacheHeaderData();
-        header.encoding = encoding;
-        header.jabrefVersion = GUIGlobals.version;
-        setVersionNumbers(header, GUIGlobals.version);
-        header.warnings = new String[0];
+        header.encoding = parsed.getEncoding();
+        header.jabrefVersion = parsed.getJabrefVersion();
+        header.jabrefMajorVersion = parsed.getJabrefMajorVersion();
+        header.jabrefMinorVersion = parsed.getJabrefMinorVersion();
+        header.jabrefMinor2Version = parsed.getJabrefMinor2Version();
+        header.warnings = parsed.warnings();
 
         List<BibtexEntry> sourceEntries = database.getEntriesSnapshot();
         Map<String, BibtexEntry> keyWinners = database.getKeyToEntryMapSnapshot();
@@ -501,6 +486,14 @@ public final class BinaryDatabaseCache {
         List<EntrySnapshot> winners = new ArrayList<EntrySnapshot>(sourceEntries.size());
         LinkedHashMap<String, CustomTypeSnapshot> customTypes =
                 new LinkedHashMap<String, CustomTypeSnapshot>();
+        for (BibtexEntryType type : collectParsedCustomEntryTypes(
+                parsed.getEntryTypes()).values()) {
+            CustomEntryType custom = (CustomEntryType) type;
+            customTypes.put(type.getName().toLowerCase(Locale.US),
+                    new CustomTypeSnapshot(custom.getName(),
+                            custom.getRequiredFieldsString(),
+                            join(custom.getOptionalFields(), ";")));
+        }
 
         for (BibtexEntry entry : sourceEntries) {
             EntrySnapshot entrySnapshot = snapshotEntry(entry);
@@ -511,17 +504,6 @@ public final class BinaryDatabaseCache {
                 winners.add(entrySnapshot);
             }
 
-            // Collect custom types actually referenced by entries. Only types
-            // that are not standard built-ins are cached.
-            BibtexEntryType type = entry.getType();
-            if ((type instanceof CustomEntryType)
-                    && (BibtexEntryType.getStandardType(type.getName()) == null)) {
-                CustomEntryType custom = (CustomEntryType) type;
-                customTypes.put(type.getName().toLowerCase(Locale.US),
-                        new CustomTypeSnapshot(custom.getName(),
-                                custom.getRequiredFieldsString(),
-                                join(custom.getOptionalFields(), ";")));
-            }
         }
 
         // Preserve the non-winners-first ordering established above.
@@ -1421,22 +1403,6 @@ public final class BinaryDatabaseCache {
             result.append(values[i]);
         }
         return result.toString();
-    }
-
-    /** Parses "a.b[.c]" version components into the header's int fields. */
-    private static void setVersionNumbers(CacheHeaderData header, String version) {
-        if (version == null) {
-            return;
-        }
-        Matcher matcher = VERSION_PATTERN.matcher(version);
-        if (matcher.matches()) {
-            header.jabrefMajorVersion = Integer.parseInt(matcher.group(1));
-            header.jabrefMinorVersion = Integer.parseInt(matcher.group(2));
-        }
-        Matcher matcher2 = VERSION_PATTERN_2.matcher(version);
-        if (matcher2.matches()) {
-            header.jabrefMinor2Version = Integer.parseInt(matcher2.group(3));
-        }
     }
 
     /** Immutable (length, mtime, SHA-256) identity of a .bib file. */
