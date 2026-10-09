@@ -413,13 +413,19 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
         }
     }
 
-    private void scheduleCacheVerification(final BasePanel panel, final File sourceFile) {
-        BinaryDatabaseCache.startBackgroundVerification(sourceFile,
+    private static void scheduleCacheVerification(final BasePanel panel, final File sourceFile) {
+        if (panel.isClosedForCacheVerification()) {
+            return;
+        }
+        BinaryDatabaseCache.VerificationListener listener =
                 new BinaryDatabaseCache.VerificationListener() {
             @Override
             public void verificationCompleted(final File bibFile,
                     final BinaryDatabaseCache.VerificationStatus status,
                     final String message) {
+                if (panel.isClosedForCacheVerification()) {
+                    return;
+                }
                 if (status == BinaryDatabaseCache.VerificationStatus.VERIFIED) {
                     logger.info("Verified binary database cache against the file: "
                             + bibFile.getPath());
@@ -433,20 +439,26 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            frame.output("Binary cache verification failed; .bib file differs: "
-                                    + bibFile.getPath());
+                            if (!panel.isClosedForCacheVerification()) {
+                                panel.frame().output("Binary cache verification failed; .bib file differs: "
+                                        + bibFile.getPath());
+                            }
                         }
                     });
                     // Reuse JabRef's existing external-change code. The
                     // ChangeScanner path is cache-bypassed, so this compares
                     // the in-memory cache data with the .bib file.
-                    panel.fileUpdated();
+                    if (!panel.isClosedForCacheVerification()) {
+                        panel.fileUpdated();
+                    }
                 } else if (status == BinaryDatabaseCache.VerificationStatus.FAILED) {
                     logger.warning("Could not verify binary database cache for '"
                             + bibFile.getPath() + "': " + message);
                 }
             }
-        });
+        };
+        panel.setCacheVerificationListener(sourceFile, listener);
+        BinaryDatabaseCache.startBackgroundVerification(sourceFile, listener);
     }
 
     private static String detectEncodingFromHeader(File file) throws IOException {

@@ -464,7 +464,7 @@ public final class BinaryDatabaseCache {
             invalidateExistingCache(bibFile);
             generation = ASYNC_WRITE_SEQUENCE.incrementAndGet();
             ASYNC_WRITE_GENERATIONS.put(key, generation);
-            VERIFICATIONS.put(key, verification);
+            replaceVerification(key, verification);
         }
 
         Thread writer = new Thread(new Runnable() {
@@ -878,6 +878,25 @@ public final class BinaryDatabaseCache {
     }
 
     /**
+     * Detaches a database tab's callback without interrupting source verification.
+     * The listener identity check avoids detaching a newer tab's callback if
+     * the same file was closed and reopened during an outstanding verification.
+     */
+    public static void removeVerificationListener(File bibFile, VerificationListener listener) {
+        if ((bibFile == null) || (listener == null)) {
+            return;
+        }
+        CacheVerification verification = VERIFICATIONS.get(fileKey(bibFile));
+        if (verification != null) {
+            synchronized (verification) {
+                if (verification.listener == listener) {
+                    verification.listener = null;
+                }
+            }
+        }
+    }
+
+    /**
      * Starts SHA-256 verification for a cache loaded through the fast metadata
      * path. Calling this for a file with no pending verification is a no-op.
      */
@@ -958,9 +977,20 @@ public final class BinaryDatabaseCache {
     private static void completeVerification(File bibFile, CacheVerification verification) {
         VerificationResult result = verifySnapshot(bibFile, verification);
         applyVerificationResult(bibFile, verification, result);
-        VerificationListener listener = verification.listener;
-        if (listener != null) {
-            listener.verificationCompleted(bibFile, result.status, result.message);
+        VerificationListener listener;
+        synchronized (verification) {
+            listener = verification.listener;
+            // A completed verification must not keep a closed BasePanel alive
+            // through the static VERIFICATIONS map.
+            verification.listener = null;
+        }
+        if ((listener != null) && (VERIFICATIONS.get(fileKey(bibFile)) == verification)) {
+            try {
+                listener.verificationCompleted(bibFile, result.status, result.message);
+            } catch (RuntimeException ex) {
+                LOGGER.warning("Binary cache verification listener failed for '"
+                        + bibFile.getPath() + "': " + ex.getMessage());
+            }
         }
     }
 
@@ -1004,7 +1034,7 @@ public final class BinaryDatabaseCache {
     /** Registers a loaded cache as PENDING verification (digest not yet checked). */
     private static void rememberPendingVerification(File bibFile, long length,
             long lastModified, byte[] sha256) {
-        VERIFICATIONS.put(fileKey(bibFile),
+        replaceVerification(fileKey(bibFile),
                 new CacheVerification(length, lastModified, sha256, VerificationStatus.PENDING));
     }
 
@@ -1013,13 +1043,28 @@ public final class BinaryDatabaseCache {
         CacheVerification verification = new CacheVerification(snapshot.length,
                 snapshot.lastModified, snapshot.sha256, VerificationStatus.VERIFIED);
         verification.done.countDown();
-        VERIFICATIONS.put(fileKey(bibFile), verification);
+        replaceVerification(fileKey(bibFile), verification);
+    }
+
+    /** Releases callbacks associated with a superseded verification state. */
+    private static void replaceVerification(String key, CacheVerification replacement) {
+        CacheVerification previous = VERIFICATIONS.put(key, replacement);
+        if (previous != null) {
+            synchronized (previous) {
+                previous.listener = null;
+            }
+        }
     }
 
     /** Forgets any verification state for the given .bib file. */
     private static void clearVerification(File bibFile) {
         if (bibFile != null) {
-            VERIFICATIONS.remove(fileKey(bibFile));
+            CacheVerification previous = VERIFICATIONS.remove(fileKey(bibFile));
+            if (previous != null) {
+                synchronized (previous) {
+                    previous.listener = null;
+                }
+            }
         }
     }
 

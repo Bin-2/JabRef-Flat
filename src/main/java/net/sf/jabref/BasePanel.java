@@ -84,6 +84,7 @@ import net.sf.jabref.groups.GroupTreeNode;
 import net.sf.jabref.gui.*;
 import net.sf.jabref.imports.AppendDatabaseAction;
 import net.sf.jabref.imports.BibtexParser;
+import net.sf.jabref.imports.BinaryDatabaseCache;
 import net.sf.jabref.imports.SPIRESFetcher;
 import net.sf.jabref.journals.AbbreviateAction;
 import net.sf.jabref.journals.UnabbreviateAction;
@@ -124,6 +125,10 @@ import com.jgoodies.forms.layout.FormLayout;
 public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdateListener {
 
     private static final Logger logger = Logger.getLogger(BasePanel.class.getName());
+
+    private File cacheVerificationFile;
+    private BinaryDatabaseCache.VerificationListener cacheVerificationListener;
+    private volatile boolean closedForCacheVerification;
 
     // Performance diagnostics. Keep the threshold at 0 while profiling, then raise it or disable.
     private static final boolean PERF_TIMERS = true;
@@ -3106,10 +3111,36 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         Util.pr("File '" + getFile().getPath() + "' has been deleted.");
     }
 
+    /** Keeps a cache verification callback tied to this tab's lifecycle. */
+    public void setCacheVerificationListener(File sourceFile,
+            BinaryDatabaseCache.VerificationListener listener) {
+        if (cacheVerificationListener != null) {
+            BinaryDatabaseCache.removeVerificationListener(
+                    cacheVerificationFile, cacheVerificationListener);
+        }
+        cacheVerificationFile = null;
+        cacheVerificationListener = null;
+        if (!closedForCacheVerification) {
+            cacheVerificationFile = sourceFile;
+            cacheVerificationListener = listener;
+        }
+    }
+
+    public boolean isClosedForCacheVerification() {
+        return closedForCacheVerification;
+    }
+
     /**
      * Perform necessary cleanup when this BasePanel is closed.
      */
     public void cleanUp() {
+        closedForCacheVerification = true;
+        if (cacheVerificationListener != null) {
+            BinaryDatabaseCache.removeVerificationListener(
+                    cacheVerificationFile, cacheVerificationListener);
+            cacheVerificationListener = null;
+            cacheVerificationFile = null;
+        }
         if (fileMonitorHandle != null) {
             Globals.fileUpdateMonitor.removeUpdateListener(fileMonitorHandle);
         }
