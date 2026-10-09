@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -63,7 +64,7 @@ import net.sf.jabref.groups.VersionHandling;
  * {@link DataOutputStream})</h2>
  * <pre>
  *   int32   MAGIC                 0x4A424331 ("JBC1")
- *   int32   FORMAT_VERSION        currently 3
+ *   int32   FORMAT_VERSION        currently 4
  *   int64   source length         of the .bib file at snapshot time
  *   int64   source lastModified   of the .bib file at snapshot time
  *   byte[32] source SHA-256       of the .bib file at snapshot time
@@ -102,6 +103,8 @@ import net.sf.jabref.groups.VersionHandling;
  *     string?[valueCount] values } * metaKeyCount
  *   bool    hasGroupTree
  *   string  groupTree             only if hasGroupTree, newline-separated
+ *
+ *   byte[32] cache SHA-256        of all preceding bytes (header and payload)
  * </pre>
  *
  * <h2>String encoding</h2>
@@ -113,17 +116,18 @@ import net.sf.jabref.groups.VersionHandling;
  * prefixes and the header are binary.</p>
  *
  * <h2>Consistency model</h2>
- * <p>A cache is valid iff the .bib file's length, lastModified and SHA-256
- * all match the values stored in the cache. Because length+lastModified are
- * checked cheaply on load, the SHA-256 is only recomputed lazily in the
+ * <p>Before deserialization, the cache SHA-256 trailer is validated against
+ * the serialized bytes. The .bib file's length, lastModified and SHA-256
+ * must also match their stored values. Because source length+lastModified are
+ * checked cheaply on load, the source SHA-256 is only recomputed lazily in the
  * background ({@link #startBackgroundVerification}) or at the save barrier
  * ({@link #verifyBeforeSave}). See {@link CacheVerification}.</p>
  *
  * <h2>Failure policy</h2>
  * <ul>
  *   <li>{@link #loadIfValid} returns {@code null} for a missing, stale or
- *       header-mismatched cache, and throws {@link IOException} only for a
- *       cache that is present but structurally corrupt/truncated.</li>
+ *       header-mismatched cache, and throws {@link IOException} for a
+ *       cache whose checksum fails or whose contents are corrupt/truncated.</li>
  *   <li>{@link #write} throws on any failure; callers treat that as "no cache"
  *       and continue.</li>
  *   <li>{@link #writeAsync} invalidates the previous cache <em>before</em>
@@ -136,10 +140,10 @@ import net.sf.jabref.groups.VersionHandling;
 public final class BinaryDatabaseCache {
 
     /*
-     * Format v3, in order:
+     * Format v4, in order:
      *   magic/version, source size/mtime/SHA-256, parser preferences,
      *   parser-result header, custom entry types, preamble, BibTeX strings,
-     *   entries, metadata, optional group tree.
+     *   entries, metadata, optional group tree, cache SHA-256 trailer.
      *
      * The reader and writer must evolve together. Any layout change requires a
      * FORMAT_VERSION bump rather than attempting to reinterpret older caches.
@@ -153,8 +157,8 @@ public final class BinaryDatabaseCache {
      * Binary layout version. Increment this whenever the serialized field order
      * or interpretation changes; older caches will then be ignored and rebuilt.
      */
-    // V3 rejects older post-save caches built from unsaved in-memory fields.
-    private static final int FORMAT_VERSION = 3;
+    // V4 adds integrity verification for the serialized cache itself.
+    private static final int FORMAT_VERSION = 4;
     private static final int SHA256_LENGTH = 32;
 
     /* Defensive limits for values read from a corrupt or incompatible cache. */
@@ -214,10 +218,10 @@ public final class BinaryDatabaseCache {
      * Loads a cache after inexpensive validation.
      *
      * <p>Magic/version, source length and timestamp, invalidation marker, and
-     * parser-relevant preferences and effective source encoding are checked
-     * before database objects are reconstructed. A successful load records
-     * the stored SHA-256 digest as pending verification; the digest is not recomputed here so
-     * cached startup remains fast.</p>
+     * parser-relevant preferences, effective source encoding, and cache
+     * SHA-256 checksum are checked before database objects are reconstructed.
+     * A successful load records the source .bib SHA-256 as pending verification;
+     * the source digest is not recomputed here.</p>
      *
      * @param effectiveEncoding encoding selected for parsing the source file,
      *         including any supported encoding declared in its header
@@ -242,8 +246,19 @@ public final class BinaryDatabaseCache {
             return null;
         }
 
-        try (DataInputStream in = new DataInputStream(new BufferedInputStream(
-                new FileInputStream(cacheFile), 256 * 1024))) {
+        try (FileInputStream fileStream = new FileInputStream(cacheFile);
+                DataInputStream in = new DataInputStream(new BufferedInputStream(
+                        fileStream, 256 * 1024))) {
+            // Cheap compatibility check before hashing a potentially large
+            // legacy cache. Do not consume the buffered deserialization stream.
+            DataInputStream prefix = new DataInputStream(fileStream);
+            if ((prefix.readInt() != MAGIC) || (prefix.readInt() != FORMAT_VERSION)) {
+                return null;
+            }
+            // Verify the complete cache before constructing any database
+            // objects. Reuse the same file descriptor for both passes so an
+            // atomic cache replacement cannot swap in a different file.
+            verifyCacheChecksum(fileStream);
             if (in.readInt() != MAGIC) {
                 return null;
             }
@@ -312,20 +327,77 @@ public final class BinaryDatabaseCache {
             MetaData metaData = readMetaData(in, database, bibFile);
             result.setMetaData(metaData);
 
+            // The trailer is not part of the serialized database payload.
+            // Require exactly one trailer, without any trailing garbage.
+            byte[] trailer = new byte[SHA256_LENGTH];
+            in.readFully(trailer);
+            if (in.read() != -1) {
+                throw new IOException("Unexpected data after binary cache checksum");
+            }
+
             // Defer the SHA-256 check: register the snapshot as PENDING so a
             // later startBackgroundVerification()/verifyBeforeSave() can
             // confirm the .bib still hashes to the same bytes.
             rememberPendingVerification(bibFile, sourceLength, sourceLastModified, sourceSha256);
             return result;
         } catch (EOFException ex) {
+            clearVerification(bibFile);
             throw new IOException("Truncated binary cache: " + cacheFile.getPath(), ex);
         } catch (KeyCollisionException ex) {
             throw new IOException("Invalid binary cache: duplicate internal ID", ex);
+        } catch (IOException ex) {
+            clearVerification(bibFile);
+            throw ex;
         } catch (RuntimeException ex) {
             // Length/count validation failures surface as IOException; other
             // runtime errors here mean the bytes are not a JBC1 file at all.
             throw new IOException("Invalid binary cache: " + ex.getMessage(), ex);
         }
+    }
+
+    /**
+     * Validates the cache checksum without allocating memory proportional to
+     * the file size. The SHA-256 trailer covers every preceding byte.
+     *
+     * <p>The stream is reset to offset zero for normal deserialization after
+     * verification. The reader must not buffer any bytes before this call.</p>
+     */
+    private static void verifyCacheChecksum(FileInputStream in) throws IOException {
+        long length = in.getChannel().size();
+        if (length < 4L + 4 + 8 + 8 + SHA256_LENGTH + SHA256_LENGTH) {
+            throw new IOException("Truncated binary cache checksum");
+        }
+        long remaining = length - SHA256_LENGTH;
+        MessageDigest digest = newSha256Digest();
+        byte[] buffer = new byte[256 * 1024];
+        in.getChannel().position(0L);
+        while (remaining > 0) {
+            int read = in.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+            if (read < 0) {
+                throw new IOException("Truncated binary cache checksum");
+            }
+            if (read == 0) {
+                throw new IOException("Could not read binary cache checksum input");
+            }
+            digest.update(buffer, 0, read);
+            remaining -= read;
+        }
+        byte[] expected = new byte[SHA256_LENGTH];
+        new DataInputStream(in).readFully(expected);
+        if (in.read() != -1) {
+            throw new IOException("Binary cache changed during integrity verification");
+        }
+        if (!MessageDigest.isEqual(expected, digest.digest())) {
+            throw new IOException("Binary cache checksum mismatch");
+        }
+        in.getChannel().position(0L);
+    }
+
+    /** Appends the digest without including the trailer in its own checksum. */
+    private static void writeCacheChecksum(DataOutputStream out,
+            DigestOutputStream digestStream) throws IOException {
+        digestStream.on(false);
+        out.write(digestStream.getMessageDigest().digest());
     }
 
     /** Charset aliases (for example UTF8 and UTF-8) describe the same decoder. */
@@ -565,8 +637,10 @@ public final class BinaryDatabaseCache {
         boolean moved = false;
 
         try {
-            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
-                    new FileOutputStream(tempFile), 256 * 1024))) {
+            DigestOutputStream digestStream = new DigestOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(tempFile), 256 * 1024),
+                    newSha256Digest());
+            try (DataOutputStream out = new DataOutputStream(digestStream)) {
                 out.writeInt(MAGIC);
                 out.writeInt(FORMAT_VERSION);
                 out.writeLong(snapshot.length);
@@ -582,6 +656,7 @@ public final class BinaryDatabaseCache {
                 writeBibtexStrings(out, data.strings);
                 writeEntries(out, data.entries);
                 writeMetaData(out, data.metaData, data.groupTree);
+                writeCacheChecksum(out, digestStream);
             }
 
             // Re-check generation and source identity before committing. The
@@ -750,8 +825,10 @@ public final class BinaryDatabaseCache {
         boolean moved = false;
 
         try {
-            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
-                    new FileOutputStream(tempFile), 256 * 1024))) {
+            DigestOutputStream digestStream = new DigestOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(tempFile), 256 * 1024),
+                    newSha256Digest());
+            try (DataOutputStream out = new DataOutputStream(digestStream)) {
                 out.writeInt(MAGIC);
                 out.writeInt(FORMAT_VERSION);
                 out.writeLong(snapshot.length);
@@ -768,6 +845,7 @@ public final class BinaryDatabaseCache {
                 writeBibtexStrings(out, database.getStringValues());
                 writeEntries(out, database);
                 writeMetaData(out, metaData);
+                writeCacheChecksum(out, digestStream);
             }
 
             if (!sourceStillMatchesSnapshot(bibFile, snapshot)) {
@@ -977,14 +1055,16 @@ public final class BinaryDatabaseCache {
     }
 
     /** Computes SHA-256 using a buffered streaming read. */
-    private static byte[] sha256(File file) throws IOException {
-        final MessageDigest digest;
+    private static MessageDigest newSha256Digest() throws IOException {
         try {
-            digest = MessageDigest.getInstance("SHA-256");
+            return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException ex) {
             throw new IOException("SHA-256 is not available", ex);
         }
+    }
 
+    private static byte[] sha256(File file) throws IOException {
+        MessageDigest digest = newSha256Digest();
         byte[] buffer = new byte[256 * 1024];
         try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(file),
                 buffer.length)) {
