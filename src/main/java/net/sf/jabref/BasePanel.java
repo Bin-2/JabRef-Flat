@@ -586,49 +586,53 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
                         NamedCompound ce = new NamedCompound(Globals.lang(bes.length > 1 ? "paste entries" : "paste entry"));
 
-                        // Store the first inserted bibtexentry.
-                        // bes[0] does not work as bes[0] is first clonded,
-                        // then inserted.
-                        // This entry is used to open up an entry editor
-                        // for the first inserted entry.
+                        // Only open the editor for an entry that was actually inserted.
                         BibtexEntry firstBE = null;
+                        int insertedCount = 0;
+                        int failedCount = 0;
 
                         for (BibtexEntry be1 : bes) {
                             try {
                                 BibtexEntry be = (BibtexEntry) (be1.clone());
-                                if (firstBE == null) {
-                                    firstBE = be;
-                                }
                                 Util.setAutomaticFields(be,
                                         Globals.prefs.getBoolean("overwriteOwner"),
                                         Globals.prefs.getBoolean("overwriteTimeStamp"));
 
-                                // We have to clone the
-                                // entries, since the pasted
-                                // entries must exist
-                                // independently of the copied
-                                // ones.
-                                be.setId(Util.createNeutralId());
+                                // Copy entries independently of the clipboard source.
+                                // Defend against IDs restored from older caches as well.
+                                do {
+                                    be.setId(Util.createNeutralId());
+                                } while (database.getEntryById(be.getId()) != null);
                                 database.insertEntry(be);
 
+                                if (firstBE == null) {
+                                    firstBE = be;
+                                }
+                                insertedCount++;
                                 ce.addEdit(new UndoableInsertEntry(database, be, BasePanel.this));
                             } catch (KeyCollisionException ex) {
-                                Util.pr("KeyCollisionException... this shouldn't happen.");
+                                failedCount++;
+                                Util.pr("Paste failed for entry '" + be1.getCiteKey()
+                                        + "': " + ex.getMessage());
                             }
                         }
                         ce.end();
-                        undoManager.addEdit(ce);
 
-                        output(Globals.lang("Pasted") + " "
-                                + (bes.length > 1 ? bes.length + " "
-                                        + Globals.lang("entries") : "1 " + Globals.lang("entry"))
-                                + ".");
-                        markBaseChanged();
+                        if (insertedCount > 0) {
+                            undoManager.addEdit(ce);
+                            output(Globals.lang("Pasted") + " "
+                                    + (insertedCount > 1 ? insertedCount + " "
+                                            + Globals.lang("entries") : "1 " + Globals.lang("entry"))
+                                    + (failedCount > 0 ? " (" + failedCount + " failed)" : "") + ".");
+                            markBaseChanged();
 
-                        if (Globals.prefs.getBoolean("autoOpenForm")) {
-                            selectionListener.editSignalled(firstBE);
+                            if (Globals.prefs.getBoolean("autoOpenForm")) {
+                                selectionListener.editSignalled(firstBE);
+                            }
+                            highlightEntry(firstBE);
+                        } else {
+                            output("Paste failed: no entries were inserted (internal ID collision).");
                         }
-                        highlightEntry(firstBE);
                     }
                 }
 

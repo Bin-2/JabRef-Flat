@@ -221,6 +221,7 @@ public class BibtexDatabase {
             throw new KeyCollisionException("ID is already in use, please choose another");
         }
 
+        Util.registerExistingNeutralId(id);
         entry.addPropertyChangeListener(listener);
         _entries.put(id, entry);
 
@@ -310,6 +311,7 @@ public class BibtexDatabase {
             throw new KeyCollisionException("Duplicate BibtexString id.");
         }
 
+        Util.registerExistingNeutralId(string.getId());
         _strings.put(string.getId(), string);
         _stringsByName.put(string.getName().toLowerCase(), string);
     }

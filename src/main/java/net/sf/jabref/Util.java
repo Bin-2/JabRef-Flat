@@ -229,10 +229,33 @@ public class Util {
         return s;
     }
 
-    private static int idCounter = 0;
+    private static long idCounter = 0;
 
     public synchronized static String createNeutralId() {
         return idFormat.format(idCounter++);
+    }
+
+    /**
+     * Keep generated IDs ahead of IDs restored from a database or binary cache.
+     * Restoring an ID directly does not call createNeutralId().
+     */
+    public synchronized static void registerExistingNeutralId(String id) {
+        if (id == null || id.length() < idFormat.getMinimumIntegerDigits()) {
+            return;
+        }
+
+        long value = 0;
+        for (int i = 0; i < id.length(); i++) {
+            int digit = Character.digit(id.charAt(i), 10);
+            if (digit < 0 || value > (Long.MAX_VALUE - digit) / 10) {
+                return;
+            }
+            value = value * 10 + digit;
+        }
+
+        if (value >= idCounter && value < Long.MAX_VALUE) {
+            idCounter = value + 1;
+        }
     }
 
     /**
