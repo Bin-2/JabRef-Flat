@@ -329,9 +329,12 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
 
     public static ParserResult loadDatabase(File fileToOpen, String encoding)
             throws IOException {
+        // Apply the same encoding resolution for cache validation and BibTeX
+        // parsing. An encoding declared in the file overrides the preference.
+        String effectiveEncoding = resolveFileEncoding(fileToOpen, encoding);
         ParserResult pr = null;
         try {
-            pr = BinaryDatabaseCache.loadIfValid(fileToOpen);
+            pr = BinaryDatabaseCache.loadIfValid(fileToOpen, effectiveEncoding);
             if (pr != null) {
                 logger.info("Loaded binary database cache: "
                         + BinaryDatabaseCache.getCacheFile(fileToOpen).getPath());
@@ -342,7 +345,7 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
         }
 
         if (pr == null) {
-            pr = loadDatabaseFromBib(fileToOpen, encoding);
+            pr = parseBibWithEncoding(fileToOpen, effectiveEncoding);
             try {
                 BinaryDatabaseCache.write(fileToOpen, pr);
                 logger.info("Wrote binary database cache: "
@@ -365,20 +368,28 @@ public class OpenDatabaseAction extends MnemonicAwareAction {
      */
     public static ParserResult loadDatabaseFromBib(File fileToOpen, String encoding)
             throws IOException {
-        Reader reader;
-        String suppliedEncoding = detectEncodingFromHeader(fileToOpen);
+        return parseBibWithEncoding(fileToOpen, resolveFileEncoding(fileToOpen, encoding));
+    }
 
-        if (suppliedEncoding != null) {
+    /** Resolves the encoding exactly once for both cache and normal loading. */
+    private static String resolveFileEncoding(File file, String fallbackEncoding)
+            throws IOException {
+        String declaredEncoding = detectEncodingFromHeader(file);
+        if (declaredEncoding != null) {
             try {
-                reader = ImportFormatReader.getReader(fileToOpen, suppliedEncoding);
-                encoding = suppliedEncoding;
-            } catch (Exception ex) {
-                reader = ImportFormatReader.getReader(fileToOpen, encoding);
+                Charset.forName(declaredEncoding);
+                return declaredEncoding;
+            } catch (IllegalArgumentException ex) {
+                // An invalid/unsupported header encoding falls back to the
+                // user's requested encoding, as in the original parser path.
             }
-        } else {
-            reader = ImportFormatReader.getReader(fileToOpen, encoding);
         }
+        return fallbackEncoding;
+    }
 
+    private static ParserResult parseBibWithEncoding(File fileToOpen, String encoding)
+            throws IOException {
+        Reader reader = ImportFormatReader.getReader(fileToOpen, encoding);
         BibtexParser bp = new BibtexParser(reader);
         ParserResult pr = bp.parse();
         pr.setEncoding(encoding);

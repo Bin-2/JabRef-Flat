@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
@@ -218,17 +219,20 @@ public final class BinaryDatabaseCache {
      * Loads a cache after inexpensive validation.
      *
      * <p>Magic/version, source length and timestamp, invalidation marker, and
-     * parser-relevant preferences are checked before database objects are
-     * reconstructed. A successful load records the stored SHA-256 digest as a
-     * pending verification; the digest is intentionally not recomputed here so
+     * parser-relevant preferences and effective source encoding are checked
+     * before database objects are reconstructed. A successful load records
+     * the stored SHA-256 digest as pending verification; the digest is not recomputed here so
      * cached startup remains fast.</p>
      *
+     * @param effectiveEncoding encoding selected for parsing the source file,
+     *         including any supported encoding declared in its header
      * @return reconstructed parser result, or {@code null} when the cache must
      *         be ignored and the caller should parse the {@code .bib} file
      * @throws IOException if a cache that passed the initial checks is corrupt
      *         or truncated
      */
-    public static ParserResult loadIfValid(File bibFile) throws IOException {
+    public static ParserResult loadIfValid(File bibFile, String effectiveEncoding)
+            throws IOException {
         if ((bibFile == null) || !bibFile.isFile()) {
             return null;
         }
@@ -278,6 +282,10 @@ public final class BinaryDatabaseCache {
             }
 
             String encoding = readNullableString(in);
+            if (!sameEncoding(encoding, effectiveEncoding)) {
+                clearVerification(bibFile);
+                return null;
+            }
             String jabrefVersion = readNullableString(in);
             int jabrefMajorVersion = in.readInt();
             int jabrefMinorVersion = in.readInt();
@@ -322,6 +330,19 @@ public final class BinaryDatabaseCache {
             // Length/count validation failures surface as IOException; other
             // runtime errors here mean the bytes are not a JBC1 file at all.
             throw new IOException("Invalid binary cache: " + ex.getMessage(), ex);
+        }
+    }
+
+    /** Charset aliases (for example UTF8 and UTF-8) describe the same decoder. */
+    private static boolean sameEncoding(String cachedEncoding, String effectiveEncoding) {
+        if ((cachedEncoding == null) || (effectiveEncoding == null)) {
+            return cachedEncoding == effectiveEncoding;
+        }
+        try {
+            return Charset.forName(cachedEncoding).equals(Charset.forName(effectiveEncoding));
+        } catch (IllegalArgumentException ex) {
+            // Unrecognized cached encodings must never validate by accident.
+            return false;
         }
     }
 
