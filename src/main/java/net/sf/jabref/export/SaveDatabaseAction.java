@@ -329,18 +329,21 @@ public class SaveDatabaseAction extends AbstractWorker {
 
         try {
             if (commit) {
-                session.commit();
+                commitWithCacheBarrier(session, file);
                 panel.setEncoding(encoding); // Make sure to remember which encoding we used.
             } else {
                 session.cancel();
             }
         } catch (SaveException e) {
+            if (e != SaveException.BACKUP_CREATION) {
+                throw e;
+            }
             int ans = JOptionPane.showConfirmDialog(null, Globals.lang("Save failed during backup creation") + ". "
                     + Globals.lang("Save without backup?"), Globals.lang("Unable to create backup"),
                     JOptionPane.YES_NO_OPTION);
             if (ans == JOptionPane.YES_OPTION) {
                 session.setUseBackup(false);
-                session.commit();
+                commitWithCacheBarrier(session, file);
                 panel.setEncoding(encoding);
             } else {
                 commit = false;
@@ -348,6 +351,27 @@ public class SaveDatabaseAction extends AbstractWorker {
         }
 
         return commit;
+    }
+
+    /** Prevent an old .jbc from being trusted between source commit and regeneration. */
+    private static void commitWithCacheBarrier(SaveSession session, File file)
+            throws SaveException {
+        final long generation;
+        try {
+            generation = BinaryDatabaseCache.beginSourceSave(file);
+        } catch (IOException ex) {
+            // Never write the .bib if its existing cache cannot be invalidated.
+            throw new SaveException("Could not invalidate binary database cache: "
+                    + ex.getMessage());
+        }
+
+        boolean committed = false;
+        try {
+            session.commit();
+            committed = true;
+        } finally {
+            BinaryDatabaseCache.finishSourceSave(file, generation, committed);
+        }
     }
 
     /**

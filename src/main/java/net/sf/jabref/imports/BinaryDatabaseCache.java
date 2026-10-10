@@ -187,6 +187,10 @@ public final class BinaryDatabaseCache {
     private static final AtomicLong ASYNC_WRITE_SEQUENCE = new AtomicLong();
     private static final Object ASYNC_WRITE_LOCK = new Object();
 
+    /** Active source commits, guarded by ASYNC_WRITE_LOCK. */
+    private static final Map<String, Integer> ACTIVE_SOURCE_SAVES =
+            new HashMap<String, Integer>();
+
     /** Lifecycle of a cache's SHA-256 verification. */
     public enum VerificationStatus {
         /** Verification has not been started yet. */
@@ -674,8 +678,15 @@ public final class BinaryDatabaseCache {
             }
 
             synchronized (ASYNC_WRITE_LOCK) {
-                if (!isCurrentAsyncGeneration(key, generation)) {
+                if (!isCurrentAsyncGeneration(key, generation)
+                        || isSourceSaveActive(key)) {
                     return;
+                }
+                // A new source commit can start between the earlier checksum
+                // check and acquiring the publication lock.
+                if (!sourceStillMatchesSnapshot(bibFile, snapshot)) {
+                    throw new SourceChangedException(
+                            "Source BibTeX file changed before cache publication");
                 }
                 try {
                     Files.move(tempFile.toPath(), cacheFile.toPath(),
@@ -719,6 +730,52 @@ public final class BinaryDatabaseCache {
         return (current != null) && (current.longValue() == generation);
     }
 
+    /** Called directly before SaveSession commits bytes to the source .bib file. */
+    public static long beginSourceSave(File bibFile) throws IOException {
+        if (bibFile == null) {
+            throw new IOException("Cannot invalidate cache for a null source file");
+        }
+        String key = fileKey(bibFile);
+        synchronized (ASYNC_WRITE_LOCK) {
+            // Do this before writing the .bib file, not after commit. It also
+            // serializes with cache publication and retires older async writers.
+            invalidateExistingCache(bibFile);
+            long generation = ASYNC_WRITE_SEQUENCE.incrementAndGet();
+            ASYNC_WRITE_GENERATIONS.put(key, generation);
+            Integer count = ACTIVE_SOURCE_SAVES.get(key);
+            ACTIVE_SOURCE_SAVES.put(key, count == null ? 1 : count + 1);
+            return generation;
+        }
+    }
+
+    /**
+     * Releases the source-commit barrier. A failed or interrupted commit must
+     * leave the cache invalidated, since the destination might be partly written.
+     */
+    public static void finishSourceSave(File bibFile, long generation, boolean committed) {
+        String key = fileKey(bibFile);
+        synchronized (ASYNC_WRITE_LOCK) {
+            Integer count = ACTIVE_SOURCE_SAVES.get(key);
+            if (count != null) {
+                if (count <= 1) {
+                    ACTIVE_SOURCE_SAVES.remove(key);
+                } else {
+                    ACTIVE_SOURCE_SAVES.put(key, count - 1);
+                }
+            }
+            if (committed && isCurrentAsyncGeneration(key, generation)) {
+                // The old source checksum no longer describes a successful save.
+                // writeAsync() will register verification of the new snapshot.
+                clearVerification(bibFile);
+            }
+        }
+    }
+
+    /** Called only while holding ASYNC_WRITE_LOCK. */
+    private static boolean isSourceSaveActive(String key) {
+        return ACTIVE_SOURCE_SAVES.containsKey(key);
+    }
+
     /**
      * Marker used to reject a cache while an asynchronous replacement is in
      * progress or when cache preparation failed after the source was saved.
@@ -736,6 +793,8 @@ public final class BinaryDatabaseCache {
         }
         try (FileOutputStream out = new FileOutputStream(marker, false)) {
             out.write(0);
+            // Flush the invalidation record before a source commit starts.
+            out.getFD().sync();
         }
     }
 
@@ -848,21 +907,29 @@ public final class BinaryDatabaseCache {
                 writeCacheChecksum(out, digestStream);
             }
 
-            if (!sourceStillMatchesSnapshot(bibFile, snapshot)) {
-                throw new IOException("Source BibTeX file changed while binary cache was being written");
-            }
+            // The normal-load writer must not clear a source-save marker
+            // while SaveSession is committing the .bib file. Both commit
+            // barrier creation and cache publication use the same lock.
+            synchronized (ASYNC_WRITE_LOCK) {
+                if (isSourceSaveActive(fileKey(bibFile))) {
+                    return;
+                }
+                if (!sourceStillMatchesSnapshot(bibFile, snapshot)) {
+                    throw new IOException("Source BibTeX file changed while binary cache was being written");
+                }
 
-            try {
-                Files.move(tempFile.toPath(), cacheFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException ex) {
-                Files.move(tempFile.toPath(), cacheFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING);
+                try {
+                    Files.move(tempFile.toPath(), cacheFile.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING,
+                            StandardCopyOption.ATOMIC_MOVE);
+                } catch (AtomicMoveNotSupportedException ex) {
+                    Files.move(tempFile.toPath(), cacheFile.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING);
+                }
+                moved = true;
+                rememberVerifiedSnapshot(bibFile, snapshot);
+                deleteInvalidationMarker(bibFile);
             }
-            moved = true;
-            rememberVerifiedSnapshot(bibFile, snapshot);
-            deleteInvalidationMarker(bibFile);
         } finally {
             if (!moved) {
                 tempFile.delete();
