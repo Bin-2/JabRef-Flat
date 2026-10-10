@@ -8,6 +8,8 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -162,14 +164,19 @@ public final class BinaryDatabaseCache {
     private static final int SHA256_LENGTH = 32;
 
     /* Defensive limits for values read from a corrupt or incompatible cache. */
-    private static final int MAX_STRING_BYTES = 256 * 1024 * 1024;
-    private static final int MAX_ENTRIES = 5_000_000;
-    private static final int MAX_FIELDS_PER_ENTRY = 100_000;
-    private static final int MAX_BIBTEX_STRINGS = 1_000_000;
-    private static final int MAX_CUSTOM_TYPES = 100_000;
-    private static final int MAX_WARNINGS = 1_000_000;
-    private static final int MAX_METADATA_KEYS = 100_000;
-    private static final int MAX_METADATA_VALUES = 1_000_000;
+    private static final int MAX_STRING_BYTES = 16 * 1024 * 1024;
+    private static final int MAX_GROUP_TREE_BYTES = 16 * 1024 * 1024;
+    private static final int MAX_GROUP_TREE_LINES = 100_000;
+    private static final long MAX_TOTAL_STRING_BYTES = 512L * 1024 * 1024;
+    private static final int MAX_ENTRIES = 500_000;
+    private static final int MAX_FIELDS_PER_ENTRY = 4_096;
+    private static final long MAX_TOTAL_FIELDS = 4_000_000L;
+    private static final int MAX_BIBTEX_STRINGS = 250_000;
+    private static final int MAX_CUSTOM_TYPES = 10_000;
+    private static final int MAX_WARNINGS = 50_000;
+    private static final int MAX_METADATA_KEYS = 10_000;
+    private static final int MAX_METADATA_VALUES = 100_000;
+    private static final long MAX_TOTAL_METADATA_VALUES = 500_000L;
 
     /*
      * Per-file verification state survives the fast cache load and coordinates
@@ -250,11 +257,9 @@ public final class BinaryDatabaseCache {
             return null;
         }
 
-        try (FileInputStream fileStream = new FileInputStream(cacheFile);
-                DataInputStream in = new DataInputStream(new BufferedInputStream(
-                        fileStream, 256 * 1024))) {
-            // Cheap compatibility check before hashing a potentially large
-            // legacy cache. Do not consume the buffered deserialization stream.
+        try (FileInputStream fileStream = new FileInputStream(cacheFile)) {
+            // Check the legacy version before hashing; do not buffer any
+            // deserialization bytes until the checksum has been verified.
             DataInputStream prefix = new DataInputStream(fileStream);
             if ((prefix.readInt() != MAGIC) || (prefix.readInt() != FORMAT_VERSION)) {
                 return null;
@@ -263,6 +268,8 @@ public final class BinaryDatabaseCache {
             // objects. Reuse the same file descriptor for both passes so an
             // atomic cache replacement cannot swap in a different file.
             verifyCacheChecksum(fileStream);
+            long payloadLength = fileStream.getChannel().size() - SHA256_LENGTH;
+            CacheInput in = CacheInput.open(fileStream, payloadLength);
             if (in.readInt() != MAGIC) {
                 return null;
             }
@@ -305,8 +312,8 @@ public final class BinaryDatabaseCache {
             int jabrefMinorVersion = in.readInt();
             int jabrefMinor2Version = in.readInt();
 
-            int warningCount = readCount(in, MAX_WARNINGS, "warning count");
-            List<String> warnings = new ArrayList<String>(warningCount);
+            int warningCount = readCount(in, MAX_WARNINGS, 4, "warning count");
+            List<String> warnings = new ArrayList<String>(Math.min(warningCount, 1_024));
             for (int i = 0; i < warningCount; i++) {
                 warnings.add(readString(in));
             }
@@ -331,8 +338,12 @@ public final class BinaryDatabaseCache {
             MetaData metaData = readMetaData(in, database, bibFile);
             result.setMetaData(metaData);
 
-            // The trailer is not part of the serialized database payload.
-            // Require exactly one trailer, without any trailing garbage.
+            // All declared payload bytes must have been consumed before the
+            // integrity trailer. The digest alone cannot detect extra fields
+            // when an attacker recalculates the checksum.
+            if (in.remainingPayloadBytes() != 0) {
+                throw new IOException("Unexpected bytes in binary cache payload");
+            }
             byte[] trailer = new byte[SHA256_LENGTH];
             in.readFully(trailer);
             if (in.read() != -1) {
@@ -348,11 +359,13 @@ public final class BinaryDatabaseCache {
             clearVerification(bibFile);
             throw new IOException("Truncated binary cache: " + cacheFile.getPath(), ex);
         } catch (KeyCollisionException ex) {
+            clearVerification(bibFile);
             throw new IOException("Invalid binary cache: duplicate internal ID", ex);
         } catch (IOException ex) {
             clearVerification(bibFile);
             throw ex;
         } catch (RuntimeException ex) {
+            clearVerification(bibFile);
             // Length/count validation failures surface as IOException; other
             // runtime errors here mean the bytes are not a JBC1 file at all.
             throw new IOException("Invalid binary cache: " + ex.getMessage(), ex);
@@ -718,6 +731,7 @@ public final class BinaryDatabaseCache {
         out.writeInt(header.jabrefMinor2Version);
 
         String[] warnings = header.warnings != null ? header.warnings : new String[0];
+        validateCount(warnings.length, MAX_WARNINGS, "warning count");
         out.writeInt(warnings.length);
         for (String warning : warnings) {
             writeString(out, warning);
@@ -1224,6 +1238,7 @@ public final class BinaryDatabaseCache {
     /** Writes custom types from live objects (synchronous write path). */
     private static void writeCustomEntryTypes(DataOutputStream out,
             Map<String, BibtexEntryType> customTypes) throws IOException {
+        validateCount(customTypes.size(), MAX_CUSTOM_TYPES, "custom entry type count");
         out.writeInt(customTypes.size());
         for (BibtexEntryType type : customTypes.values()) {
             CustomEntryType custom = (CustomEntryType) type;
@@ -1236,6 +1251,7 @@ public final class BinaryDatabaseCache {
     /** Writes custom types from immutable snapshots (async write path). */
     private static void writeCustomEntryTypes(DataOutputStream out,
             List<CustomTypeSnapshot> customTypes) throws IOException {
+        validateCount(customTypes.size(), MAX_CUSTOM_TYPES, "custom entry type count");
         out.writeInt(customTypes.size());
         for (CustomTypeSnapshot custom : customTypes) {
             writeString(out, custom.name);
@@ -1245,9 +1261,9 @@ public final class BinaryDatabaseCache {
     }
 
     /** Reads the custom type table and indexes it by lower-cased name. */
-    private static HashMap<String, BibtexEntryType> readCustomEntryTypes(DataInputStream in)
+    private static HashMap<String, BibtexEntryType> readCustomEntryTypes(CacheInput in)
             throws IOException {
-        int count = readCount(in, MAX_CUSTOM_TYPES, "custom entry type count");
+        int count = readCount(in, MAX_CUSTOM_TYPES, 12, "custom entry type count");
         HashMap<String, BibtexEntryType> result = new HashMap<String, BibtexEntryType>();
         for (int i = 0; i < count; i++) {
             String name = readString(in);
@@ -1262,6 +1278,7 @@ public final class BinaryDatabaseCache {
     /** Writes BibTeX @string macros from live objects. */
     private static void writeBibtexStrings(DataOutputStream out,
             Collection<BibtexString> strings) throws IOException {
+        validateCount(strings.size(), MAX_BIBTEX_STRINGS, "BibTeX string count");
         out.writeInt(strings.size());
         for (BibtexString string : strings) {
             writeString(out, string.getId());
@@ -1273,6 +1290,7 @@ public final class BinaryDatabaseCache {
     /** Writes BibTeX @string macros from snapshots. */
     private static void writeBibtexStrings(DataOutputStream out,
             List<BibtexStringSnapshot> strings) throws IOException {
+        validateCount(strings.size(), MAX_BIBTEX_STRINGS, "BibTeX string count");
         out.writeInt(strings.size());
         for (BibtexStringSnapshot string : strings) {
             writeString(out, string.id);
@@ -1282,9 +1300,9 @@ public final class BinaryDatabaseCache {
     }
 
     /** Reads @string macros into the database. */
-    private static void readBibtexStrings(DataInputStream in, BibtexDatabase database)
+    private static void readBibtexStrings(CacheInput in, BibtexDatabase database)
             throws IOException, KeyCollisionException {
-        int count = readCount(in, MAX_BIBTEX_STRINGS, "BibTeX string count");
+        int count = readCount(in, MAX_BIBTEX_STRINGS, 12, "BibTeX string count");
         for (int i = 0; i < count; i++) {
             String id = readString(in);
             String name = readString(in);
@@ -1301,6 +1319,7 @@ public final class BinaryDatabaseCache {
     private static void writeEntries(DataOutputStream out, BibtexDatabase database)
             throws IOException {
         Collection<BibtexEntry> entries = database.getEntries();
+        validateCount(entries.size(), MAX_ENTRIES, "entry count");
         out.writeInt(entries.size());
 
         // For duplicate cite keys, preserve which entry currently wins in the
@@ -1325,11 +1344,13 @@ public final class BinaryDatabaseCache {
      */
     private static void writeEntries(DataOutputStream out,
             List<EntrySnapshot> entries) throws IOException {
+        validateCount(entries.size(), MAX_ENTRIES, "entry count");
         out.writeInt(entries.size());
         for (EntrySnapshot entry : entries) {
             writeString(out, entry.id);
             writeString(out, entry.typeName);
-            out.writeInt(entry.fieldNames.length);
+            validateCount(entry.fieldNames.length, MAX_FIELDS_PER_ENTRY, "field count");
+        out.writeInt(entry.fieldNames.length);
             for (int i = 0; i < entry.fieldNames.length; i++) {
                 writeString(out, entry.fieldNames[i]);
                 writeNullableString(out, entry.fieldValues[i]);
@@ -1343,6 +1364,7 @@ public final class BinaryDatabaseCache {
         writeString(out, entry.getType().getName());
 
         Collection<String> fields = entry.getAllFields();
+        validateCount(fields.size(), MAX_FIELDS_PER_ENTRY, "field count");
         out.writeInt(fields.size());
         for (String field : fields) {
             writeString(out, field);
@@ -1355,18 +1377,20 @@ public final class BinaryDatabaseCache {
      * {@code OTHER} but their original name is kept in a warning, so the user
      * can see what was lost.
      */
-    private static void readEntries(DataInputStream in, BibtexDatabase database,
+    private static void readEntries(CacheInput in, BibtexDatabase database,
             Map<String, BibtexEntryType> customTypes, ParserResult result)
             throws IOException, KeyCollisionException {
-        int entryCount = readCount(in, MAX_ENTRIES, "entry count");
+        int entryCount = readCount(in, MAX_ENTRIES, 12, "entry count");
         for (int i = 0; i < entryCount; i++) {
             String id = readString(in);
             String typeName = readString(in);
             BibtexEntryType type = resolveEntryType(typeName, customTypes);
             boolean unknownType = type instanceof UnknownEntryType;
 
-            int fieldCount = readCount(in, MAX_FIELDS_PER_ENTRY, "field count");
-            Map<String, String> fields = new HashMap<String, String>(Math.max(16, fieldCount * 2));
+            int fieldCount = readCount(in, MAX_FIELDS_PER_ENTRY, 8, "field count");
+            in.reserveFields(fieldCount);
+            Map<String, String> fields = new HashMap<String, String>(
+                    Math.max(16, Math.min(fieldCount, 128) * 2));
             for (int j = 0; j < fieldCount; j++) {
                 fields.put(readString(in), readNullableString(in));
             }
@@ -1418,6 +1442,7 @@ public final class BinaryDatabaseCache {
         for (String key : metaData) {
             keys.add(key);
         }
+        validateCount(keys.size(), MAX_METADATA_KEYS, "metadata key count");
         out.writeInt(keys.size());
         for (String key : keys) {
             writeString(out, key);
@@ -1425,6 +1450,7 @@ public final class BinaryDatabaseCache {
             if (values == null) {
                 out.writeInt(-1);
             } else {
+                validateCount(values.size(), MAX_METADATA_VALUES, "metadata value count");
                 out.writeInt(values.size());
                 for (String value : values) {
                     writeNullableString(out, value);
@@ -1444,12 +1470,14 @@ public final class BinaryDatabaseCache {
     /** Snapshot variant of {@link #writeMetaData(DataOutputStream, MetaData)}. */
     private static void writeMetaData(DataOutputStream out,
             List<MetaDataSnapshot> metaData, String groupTree) throws IOException {
+        validateCount(metaData.size(), MAX_METADATA_KEYS, "metadata key count");
         out.writeInt(metaData.size());
         for (MetaDataSnapshot item : metaData) {
             writeString(out, item.key);
             if (item.values == null) {
                 out.writeInt(-1);
             } else {
+                validateCount(item.values.length, MAX_METADATA_VALUES, "metadata value count");
                 out.writeInt(item.values.length);
                 for (String value : item.values) {
                     writeNullableString(out, value);
@@ -1471,10 +1499,10 @@ public final class BinaryDatabaseCache {
      * reported as a corrupt-cache IOException rather than silently dropping
      * the tree.
      */
-    private static MetaData readMetaData(DataInputStream in,
+    private static MetaData readMetaData(CacheInput in,
             BibtexDatabase database, File bibFile) throws IOException {
         MetaData metaData = new MetaData();
-        int keyCount = readCount(in, MAX_METADATA_KEYS, "metadata key count");
+        int keyCount = readCount(in, MAX_METADATA_KEYS, 8, "metadata key count");
         for (int i = 0; i < keyCount; i++) {
             String key = readString(in);
             int valueCount = in.readInt();
@@ -1482,7 +1510,9 @@ public final class BinaryDatabaseCache {
                 continue;
             }
             validateCount(valueCount, MAX_METADATA_VALUES, "metadata value count");
-            List<String> values = new ArrayList<String>(valueCount);
+            in.requirePayloadBytes(4L * valueCount, "metadata values");
+            in.reserveMetadataValues(valueCount);
+            List<String> values = new ArrayList<String>(Math.min(valueCount, 1_024));
             for (int j = 0; j < valueCount; j++) {
                 values.add(readNullableString(in));
             }
@@ -1490,10 +1520,13 @@ public final class BinaryDatabaseCache {
         }
 
         if (in.readBoolean()) {
-            String tree = readString(in);
+            String tree = readString(in, MAX_GROUP_TREE_BYTES);
             List<String> groupData = new ArrayList<String>();
             StringTokenizer tokenizer = new StringTokenizer(tree, "\n");
             while (tokenizer.hasMoreTokens()) {
+                if (groupData.size() >= MAX_GROUP_TREE_LINES) {
+                    throw new IOException("Binary cache group tree has too many lines");
+                }
                 groupData.add(tokenizer.nextToken());
             }
             try {
@@ -1509,19 +1542,100 @@ public final class BinaryDatabaseCache {
         return metaData;
     }
 
-    /** Reads a collection count only after enforcing the corresponding safety limit. */
-    private static int readCount(DataInputStream in, int maximum, String what)
-            throws IOException {
+    /** Checks collection counts against both fixed limits and remaining payload bytes. */
+    private static int readCount(CacheInput in, int maximum, int minimumBytesPerItem,
+            String what) throws IOException {
         int value = in.readInt();
         validateCount(value, maximum, what);
+        in.requirePayloadBytes((long) value * minimumBytesPerItem, what);
         return value;
     }
 
-    /** Throws if {@code value} is negative or above {@code maximum}. */
     private static void validateCount(int value, int maximum, String what)
             throws IOException {
         if ((value < 0) || (value > maximum)) {
             throw new IOException("Invalid " + what + ": " + value);
+        }
+    }
+
+    /** Count only bytes consumed by the decoder, not buffered read-ahead. */
+    private static final class CountingInputStream extends FilterInputStream {
+        private long bytesRead;
+
+        CountingInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int value = in.read();
+            if (value != -1) {
+                bytesRead++;
+            }
+            return value;
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            int count = in.read(bytes, offset, length);
+            if (count > 0) {
+                bytesRead += count;
+            }
+            return count;
+        }
+    }
+
+    /** Tracks payload capacity and cumulative allocations for one cache load. */
+    private static final class CacheInput extends DataInputStream {
+        private final CountingInputStream counter;
+        private final long payloadLength;
+        private long stringBytes;
+        private long fieldCount;
+        private long metadataValueCount;
+
+        private CacheInput(CountingInputStream counter, long payloadLength) {
+            super(counter);
+            this.counter = counter;
+            this.payloadLength = payloadLength;
+        }
+
+        static CacheInput open(FileInputStream source, long payloadLength) {
+            CountingInputStream counter = new CountingInputStream(
+                    new BufferedInputStream(source, 256 * 1024));
+            return new CacheInput(counter, payloadLength);
+        }
+
+        long remainingPayloadBytes() {
+            return payloadLength - counter.bytesRead;
+        }
+
+        void requirePayloadBytes(long count, String what) throws IOException {
+            if ((count < 0) || (count > remainingPayloadBytes())) {
+                throw new IOException("Invalid binary cache " + what
+                        + ": exceeds remaining payload bytes");
+            }
+        }
+
+        void reserveStringBytes(int count) throws IOException {
+            requirePayloadBytes(count, "string length");
+            if (stringBytes > MAX_TOTAL_STRING_BYTES - count) {
+                throw new IOException("Binary cache cumulative string data exceeds safety limit");
+            }
+            stringBytes += count;
+        }
+
+        void reserveFields(int count) throws IOException {
+            if (fieldCount > MAX_TOTAL_FIELDS - count) {
+                throw new IOException("Binary cache cumulative field count exceeds safety limit");
+            }
+            fieldCount += count;
+        }
+
+        void reserveMetadataValues(int count) throws IOException {
+            if (metadataValueCount > MAX_TOTAL_METADATA_VALUES - count) {
+                throw new IOException("Binary cache metadata value count exceeds safety limit");
+            }
+            metadataValueCount += count;
         }
     }
 
@@ -1539,15 +1653,13 @@ public final class BinaryDatabaseCache {
         out.write(bytes);
     }
 
-    /** Reads the length-prefixed UTF-8 representation used by {@link #writeString}. */
-    private static String readString(DataInputStream in) throws IOException {
-        int length = in.readInt();
-        if ((length < 0) || (length > MAX_STRING_BYTES)) {
-            throw new IOException("Invalid string length in binary cache: " + length);
-        }
-        byte[] bytes = new byte[length];
-        in.readFully(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+    /** Reads a non-null string after checking its size and read budget. */
+    private static String readString(CacheInput in) throws IOException {
+        return readString(in, MAX_STRING_BYTES);
+    }
+
+    private static String readString(CacheInput in, int maximumBytes) throws IOException {
+        return readCacheString(in, false, maximumBytes);
     }
 
     /**
@@ -1568,14 +1680,23 @@ public final class BinaryDatabaseCache {
         out.write(bytes);
     }
 
-    /** Reads a string written by {@link #writeNullableString} ({@code -1} -> null). */
-    private static String readNullableString(DataInputStream in) throws IOException {
+    /** Reads a nullable string without allocating beyond the remaining payload. */
+    private static String readNullableString(CacheInput in) throws IOException {
+        return readCacheString(in, true, MAX_STRING_BYTES);
+    }
+
+    private static String readCacheString(CacheInput in, boolean nullable, int maximumBytes)
+            throws IOException {
         int length = in.readInt();
-        if (length == -1) {
+        if (nullable && (length == -1)) {
             return null;
         }
-        if ((length < 0) || (length > MAX_STRING_BYTES)) {
+        if ((length < 0) || (length > maximumBytes)) {
             throw new IOException("Invalid string length in binary cache: " + length);
+        }
+        in.reserveStringBytes(length);
+        if (length == 0) {
+            return "";
         }
         byte[] bytes = new byte[length];
         in.readFully(bytes);
