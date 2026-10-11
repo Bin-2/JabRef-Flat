@@ -130,9 +130,13 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     private BinaryDatabaseCache.VerificationListener cacheVerificationListener;
     private volatile boolean closedForCacheVerification;
 
+    private static final boolean DEFER_AUTOCOMPLETE_INITIALIZATION = Boolean.parseBoolean(
+            System.getProperty("jabref.autocomplete.deferInitialIndex", "true"));
+
     // Performance diagnostics. Keep the threshold at 0 while profiling, then raise it or disable.
     private static final boolean PERF_TIMERS = true;
-    private static final long PERF_LOG_THRESHOLD_MS = 500L;
+    private static final long PERF_LOG_THRESHOLD_MS = Math.max(0L,
+            Long.getLong("jabref.perf.baseThresholdMs", 500L));
 
     private static long perfStart() {
         return System.nanoTime();
@@ -2067,7 +2071,6 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
 
         long formatStart = perfStart();
         tableFormat = new MainTableFormat(this);
-        tableFormat.updateTableFormat();
         perfLog("createMainTable MainTableFormat/updateTableFormat", formatStart);
 
         long tableStart = perfStart();
@@ -2267,6 +2270,9 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         perfLog("setupMainPanel revalidate/repaint", repaintStart);
         timing.totalMs = elapsedMillis(totalStart);
         perfLog("setupMainPanel total", totalStart);
+        if (PERF_TIMERS && timing.totalMs >= PERF_LOG_THRESHOLD_MS) {
+            System.out.println("[BasePanel profile] " + timing.toCompactString());
+        }
         return timing;
     }
 
@@ -2287,12 +2293,14 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         searchCompleter = new NameFieldAutoCompleter(new String[]{"author", "editor"}, true);
         searchAutoCompleterHM.clear();
         searchAutoCompleterHM.put("x", searchCompleter);
-        int count = 0;
-        for (BibtexEntry entry : database.getEntries()) {
-            // There is exactly one search completer. Calling it directly avoids
-            // allocating a HashMap iterator for every bibliography entry.
-            searchCompleter.addBibtexEntry(entry);
-            count++;
+        Collection<BibtexEntry> entries = database.getEntriesSnapshot();
+        int count = entries.size();
+        if (DEFER_AUTOCOMPLETE_INITIALIZATION) {
+            searchCompleter.deferInitialEntries(entries);
+        } else {
+            for (BibtexEntry entry : entries) {
+                searchCompleter.addBibtexEntry(entry);
+            }
         }
         searchCompleteListener = new AutoCompleteListener(searchCompleter);
         searchCompleteListener.setConsumeEnterKey(false); // So you don't have to press Enter twice
@@ -2303,16 +2311,18 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         long totalStart = perfStart();
         autoCompleters.clear();
         String[] completeFields = Globals.prefs.getStringArray("autoCompleteFields");
-        Collection<BibtexEntry> entries = database.getEntries();
+        Collection<BibtexEntry> entries = database.getEntriesSnapshot();
         int count = entries.size();
 
-        // Build one field at a time. The previous entry-first loop created a
-        // HashMap iterator for every bibliography entry.
         for (String field : completeFields) {
             AbstractAutoCompleter autoCompleter = AutoCompleterFactory.getFor(field);
             autoCompleters.put(field, autoCompleter);
-            for (BibtexEntry entry : entries) {
-                autoCompleter.addBibtexEntry(entry);
+            if (DEFER_AUTOCOMPLETE_INITIALIZATION) {
+                autoCompleter.deferInitialEntries(entries);
+            } else {
+                for (BibtexEntry entry : entries) {
+                    autoCompleter.addBibtexEntry(entry);
+                }
             }
         }
 

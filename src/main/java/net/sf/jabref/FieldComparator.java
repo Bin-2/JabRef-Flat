@@ -148,6 +148,25 @@ public class FieldComparator implements Comparator<BibtexEntry> {
     }
 
     private int compareInternal(BibtexEntry e1, BibtexEntry e2) {
+        // Timestamp values need neither alias resolution nor normalized-value
+        // caching. Avoid two identity-map lookups for every comparison.
+        if (useFastTimestampCompare && !isNumeric) {
+            String left = e1.getField("timestamp");
+            String right = e2.getField("timestamp");
+            boolean leftMissing = left == null || left.length() == 0;
+            boolean rightMissing = right == null || right.length() == 0;
+            if (leftMissing) {
+                return rightMissing ? 0 : multiplier;
+            }
+            if (rightMissing) {
+                return -multiplier;
+            }
+            if (PERF_TIMERS) {
+                fastTimestampComparisons++;
+            }
+            return String.CASE_INSENSITIVE_ORDER.compare(left, right) * multiplier;
+        }
+
         CachedSortValue v1 = getCachedSortValue(e1);
         CachedSortValue v2 = getCachedSortValue(e2);
 

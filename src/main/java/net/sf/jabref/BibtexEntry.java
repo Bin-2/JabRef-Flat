@@ -286,13 +286,12 @@ public class BibtexEntry {
             return fieldValue;
         }
 
-        // No value of this field found, so look at the alias
-        // Create bidirectional dictionary between field names and their aliases
-        Map<String, String> aliases = new HashMap<>();
-        aliases.putAll(FieldAliasesOldToNew);
-        aliases.putAll(FieldAliasesNewToOld);
-
-        String aliasForField = aliases.get(name);
+        // Resolve aliases without allocating a temporary map on every lookup.
+        // New-to-old aliases take precedence, matching the previous merge order.
+        String aliasForField = FieldAliasesNewToOld.get(name);
+        if (aliasForField == null && !FieldAliasesNewToOld.containsKey(name)) {
+            aliasForField = FieldAliasesOldToNew.get(name);
+        }
         if (aliasForField != null) {
             return getField(aliasForField);
         }

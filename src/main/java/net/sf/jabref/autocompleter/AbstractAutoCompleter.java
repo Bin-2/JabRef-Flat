@@ -16,6 +16,7 @@
 package net.sf.jabref.autocompleter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.SortedSet;
@@ -57,6 +58,18 @@ public abstract class AbstractAutoCompleter {
     // occurrence is unnecessarily expensive.
     private HashSet<String> pendingWords = new HashSet<String>();
     private boolean indexMaterialized = false;
+    private Collection<BibtexEntry> deferredEntries;
+
+    /**
+     * Retains a stable list of initial entries until completion is first used.
+     * Later database changes can still add words through addBibtexEntry().
+     */
+    public void deferInitialEntries(Collection<BibtexEntry> entries) {
+        if (indexMaterialized || deferredEntries != null) {
+            throw new IllegalStateException("Initial autocomplete entries already configured");
+        }
+        deferredEntries = entries;
+    }
 
     /**
      * Add a BibtexEntry to this autocompleter. The autocompleter (respectively
@@ -146,6 +159,13 @@ public abstract class AbstractAutoCompleter {
             return;
         }
 
+        if (deferredEntries != null) {
+            Collection<BibtexEntry> entries = deferredEntries;
+            deferredEntries = null;
+            for (BibtexEntry entry : entries) {
+                addBibtexEntry(entry);
+            }
+        }
         for (String word : pendingWords) {
             addWordToMaterializedIndex(word);
         }

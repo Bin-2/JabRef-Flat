@@ -40,6 +40,7 @@ import net.sf.jabref.*;
 import net.sf.jabref.groups.EntryTableTransferHandler;
 import net.sf.jabref.search.NoSearchMatcher;
 import net.sf.jabref.specialfields.SpecialFieldsUtils;
+import ca.odell.glazedlists.BasicEventList;
 import ca.odell.glazedlists.CompositeList;
 import ca.odell.glazedlists.EventList;
 import ca.odell.glazedlists.FilterList;
@@ -84,8 +85,12 @@ public class MainTable extends JTable implements ThemeAwareComponent {
     // needed to activate/deactivate the listener
     private final PersistenceTableColumnListener tableColumnListener;
 
+    private static final boolean PRE_SORT_BEFORE_VIEWS = Boolean.parseBoolean(
+            System.getProperty("jabref.table.preSortBeforeViews", "false"));
+
     private static final boolean PERF_TIMERS = true;
-    private static final long PERF_LOG_THRESHOLD_MS = 500L;
+    private static final long PERF_LOG_THRESHOLD_MS = Math.max(0L,
+            Long.getLong("jabref.perf.tableThresholdMs", 500L));
     private static final int PERF_RENDERER_LOG_EVERY = 50000;
     private static long perfRendererCalls = 0L;
     private static long perfRendererNs = 0L;
@@ -165,6 +170,15 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         super();
         long constructorStartNs = perfStart();
         long blockStartNs;
+        long sortedViewsNs = 0L;
+        long searchPartitionNs = 0L;
+        long groupPartitionNs = 0L;
+        long tableModelNs = 0L;
+        long selectionNs = 0L;
+        long chooserInstallNs = 0L;
+        long sortSetupNs = 0L;
+        long sortRefreshNs = 0L;
+        long preSortNs = 0L;
 
         blockStartNs = perfStart();
         addFocusListener(Globals.focusListener);
@@ -177,11 +191,31 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         // we are going to install, which responds to user sorting selections:
         blockStartNs = perfStart();
         sortedForTable = new SortedList<BibtexEntry>(list, null);
+        sortedViewsNs += System.nanoTime() - blockStartNs;
         perfLog("constructor new sortedForTable size=" + safeEventListSize(sortedForTable), blockStartNs);
+
+        // Installing the chooser on a zero-row model allows its initial sort
+        // to run before downstream filter and selection listeners exist.
+        // The final model has the same columns and replaces this temporary one.
+        if (PRE_SORT_BEFORE_VIEWS) {
+            blockStartNs = perfStart();
+            installInitialSortingModel();
+            comparatorChooser = this.createTableComparatorChooser(this, sortedForTable,
+                    TableComparatorChooser.MULTIPLE_COLUMN_KEYBOARD);
+            initializingSorting = true;
+            try {
+                setupComparatorChooser();
+            } finally {
+                initializingSorting = false;
+            }
+            preSortNs = System.nanoTime() - blockStartNs;
+            perfLog("constructor pre-sort before views rows=" + safeEventListSize(sortedForTable), blockStartNs);
+        }
 
         // This SortedList applies afterwards, and floats marked entries:
         blockStartNs = perfStart();
         sortedForMarking = new SortedList<BibtexEntry>(sortedForTable, null);
+        sortedViewsNs += System.nanoTime() - blockStartNs;
         perfLog("constructor new sortedForMarking size=" + safeEventListSize(sortedForMarking), blockStartNs);
 
         // Partition search results without sorting the entire table. The first
@@ -196,6 +230,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         searchPartition.addMemberList(searchHits);
         searchPartition.addMemberList(searchMisses);
         sortedForSearch = new TransactionList<BibtexEntry>(searchPartition);
+        searchPartitionNs = System.nanoTime() - blockStartNs;
         perfLog("constructor new search partition size=" + safeEventListSize(sortedForSearch), blockStartNs);
 
         // Partition group results in the same way as search results. Hits are
@@ -211,6 +246,7 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         groupPartition.addMemberList(groupHits);
         groupPartition.addMemberList(groupMisses);
         sortedForGrouping = new TransactionList<BibtexEntry>(groupPartition);
+        groupPartitionNs = System.nanoTime() - blockStartNs;
         perfLog("constructor new group partition size=" + safeEventListSize(sortedForGrouping), blockStartNs);
 
         searchMatcher = null;
@@ -218,16 +254,31 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         blockStartNs = perfStart();
         EventTableModel<BibtexEntry> tableModel = new EventTableModel<BibtexEntry>(sortedForGrouping, tableFormat);
+        tableModelNs += System.nanoTime() - blockStartNs;
         perfLog("constructor new EventTableModel rows=" + safeEventListSize(sortedForGrouping), blockStartNs);
 
         blockStartNs = perfStart();
-        setModel(tableModel);
+        if (PRE_SORT_BEFORE_VIEWS) {
+            // JTable normally replaces its columns when the model changes.
+            // Retain the same column model and header where the comparator
+            // chooser registered its mouse listeners and sort indicators.
+            setAutoCreateColumnsFromModel(false);
+            try {
+                setModel(tableModel);
+            } finally {
+                setAutoCreateColumnsFromModel(true);
+            }
+        } else {
+            setModel(tableModel);
+        }
+        tableModelNs += System.nanoTime() - blockStartNs;
         perfLog("constructor setModel columns=" + tableModel.getColumnCount(), blockStartNs);
 
         blockStartNs = perfStart();
         tableColorCodes = Globals.prefs.getBoolean("tableColorCodesOn");
         selectionModel = new EventSelectionModel<BibtexEntry>(sortedForGrouping);
         setSelectionModel(selectionModel);
+        selectionNs = System.nanoTime() - blockStartNs;
         perfLog("constructor selection model rows=" + safeEventListSize(sortedForGrouping), blockStartNs);
 
         blockStartNs = perfStart();
@@ -243,15 +294,18 @@ public class MainTable extends JTable implements ThemeAwareComponent {
         }
         perfLog("constructor scrollPane/grid", blockStartNs);
 
-        blockStartNs = perfStart();
-        this.setTableHeader(new PreventDraggingJTableHeader(this.getColumnModel()));
-        setColumnSortingLocked(Globals.prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING));
-        perfLog("constructor tableHeader", blockStartNs);
+        if (!PRE_SORT_BEFORE_VIEWS) {
+            blockStartNs = perfStart();
+            this.setTableHeader(new PreventDraggingJTableHeader(this.getColumnModel()));
+            setColumnSortingLocked(Globals.prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING));
+            perfLog("constructor tableHeader", blockStartNs);
 
-        blockStartNs = perfStart();
-        comparatorChooser = this.createTableComparatorChooser(this, sortedForTable,
-                TableComparatorChooser.MULTIPLE_COLUMN_KEYBOARD);
-        perfLog("constructor createTableComparatorChooser rows=" + safeEventListSize(sortedForTable), blockStartNs);
+            blockStartNs = perfStart();
+            comparatorChooser = this.createTableComparatorChooser(this, sortedForTable,
+                    TableComparatorChooser.MULTIPLE_COLUMN_KEYBOARD);
+            chooserInstallNs = System.nanoTime() - blockStartNs;
+            perfLog("constructor createTableComparatorChooser rows=" + safeEventListSize(sortedForTable), blockStartNs);
+        }
 
         blockStartNs = perfStart();
         this.tableColumnListener = new PersistenceTableColumnListener(this);
@@ -275,12 +329,16 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         initializingSorting = true;
         try {
-            blockStartNs = perfStart();
-            setupComparatorChooser();
-            perfLog("constructor setupComparatorChooser", blockStartNs);
+            if (!PRE_SORT_BEFORE_VIEWS) {
+                blockStartNs = perfStart();
+                setupComparatorChooser();
+                sortSetupNs = System.nanoTime() - blockStartNs;
+                perfLog("constructor setupComparatorChooser", blockStartNs);
+            }
 
             blockStartNs = perfStart();
             refreshSorting();
+            sortRefreshNs = System.nanoTime() - blockStartNs;
             perfLog("constructor refreshSorting", blockStartNs);
         } finally {
             initializingSorting = false;
@@ -302,7 +360,34 @@ public class MainTable extends JTable implements ThemeAwareComponent {
 
         perfLog("constructor total rows=" + safeEventListSize(sortedForGrouping)
                 + ", columns=" + getColumnCount(), constructorStartNs);
+        if (PERF_TIMERS) {
+            long totalNs = System.nanoTime() - constructorStartNs;
+            long measuredNs = sortedViewsNs + searchPartitionNs + groupPartitionNs
+                    + tableModelNs + selectionNs + chooserInstallNs + sortSetupNs + sortRefreshNs + preSortNs;
+            System.out.println("[MainTable profile] rows=" + safeEventListSize(sortedForGrouping)
+                    + ", total=" + (totalNs / 1000000L) + " ms"
+                    + ", sortedViews=" + (sortedViewsNs / 1000000L) + " ms"
+                    + ", searchPartition=" + (searchPartitionNs / 1000000L) + " ms"
+                    + ", groupPartition=" + (groupPartitionNs / 1000000L) + " ms"
+                    + ", model=" + (tableModelNs / 1000000L) + " ms"
+                    + ", selection=" + (selectionNs / 1000000L) + " ms"
+                    + ", chooserInstall=" + (chooserInstallNs / 1000000L) + " ms"
+                    + ", preSort=" + (preSortNs / 1000000L) + " ms"
+                    + ", initialSort=" + ((sortSetupNs + sortRefreshNs) / 1000000L) + " ms"
+                    + ", other=" + (Math.max(0L, totalNs - measuredNs) / 1000000L) + " ms");
+        }
 
+    }
+
+    private void installInitialSortingModel() {
+        // TableComparatorChooser.install() requires a GlazedLists EventTableModel.
+        // The empty source avoids forwarding the initial sorting event to a
+        // Swing table model before the final filtered model is constructed.
+        EventTableModel<BibtexEntry> initialModel =
+                new EventTableModel<BibtexEntry>(new BasicEventList<BibtexEntry>(), tableFormat);
+        setModel(initialModel);
+        setTableHeader(new PreventDraggingJTableHeader(getColumnModel()));
+        setColumnSortingLocked(Globals.prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING));
     }
 
     public void refreshSorting() {

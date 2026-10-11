@@ -18,8 +18,9 @@ package net.sf.jabref.gui;
 import com.formdev.flatlaf.FlatLightLaf;
 
 import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import net.sf.jabref.BibtexEntry;
 import net.sf.jabref.DatabaseChangeEvent;
@@ -36,19 +37,17 @@ public class GlazedEntrySorter implements DatabaseChangeListener {
     BibtexEntry[] entryArray;
 
     public GlazedEntrySorter(Map<String, BibtexEntry> entries) {
+        // Sort outside the observable EventList and initialize it in one bulk operation.
+        List<BibtexEntry> ordered = new ArrayList<BibtexEntry>(entries.values());
+        Collections.sort(ordered, new IdComparator());
+
         list = new BasicEventList<BibtexEntry>();
         list.getReadWriteLock().writeLock().lock();
-        Set<String> keySet = entries.keySet();
-        for (String aKeySet : keySet) {
-            list.add(entries.get(aKeySet));
+        try {
+            list.addAll(ordered);
+        } finally {
+            list.getReadWriteLock().writeLock().unlock();
         }
-
-        // Sort the list so it is ordered according to creation (or read) order
-        // when the table is unsorted.
-        Collections.sort(list, new IdComparator());
-
-        list.getReadWriteLock().writeLock().unlock();
-
     }
 
     public EventList<BibtexEntry> getTheList() {
