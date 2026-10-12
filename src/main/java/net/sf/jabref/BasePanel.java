@@ -3063,7 +3063,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
     public void fileUpdated() {
         if (saving) {
             return; // We are just saving the file, so this message is most likely due
-                    // to bad timing. If not, we'll handle it on the next polling.
+            // to bad timing. If not, we'll handle it on the next polling.
         }
         updatedExternally = true;
 
@@ -3121,7 +3121,9 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         Util.pr("File '" + getFile().getPath() + "' has been deleted.");
     }
 
-    /** Keeps a cache verification callback tied to this tab's lifecycle. */
+    /**
+     * Keeps a cache verification callback tied to this tab's lifecycle.
+     */
     public void setCacheVerificationListener(File sourceFile,
             BinaryDatabaseCache.VerificationListener listener) {
         if (cacheVerificationListener != null) {
@@ -3244,6 +3246,7 @@ public final class BasePanel extends JPanel implements ClipboardOwner, FileUpdat
         }
 
         this.baseChanged = baseChanged;
+        frame.setTabDirty(this, baseChanged);
         frame.updateSaveIconState();
     }
 

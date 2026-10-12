@@ -87,6 +87,7 @@ import net.sf.jabref.util.MassSetFieldAction;
 import net.sf.jabref.wizard.auximport.gui.FromAuxDialog;
 import net.sf.jabref.wizard.integrity.gui.IntegrityWizard;
 
+import com.formdev.flatlaf.FlatClientProperties;
 import com.jgoodies.looks.HeaderStyle;
 import com.jgoodies.looks.Options;
 import javax.swing.JSplitPane;
@@ -1126,6 +1127,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         int now = tabbedPane.getSelectedIndex();
         int len = tabbedPane.getTabCount();
         lastTabbedPanelSelectionIndex = now;
+        updateSelectedTabAccent();
     }
 
     private int getTabIndex(JComponent comp) {
@@ -1153,6 +1155,52 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         int index = getTabIndex(comp);
         tabbedPane.setTitleAt(index, title);
         tabbedPane.setToolTipTextAt(index, toolTip);
+    }
+
+    /**
+     * Updates the visual dirty-state indicator for a database tab.
+     */
+    public void setTabDirty(JComponent comp, boolean dirty) {
+        int index = getTabIndex(comp);
+        if (index < 0) {
+            return;
+        }
+
+        tabbedPane.setForegroundAt(index, dirty ? getDirtyTabColor() : null);
+
+        if (tabbedPane.getSelectedComponent() == comp) {
+            updateSelectedTabAccent();
+        }
+    }
+
+    private Color getDirtyTabColor() {
+        Color color = UIManager.getColor("Component.warning.focusedBorderColor");
+        if (color == null) {
+            color = UIManager.getColor("Component.warning.borderColor");
+        }
+        if (color == null) {
+            color = ThemeManager.isDarkTheme()
+                    ? new Color(251, 191, 36)
+                    : new Color(180, 83, 9);
+        }
+        return color;
+    }
+
+    /**
+     * Uses FlatLaf's tab indicator for the active database. The indicator is a
+     * top line when JTabbedPane.tabType is "card".
+     */
+    private void updateSelectedTabAccent() {
+        BasePanel selected = basePanel();
+        if ((selected != null) && selected.isBaseChanged()) {
+            Color dirtyColor = getDirtyTabColor();
+            Map<String, Object> style = new HashMap<String, Object>();
+            style.put("underlineColor", dirtyColor);
+            style.put("inactiveUnderlineColor", dirtyColor);
+            tabbedPane.putClientProperty(FlatClientProperties.STYLE, style);
+        } else {
+            tabbedPane.putClientProperty(FlatClientProperties.STYLE, null);
+        }
     }
 
     class GeneralAction
@@ -2515,6 +2563,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tabbedPane.add(title, bp);
         tabbedPane.setToolTipTextAt(tabbedPane.getTabCount() - 1,
                 file != null ? file.getAbsolutePath() : null);
+        setTabDirty(bp, bp.isBaseChanged());
         if (raisePanel) {
             tabbedPane.setSelectedComponent(bp);
         }
@@ -3541,6 +3590,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             BasePanel bp = baseAt(i);
             if (bp != null) {
+                setTabDirty(bp, bp.isBaseChanged());
                 bp.updateEntryEditorsForThemeChange(); // bp.rebuildAllEntryEditors();
             }
         }
