@@ -2101,9 +2101,9 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.addAction(createToolbarAction(openPdfAlternate, "openFileAlternate"));
         // tlb.addAction(openPdf);
         // tlb.addAction(openUrl);
-        tlb.addSeparator();
-        tlb.addAction(createToolbarAction(showPrefs, "preferences"));
 
+        tlb.addSeparator();
+        // Table sorting
         boolean sortingLocked = prefs.getBoolean(JabRefPreferences.LOCK_COLUMN_SORTING);
         sortLockToggle = createToolbarToggleButton(toggleSortLock,
                 sortingLocked ? "sortLock" : "sortUnlock");
@@ -2112,6 +2112,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         tlb.add(sortLockToggle);
 
         tlb.addSeparator();
+        // Application settings
+        tlb.addAction(createToolbarAction(showPrefs, "preferences"));
         tlb.add(new ToolbarSizeButton());
 
         tlb.add(Box.createHorizontalGlue());
