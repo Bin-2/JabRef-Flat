@@ -1969,7 +1969,8 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     private void stabilizeToolbarHeight() {
         Dimension preferred = tlb.getPreferredSize();
         Dimension minimum = tlb.getMinimumSize();
-        if ((preferred != null) && (minimum != null) && (minimum.height < preferred.height)) {
+
+        if (preferred != null && minimum != null) {
             tlb.setMinimumSize(new Dimension(minimum.width, preferred.height));
         }
     }
