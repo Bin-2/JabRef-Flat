@@ -45,6 +45,7 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
     private final JCheckBox showGrid;//, useCustomIconTheme;
     private final ColorSetupPanel colorPanel = new ColorSetupPanel();
     private Font font = GUIGlobals.CURRENTFONT;
+    private volatile AppearanceSettings validatedSettings;
     private int oldMenuFontSize;
     private boolean oldOverrideFontSize;
     private final JTextField fontSize;//, customIconThemeFile;
@@ -178,7 +179,7 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
 
         fontButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Font f = new FontSelectorDialog(null, GUIGlobals.CURRENTFONT).getSelectedFont();
+                Font f = new FontSelectorDialog(AppearancePrefsTab.this, font).getSelectedFont();
                 if (f != null) {
                     font = f;
                 }
@@ -285,6 +286,12 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
             updatingThemeCombo = false;
         }
 
+        int tableFontSize = _prefs.getInt("fontSize");
+        if (tableFontSize <= 0) {
+            tableFontSize = _prefs.getIntDefault("fontSize");
+        }
+        font = new Font(_prefs.get("fontFamily"), _prefs.getInt("fontStyle"), tableFontSize);
+
         colorCodes.setSelected(_prefs.getBoolean("tableColorCodesOn"));
         //antialias.setSelected(_prefs.getBoolean("antialias"));
         fontSize.setText("" + _prefs.getInt("menuFontSize"));
@@ -313,19 +320,24 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
      */
     public void storeSettings() {
 
+        AppearanceSettings settings = validatedSettings;
+        if (settings == null) {
+            throw new IllegalStateException("Appearance settings must be validated before saving");
+        }
+
         _prefs.put("Theme", ThemeManager.normalizeThemeName(pendingTheme));
         themePreviewChanged = false;
 
         _prefs.putBoolean("tableColorCodesOn", colorCodes.isSelected());
         //_prefs.putBoolean("antialias", antialias.isSelected());
-        _prefs.put("fontFamily", font.getFamily());
-        _prefs.putInt("fontStyle", font.getStyle());
-        _prefs.putInt("fontSize", font.getSize());
-        _prefs.putBoolean("overrideDefaultFonts", overrideFonts.isSelected());
+        _prefs.put("fontFamily", settings.tableFont.getFamily());
+        _prefs.putInt("fontStyle", settings.tableFont.getStyle());
+        _prefs.putInt("fontSize", settings.tableFont.getSize());
+        _prefs.putBoolean("overrideDefaultFonts", settings.overrideFonts);
         _prefs.putBoolean(
                 JabRefPreferences.USE_EMBEDDED_MENU_BAR,
                 useEmbeddedMenuBar.isSelected());
-        GUIGlobals.CURRENTFONT = font;
+        GUIGlobals.CURRENTFONT = settings.tableFont;
         colorPanel.storeSettings();
         _prefs.putBoolean("tableShowGrid", showGrid.isSelected());
 
@@ -334,45 +346,92 @@ class AppearancePrefsTab extends JPanel implements PrefsTab {
                 useThemeSemanticColors.isSelected());
         ThemeColorPalette.clearSemanticColorsPreview();
 
-        try {
-            int size = Integer.parseInt(fontSize.getText());
-            if ((overrideFonts.isSelected() != oldOverrideFontSize)
-                    || (size != oldMenuFontSize)) {
-                _prefs.putInt("menuFontSize", size);
-                JOptionPane.showMessageDialog(null,
-                        Globals.lang("You have changed the menu and label font size.")
-                                .concat(" ")
-                                .concat(Globals.lang("You must restart JabRef for this to come into effect.")),
-                        Globals.lang("Changed font settings"),
-                        JOptionPane.WARNING_MESSAGE);
-            }
-        } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+        if (settings.overrideFonts && settings.menuFontSize != oldMenuFontSize) {
+            _prefs.putInt("menuFontSize", settings.menuFontSize);
         }
-        try {
-            int padding = Integer.parseInt(rowPadding.getText());
-            _prefs.putInt("tableRowPadding", padding);
-        } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+        if ((settings.overrideFonts != oldOverrideFontSize)
+                || (settings.overrideFonts && settings.menuFontSize != oldMenuFontSize)) {
+            JOptionPane.showMessageDialog(this,
+                    Globals.lang("You have changed the menu and label font size.")
+                            .concat(" ")
+                            .concat(Globals.lang("You must restart JabRef for this to come into effect.")),
+                    Globals.lang("Changed font settings"),
+                    JOptionPane.WARNING_MESSAGE);
         }
+        _prefs.putInt("tableRowPadding", settings.rowPadding);
     }
 
-    private boolean validateIntegerField(String fieldName, String fieldValue, String errorTitle) {
+    private Integer validateIntegerField(String fieldName, JTextField field, String text,
+            int minimum, String errorTitle) {
         try {
-            // Test if the field value is a number:
-            Integer.parseInt(fieldValue);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(null, Globals.lang("You must enter an integer value in the text field for") + " '"
-                    + Globals.lang(fieldName) + "'", Globals.lang(errorTitle),
-                    JOptionPane.ERROR_MESSAGE);
-            return false;
+            int value = Integer.parseInt(text.trim());
+            if (value >= minimum) {
+                return value;
+            }
+        } catch (NumberFormatException ignored) {
         }
-        return true;
+        String message = minimum == 0
+                ? Globals.lang("You must enter a nonnegative integer value in the text field for")
+                : Globals.lang("You must enter a positive integer value in the text field for");
+        showValidationError(field, message + " '" + Globals.lang(fieldName) + "'", errorTitle);
+        return null;
+    }
+
+    private boolean showValidationError(final JTextField field, final String message, final String errorTitle) {
+        Runnable showError = () -> {
+            JOptionPane.showMessageDialog(AppearancePrefsTab.this, message, Globals.lang(errorTitle),
+                    JOptionPane.ERROR_MESSAGE);
+            field.requestFocusInWindow();
+            field.selectAll();
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            showError.run();
+        } else {
+            SwingUtilities.invokeLater(showError);
+        }
+        return false;
     }
 
     public boolean readyToClose() {
-        // Test if font size is a number:
-        return validateIntegerField("Menu and label font size", fontSize.getText(), "Changed font settings") != false;
+        boolean useCustomFonts = overrideFonts.isSelected();
+        Font tableFont = font;
+        String menuFontText = useCustomFonts ? fontSize.getText() : null;
+        String paddingText = rowPadding.getText();
+        Integer size = oldMenuFontSize;
+        if (useCustomFonts) {
+            size = validateIntegerField("Menu and label font size", fontSize, menuFontText,
+                    1, "Changed font settings");
+            if (size == null) {
+                return false;
+            }
+        }
+        Integer padding = validateIntegerField("Table row height padding", rowPadding, paddingText,
+                0, "Changed font settings");
+        if (padding == null) {
+            return false;
+        }
+        long rowHeight = (long) tableFont.getSize() + padding;
+        if (rowHeight > Integer.MAX_VALUE) {
+            return showValidationError(rowPadding,
+                    Globals.lang("The table font size and row height padding are too large."),
+                    "Changed font settings");
+        }
+        validatedSettings = new AppearanceSettings(tableFont, useCustomFonts, size, padding);
+        return true;
+    }
+
+    private static final class AppearanceSettings {
+        final Font tableFont;
+        final boolean overrideFonts;
+        final int menuFontSize;
+        final int rowPadding;
+
+        AppearanceSettings(Font tableFont, boolean overrideFonts, int menuFontSize, int rowPadding) {
+            this.tableFont = tableFont;
+            this.overrideFonts = overrideFonts;
+            this.menuFontSize = menuFontSize;
+            this.rowPadding = rowPadding;
+        }
     }
 
     public String getTabName() {

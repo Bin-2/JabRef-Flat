@@ -19,6 +19,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -963,8 +964,23 @@ public class MainTable extends JTable implements ThemeAwareComponent {
      * updateFont
      */
     public void updateFont() {
-        setFont(GUIGlobals.CURRENTFONT);
-        setRowHeight(Globals.prefs.getInt("tableRowPadding") + GUIGlobals.CURRENTFONT.getSize());
+        Font tableFont = GUIGlobals.CURRENTFONT;
+        int fontSize = tableFont.getSize();
+        if (fontSize <= 0) {
+            fontSize = Globals.prefs.getIntDefault("fontSize");
+        }
+        int padding = Globals.prefs.getInt("tableRowPadding");
+        if (padding < 0 || (long) fontSize + padding > Integer.MAX_VALUE) {
+            padding = Globals.prefs.getIntDefault("tableRowPadding");
+            if ((long) fontSize + padding > Integer.MAX_VALUE) {
+                fontSize = Globals.prefs.getIntDefault("fontSize");
+            }
+        }
+        if (fontSize != tableFont.getSize()) {
+            tableFont = new Font(tableFont.getName(), tableFont.getStyle(), fontSize);
+        }
+        setFont(tableFont);
+        setRowHeight(padding + fontSize);
     }
 
     /**

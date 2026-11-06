@@ -51,6 +51,7 @@ modified slightly by nizar batada for JabRef
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Dialog;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -58,6 +59,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.RenderingHints;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -73,6 +75,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -204,8 +207,7 @@ public class FontSelectorDialog extends JDialog {
 
     public FontSelectorDialog(Component comp, Font font) {
 
-        //super(JOptionPane.getFrameForComponent(comp),jpicedt.Localizer.currentLocalizer().get("widget.FontSelector"),true); //
-        super(JOptionPane.getFrameForComponent(comp), Globals.lang("FontSelector"), true); //
+        super(ownerFor(comp), Globals.lang("FontSelector"), Dialog.ModalityType.APPLICATION_MODAL);
         JPanel content = new JPanel(new BorderLayout());
         content.setBorder(new EmptyBorder(12, 12, 12, 12));
         setContentPane(content);
@@ -299,13 +301,38 @@ public class FontSelectorDialog extends JDialog {
         content.add(BorderLayout.SOUTH, buttons);
 
         pack();
-        setLocationRelativeTo(JOptionPane.getFrameForComponent(comp));
+        setLocationRelativeTo(comp);
         setVisible(true); // show(); -> deprecated since 1.5
     }
 
+    private static Window ownerFor(Component component) {
+        if (component instanceof Window) {
+            return (Window) component;
+        }
+        return component == null ? null : SwingUtilities.getWindowAncestor(component);
+    }
+
     public void ok() {
-        isOK = true;
+        int size;
+        try {
+            size = Integer.parseInt(sizeField.getText().trim());
+        } catch (NumberFormatException ex) {
+            showInvalidFontSize();
+            return;
+        }
+        if (size <= 0) {
+            showInvalidFontSize();
+            return;
+        }
+        selectedFont = new Font(familyField.getText(), styleList.getSelectedIndex(), size);
         dispose();
+    }
+
+    private void showInvalidFontSize() {
+        JOptionPane.showMessageDialog(this, Globals.lang("Font size must be a positive integer."),
+                Globals.lang("Invalid font size"), JOptionPane.ERROR_MESSAGE);
+        sizeField.requestFocusInWindow();
+        sizeField.selectAll();
     }
 
     public void cancel() {
@@ -313,22 +340,11 @@ public class FontSelectorDialog extends JDialog {
     }
 
     public Font getSelectedFont() {
-        if (!isOK) {
-            return null;
-        }
-
-        int size;
-        try {
-            size = Integer.parseInt(sizeField.getText());
-        } catch (Exception e) {
-            size = 14;
-        }
-
-        return new Font(familyField.getText(), styleList.getSelectedIndex(), size);
+        return selectedFont;
     }
 
     // private members
-    private boolean isOK;
+    private Font selectedFont;
     private final JTextField familyField;
     private final JList<String> familyList;
     private final JTextField sizeField;
@@ -417,9 +433,12 @@ public class FontSelectorDialog extends JDialog {
         String family = familyField.getText();
         int size;
         try {
-            size = Integer.parseInt(sizeField.getText());
-        } catch (Exception e) {
-            size = 14;
+            size = Integer.parseInt(sizeField.getText().trim());
+        } catch (NumberFormatException ex) {
+            return;
+        }
+        if (size <= 0) {
+            return;
         }
         int style = styleList.getSelectedIndex();
         preview.setFont(new Font(family, style, size));
