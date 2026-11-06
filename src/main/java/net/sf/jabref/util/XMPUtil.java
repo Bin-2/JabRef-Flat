@@ -1126,6 +1126,14 @@ public class XMPUtil {
             }
 
             try {
+                // A read-only PDF cannot be replaced on some file systems
+                // (notably Windows). Only change its attribute after the
+                // updated PDF has been saved successfully.
+                if (!Files.isWritable(targetFile.toPath())) {
+                    if (!targetFile.setWritable(true) || !Files.isWritable(targetFile.toPath())) {
+                        throw new IOException("Cannot make PDF writable: " + targetFile);
+                    }
+                }
                 Files.move(tempFile.toPath(), targetFile.toPath(),
                         StandardCopyOption.REPLACE_EXISTING,
                         StandardCopyOption.ATOMIC_MOVE);
