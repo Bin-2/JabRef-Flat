@@ -292,12 +292,7 @@ class TablePrefsTab extends JPanel implements PrefsTab {
 
         String oldVal = _prefs.get("numericFields");
         String newVal = numericFields.getText().trim();
-        if (newVal.length() == 0) {
-            newVal = null;
-        }
-        if (((newVal != null) && (oldVal == null))
-                || ((newVal == null) && (oldVal != null))
-                || ((newVal != null) && !newVal.equals(oldVal))) {
+        if (!newVal.equals(oldVal)) {
             _prefs.put("numericFields", newVal);
             BibtexFields.setNumericFieldsFromPrefs();
         }

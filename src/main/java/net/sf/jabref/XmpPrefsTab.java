@@ -102,9 +102,8 @@ class XmpPrefsTab extends JPanel implements PrefsTab {
                 tableChanged = true;
 
                 if (tableRows.size() <= row) {
-                    // For List, we need to add nulls to reach the desired size
                     while (tableRows.size() <= row) {
-                        tableRows.add(null);
+                        tableRows.add("");
                     }
                 }
 
@@ -220,13 +219,18 @@ class XmpPrefsTab extends JPanel implements PrefsTab {
      */
     @Override
     public void setValues() {
+        if (table.isEditing()) {
+            table.getCellEditor().cancelCellEditing();
+        }
         tableRows.clear();
         String[] names = JabRefPreferences.getInstance().getStringArray(JabRefPreferences.XMP_PRIVACY_FILTERS);
         Collections.addAll(tableRows, names);
         rowCount = tableRows.size() + 5;
+        tableChanged = false;
+        ((AbstractTableModel) table.getModel()).fireTableDataChanged();
 
         privacyFilterCheckBox.setSelected(JabRefPreferences.getInstance().getBoolean(
-                "useXmpPrivacyFilter"));
+                JabRefPreferences.USE_XMP_PRIVACY_FILTER));
     }
 
     /**
@@ -236,12 +240,8 @@ class XmpPrefsTab extends JPanel implements PrefsTab {
      */
     @Override
     public void storeSettings() {
-
-        if (table.isEditing()) {
-            int col = table.getEditingColumn();
-            int row = table.getEditingRow();
-            table.getCellEditor(row, col).stopCellEditing();
-        }
+        JabRefPreferences.getInstance().putBoolean(JabRefPreferences.USE_XMP_PRIVACY_FILTER,
+                privacyFilterCheckBox.isSelected());
 
         // Now we need to make sense of the contents the user has made to the
         // table setup table. This needs to be done either if changes were made, or
@@ -251,7 +251,7 @@ class XmpPrefsTab extends JPanel implements PrefsTab {
 
             // First we remove all rows with empty names.
             for (int i = tableRows.size() - 1; i >= 0; i--) {
-                if (tableRows.get(i).equals("")) {
+                if ((tableRows.get(i) == null) || "".equals(tableRows.get(i))) {
                     tableRows.remove(i);
                 }
             }
@@ -259,11 +259,19 @@ class XmpPrefsTab extends JPanel implements PrefsTab {
             // Finally, we store the new preferences.
             JabRefPreferences.getInstance().putStringArray(JabRefPreferences.XMP_PRIVACY_FILTERS,
                     tableRows.toArray(new String[0]));
+            tableChanged = false;
         }
     }
 
     @Override
     public boolean readyToClose() {
+        if (table.isEditing() && !table.getCellEditor().stopCellEditing()) {
+            JOptionPane.showMessageDialog(this,
+                    Globals.lang("Please finish editing the XMP field name before saving preferences."),
+                    Globals.lang("Invalid setting"), JOptionPane.ERROR_MESSAGE);
+            table.requestFocusInWindow();
+            return false;
+        }
         return true;
     }
 
