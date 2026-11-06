@@ -145,18 +145,12 @@ public class PreviewPrefsTab extends JPanel implements PrefsTab {
 
         def1.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String tmp = layout1.getText().replaceAll("\n", "__NEWLINE__");
-                _prefs.remove("preview0");
-                layout1.setText(_prefs.get("preview0").replaceAll("__NEWLINE__", "\n"));
-                _prefs.put("preview0", tmp);
+                layout1.setText(_prefs.getStringDefault("preview0").replace("__NEWLINE__", "\n"));
             }
         });
         def2.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String tmp = layout2.getText().replaceAll("\n", "__NEWLINE__");
-                _prefs.remove("preview1");
-                layout2.setText(_prefs.get("preview1").replaceAll("__NEWLINE__", "\n"));
-                _prefs.put("preview1", tmp);
+                layout2.setText(_prefs.getStringDefault("preview1").replace("__NEWLINE__", "\n"));
             }
         });
 

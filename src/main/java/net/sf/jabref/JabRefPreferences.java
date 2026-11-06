@@ -863,6 +863,13 @@ public final class JabRefPreferences {
         return prefs.get(key, def);
     }
 
+    /**
+     * Returns the built-in string default without changing stored preferences.
+     */
+    public String getStringDefault(String key) {
+        return (String) defaults.get(key);
+    }
+
     public boolean getBoolean(String key) {
         return prefs.getBoolean(key, getBooleanDefault(key));
     }
