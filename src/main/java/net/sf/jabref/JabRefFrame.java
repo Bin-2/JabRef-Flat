@@ -1683,11 +1683,14 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         }
     }
 
-    private void copyActionProperties(final Action source, final Action target, final boolean includeAccelerator) {
+    private void copyActionProperties(final Action source, final Action target, final boolean includeMenuKeys) {
         target.putValue(Action.NAME, source.getValue(Action.NAME));
         target.putValue(Action.SHORT_DESCRIPTION, source.getValue(Action.SHORT_DESCRIPTION));
-        if (includeAccelerator) {
+        if (includeMenuKeys) {
             target.putValue(Action.ACCELERATOR_KEY, source.getValue(Action.ACCELERATOR_KEY));
+            target.putValue(Action.MNEMONIC_KEY, source.getValue(Action.MNEMONIC_KEY));
+            target.putValue(Action.DISPLAYED_MNEMONIC_INDEX_KEY,
+                    source.getValue(Action.DISPLAYED_MNEMONIC_INDEX_KEY));
         }
         target.setEnabled(source.isEnabled());
 
@@ -1697,7 +1700,9 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
                 String propertyName = evt.getPropertyName();
                 if (Action.NAME.equals(propertyName)
                         || Action.SHORT_DESCRIPTION.equals(propertyName)
-                        || (includeAccelerator && Action.ACCELERATOR_KEY.equals(propertyName))) {
+                        || (includeMenuKeys && (Action.ACCELERATOR_KEY.equals(propertyName)
+                                || Action.MNEMONIC_KEY.equals(propertyName)
+                                || Action.DISPLAYED_MNEMONIC_INDEX_KEY.equals(propertyName)))) {
                     target.putValue(propertyName, evt.getNewValue());
                 } else if ("enabled".equals(propertyName)) {
                     target.setEnabled(Boolean.TRUE.equals(evt.getNewValue()));
