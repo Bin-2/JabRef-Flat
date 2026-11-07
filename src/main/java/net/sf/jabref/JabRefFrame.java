@@ -779,6 +779,15 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
     // General preferences dialog.  The MacAdapter calls this method when "Preferences..."
     // is selected from the application menu.
     public void preferences() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::preferences);
+            return;
+        }
+        if (prefsDialog != null && prefsDialog.isVisible()) {
+            prefsDialog.toFront();
+            prefsDialog.requestFocus();
+            return;
+        }
         output(Globals.lang("Opening preferences..."));
         if (prefsDialog == null) {
             prefsDialog = new PrefsDialog3(JabRefFrame.this);
