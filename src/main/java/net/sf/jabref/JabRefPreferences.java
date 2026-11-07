@@ -1203,11 +1203,22 @@ public final class JabRefPreferences {
      */
     public void flush() {
         try {
-            prefs.flush();
+            flushOrThrow();
         } catch (BackingStoreException ex) {
             Globals.logger("Could not flush preferences: " + ex.getLocalizedMessage());
-            return;
+        } catch (IOException ex) {
+            Globals.logger("Could not save XML preferences mirror: " + ex.getLocalizedMessage());
         }
+    }
+
+    /**
+     * Writes preferences and storage configuration, propagating persistence failures.
+     *
+     * @throws BackingStoreException if the preference backend cannot be flushed
+     * @throws IOException if an XML mirror or storage configuration operation fails
+     */
+    public synchronized void flushOrThrow() throws BackingStoreException, IOException {
+        prefs.flush();
 
         String requestedStorage = SettingsStorage.STORAGE_XML.equals(get(SETTINGS_STORAGE))
                 ? SettingsStorage.STORAGE_XML : SettingsStorage.STORAGE_REGISTRY;
@@ -1215,25 +1226,21 @@ public final class JabRefPreferences {
         File xmlFile = SettingsStorage.resolveXmlFile(requestedXmlPath);
         File activeXmlFile = SettingsStorage.getConfiguredXmlFile();
 
-        try {
-            if (!xmlFile.equals(activeXmlFile)) {
-                preserveExistingSettingsFile(xmlFile);
-            }
-            if (SettingsStorage.isRegistryActive()) {
-                // Registry mode keeps a current JabRef-only XML recovery mirror.
-                exportPreferences(xmlFile.getAbsolutePath());
-            } else if (!xmlFile.equals(activeXmlFile)) {
-                // The XML backend has already flushed its active file. If the user
-                // selected a new path, seed that file with the complete XML tree.
-                exportUserPreferencesTree(xmlFile.getAbsolutePath());
-            }
-
-            boolean migrateXmlToRegistry = SettingsStorage.isXmlActive()
-                    && SettingsStorage.STORAGE_REGISTRY.equals(requestedStorage);
-            SettingsStorage.commitConfiguration(requestedStorage, requestedXmlPath, migrateXmlToRegistry);
-        } catch (IOException ex) {
-            Globals.logger("Could not save XML preferences mirror: " + ex.getLocalizedMessage());
+        if (!xmlFile.equals(activeXmlFile)) {
+            preserveExistingSettingsFile(xmlFile);
         }
+        if (SettingsStorage.isRegistryActive()) {
+            // Registry mode keeps a current JabRef-only XML recovery mirror.
+            exportPreferences(xmlFile.getAbsolutePath());
+        } else if (!xmlFile.equals(activeXmlFile)) {
+            // The XML backend has already flushed its active file. If the user
+            // selected a new path, seed that file with the complete XML tree.
+            exportUserPreferencesTree(xmlFile.getAbsolutePath());
+        }
+
+        boolean migrateXmlToRegistry = SettingsStorage.isXmlActive()
+                && SettingsStorage.STORAGE_REGISTRY.equals(requestedStorage);
+        SettingsStorage.commitConfiguration(requestedStorage, requestedXmlPath, migrateXmlToRegistry);
     }
 
     /**
