@@ -18,6 +18,7 @@ package net.sf.jabref;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -30,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -42,6 +44,8 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -117,13 +121,17 @@ public class PrefsDialog3 extends JDialog {
 
     private Map<String, String> openingPreferencesSnapshot;
     private final AppearancePrefsTab appearancePrefsTab;
+    private final JList<String> chooser;
+    // Preference operations and dialog state are confined to the EDT.
+    private boolean operationInProgress;
+    private boolean dialogInputLocked;
+    private boolean enabledBeforeSave;
+    private Cursor cursorBeforeSave;
 
     public PrefsDialog3(JabRefFrame parent) {
         super(parent, Globals.lang("JabRef preferences"), false);
         final JabRefPreferences prefs = JabRefPreferences.getInstance();
         frame = parent;
-
-        final JList<String> chooser;
 
         JButton importPrefs = new JButton(Globals.lang("Import preferences"));
         JButton exportPrefs = new JButton(Globals.lang("Export preferences"));
@@ -189,8 +197,10 @@ public class PrefsDialog3 extends JDialog {
                 if (e.getValueIsAdjusting()) {
                     return;
                 }
-                String o = (String) chooser.getSelectedValue();
-                cardLayout.show(main, o);
+                String selected = chooser.getSelectedValue();
+                if (selected != null) {
+                    cardLayout.show(main, selected);
+                }
             }
         });
 
@@ -231,54 +241,68 @@ public class PrefsDialog3 extends JDialog {
         importPrefs.setToolTipText(Globals.lang("Import preferences from file"));
         exportPrefs.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String filename = FileDialogs.getNewFile(frame, new File(System
-                        .getProperty("user.home")), ".xml", JFileChooser.SAVE_DIALOG, false);
-                if (filename == null) {
+                if (!beginOperation()) {
                     return;
                 }
-                File file = new File(filename);
-                if (!file.exists()
-                        || (JOptionPane.showConfirmDialog(PrefsDialog3.this, "'" + file.getName()
-                                + "' " + Globals.lang("exists. Overwrite file?"),
-                                Globals.lang("Export preferences"), JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION)) {
-
-                    try {
-                        prefs.exportPreferences(filename);
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(PrefsDialog3.this,
-                                Globals.lang("Could not export preferences")
-                                + ": " + ex.getMessage(), Globals.lang("Export preferences"),
-                                JOptionPane.ERROR_MESSAGE);
-                        // ex.printStackTrace();
+                try {
+                    String filename = FileDialogs.getNewFile(frame, new File(System
+                            .getProperty("user.home")), ".xml", JFileChooser.SAVE_DIALOG, false);
+                    if (filename == null) {
+                        return;
                     }
-                }
+                    File file = new File(filename);
+                    if (!file.exists()
+                            || (JOptionPane.showConfirmDialog(PrefsDialog3.this, "'" + file.getName()
+                                    + "' " + Globals.lang("exists. Overwrite file?"),
+                                    Globals.lang("Export preferences"), JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION)) {
 
+                        try {
+                            prefs.exportPreferences(filename);
+                        } catch (IOException ex) {
+                            JOptionPane.showMessageDialog(PrefsDialog3.this,
+                                    Globals.lang("Could not export preferences")
+                                    + ": " + ex.getMessage(), Globals.lang("Export preferences"),
+                                    JOptionPane.ERROR_MESSAGE);
+                            // ex.printStackTrace();
+                        }
+                    }
+
+                } finally {
+                    finishOperation();
+                }
             }
         });
 
         importPrefs.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String filename = FileDialogs.getNewFile(frame, new File(System
-                        .getProperty("user.home")), ".xml", JFileChooser.OPEN_DIALOG, false);
-                if (filename == null) {
+                if (!beginOperation()) {
                     return;
                 }
-
                 try {
-                    prefs.importPreferences(filename);
-                    setValues();
-                    appearancePrefsTab.applyImportedTheme(frame);
-                    frame.updateMenuBarEmbeddingPreference();
-                    BibtexEntryType.loadCustomEntryTypes(prefs);
-                    ExportFormats.initAllExports();
-                    frame.removeCachedEntryEditors();
-                    Globals.prefs.updateEntryEditorTabList();
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(PrefsDialog3.this,
-                            Globals.lang("Could not import preferences")
-                            + ": " + ex.getMessage(), Globals.lang("Import preferences"),
-                            JOptionPane.ERROR_MESSAGE);
-                    // ex.printStackTrace();
+                    String filename = FileDialogs.getNewFile(frame, new File(System
+                            .getProperty("user.home")), ".xml", JFileChooser.OPEN_DIALOG, false);
+                    if (filename == null) {
+                        return;
+                    }
+
+                    try {
+                        prefs.importPreferences(filename);
+                        setValues();
+                        appearancePrefsTab.applyImportedTheme(frame);
+                        frame.updateMenuBarEmbeddingPreference();
+                        BibtexEntryType.loadCustomEntryTypes(prefs);
+                        ExportFormats.initAllExports();
+                        frame.removeCachedEntryEditors();
+                        Globals.prefs.updateEntryEditorTabList();
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(PrefsDialog3.this,
+                                Globals.lang("Could not import preferences")
+                                + ": " + ex.getMessage(), Globals.lang("Import preferences"),
+                                JOptionPane.ERROR_MESSAGE);
+                        // ex.printStackTrace();
+                    }
+                } finally {
+                    finishOperation();
                 }
             }
 
@@ -410,6 +434,71 @@ public class PrefsDialog3 extends JDialog {
         return keys.toString();
     }
 
+    private boolean beginOperation() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            throw new IllegalStateException("Preference operations must run on the EDT");
+        }
+        if (operationInProgress || !isVisible() || !isDisplayable()) {
+            return false;
+        }
+        operationInProgress = true;
+        return true;
+    }
+
+    private void lockDialogInput() {
+        enabledBeforeSave = isEnabled();
+        cursorBeforeSave = getCursor();
+        dialogInputLocked = true;
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        // Disable the heavyweight window without changing dependent control states.
+        setEnabled(false);
+    }
+
+    private void unlockDialogInput() {
+        if (dialogInputLocked) {
+            dialogInputLocked = false;
+            setCursor(cursorBeforeSave);
+            setEnabled(enabledBeforeSave);
+        }
+    }
+
+    private void finishOperation() {
+        try {
+            unlockDialogInput();
+        } finally {
+            operationInProgress = false;
+        }
+    }
+
+    private boolean validateTabs(Component[] components) {
+        int selectedIndex = chooser.getSelectedIndex();
+        for (int i = 0; i < components.length; i++) {
+            // Validators display their own dialogs, so reveal the tab first.
+            chooser.setSelectedIndex(i);
+            if (!((PrefsTab) components[i]).readyToClose()) {
+                return false;
+            }
+        }
+        chooser.setSelectedIndex(selectedIndex);
+        return true;
+    }
+
+    private void showPreferenceError(String message, Throwable error) {
+        Globals.logger(message + " " + error);
+        error.printStackTrace();
+        unlockDialogInput();
+        if (isVisible() && isDisplayable() && frame.isDisplayable()) {
+            frame.output(Globals.lang("Preferences operation failed."));
+            String detail = error.getLocalizedMessage();
+            JOptionPane.showMessageDialog(this,
+                    message + (detail == null ? "" : "\n" + detail),
+                    Globals.lang("JabRef preferences"), JOptionPane.ERROR_MESSAGE);
+            if (isVisible() && isDisplayable() && frame.isDisplayable()) {
+                requestFocus();
+            }
+        }
+    }
+
     class OkAction extends AbstractAction {
 
         public OkAction() {
@@ -417,156 +506,177 @@ public class PrefsDialog3 extends JDialog {
         }
 
         public void actionPerformed(ActionEvent e) {
+            if (!SwingUtilities.isEventDispatchThread()) {
+                SwingUtilities.invokeLater(() -> actionPerformed(e));
+                return;
+            }
+            if (!beginOperation()) {
+                return;
+            }
+
             final long preferencesStartNanos = System.nanoTime();
-
-            AbstractWorker worker = new AbstractWorker() {
-                boolean ready = true;
-                long readyToCloseMs;
-                long storeSettingsMs;
-                long flushMs;
-                boolean preferencesChanged = true;
-                boolean appearanceOnlyChange = false;
-                boolean groupOnlyChange = false;
-                boolean menuBarEmbeddingChanged = false;
-                boolean legacyExternalProgramsChanged = false;
-                Set<String> changedPreferenceEntries;
-
-                public void run() {
-                    // First check that all tabs are ready to close:
-                    int count = main.getComponentCount();
-                    Component[] comps = main.getComponents();
-                    long readyStart = System.nanoTime();
-                    for (int i = 0; i < count; i++) {
-                        if (!((PrefsTab) comps[i]).readyToClose()) {
-                            ready = false;
-                            readyToCloseMs = elapsedMillis(readyStart);
-                            return; // If not, break off.
-                        }
-                    }
-                    readyToCloseMs = elapsedMillis(readyStart);
-
-                    // Then store settings and close:
-                    long storeStart = System.nanoTime();
-                    for (int i = 0; i < count; i++) {
-                        ((PrefsTab) comps[i]).storeSettings();
-                    }
-                    storeSettingsMs = elapsedMillis(storeStart);
-
-                    changedPreferenceEntries = changedPreferenceEntriesSinceOpen();
-                    preferencesChanged = changedPreferenceEntries == null
-                            || !changedPreferenceEntries.isEmpty();
-                    appearanceOnlyChange = preferencesChanged
-                            && isAppearanceOnlyPreferenceChange(changedPreferenceEntries);
-                    groupOnlyChange = preferencesChanged
-                            && isGroupOnlyPreferenceChange(changedPreferenceEntries);
-                    menuBarEmbeddingChanged = preferencesChanged
-                            && hasPreferenceChanged(changedPreferenceEntries,
-                                    JabRefPreferences.USE_EMBEDDED_MENU_BAR);
-                    legacyExternalProgramsChanged = preferencesChanged
-                            && hasPreferenceChanged(changedPreferenceEntries,
-                                    JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS);
-
-                    long flushStart = System.nanoTime();
-                    Globals.prefs.flush();
-                    flushMs = elapsedMillis(flushStart);
+            boolean handedOff = false;
+            boolean storing = false;
+            try {
+                Component[] components = main.getComponents();
+                long readyStart = System.nanoTime();
+                if (!validateTabs(components)) {
+                    return;
                 }
+                final long readyToCloseMs = elapsedMillis(readyStart);
 
-                public void update() {
-                    if (!ready) {
-                        return;
-                    }
-
-                    long updateStart = System.nanoTime();
-                    setVisible(false);
-
-                    if (!preferencesChanged) {
-                        long updateMs = elapsedMillis(updateStart);
-                        long totalMs = elapsedMillis(preferencesStartNanos);
-                        System.out.println("[Preferences timer] changed=false"
-                                + ", ready=" + readyToCloseMs + " ms"
-                                + ", store=" + storeSettingsMs + " ms"
-                                + ", flush=" + flushMs + " ms"
-                                + ", uiApply=" + updateMs + " ms"
-                                + ", total=" + totalMs + " ms");
-                        frame.output(Globals.lang("Preferences recorded."));
-                        return;
-                    }
-
-//                    long renderersMs = 0L;
-                    long themeMs = 0L;
-                    long editorColorsMs = 0L;
-                    long setupAllTablesMs = 0L;
-                    long tableAppearanceMs = 0L;
-                    long groupsMs = 0L;
-                    long alternateViewerMs = 0L;
-
-                    if (groupOnlyChange) {
-                        long groupsStart = System.nanoTime();
-                        frame.groupSelector.revalidateGroups();
-                        groupsMs = elapsedMillis(groupsStart);
-                    } else {
-                        long renderersStart = System.nanoTime();
-
-                        long themeStart = System.nanoTime();
-                        ThemeWatcher.notifyThemeChanged();
-                        themeMs = elapsedMillis(themeStart);
-
-                        if (menuBarEmbeddingChanged) {
-                            frame.updateMenuBarEmbeddingPreference();
-                        }
-
-                        long editorColorsStart = System.nanoTime();
-                        GUIGlobals.updateEntryEditorColors();
-                        editorColorsMs = elapsedMillis(editorColorsStart);
-
-                        if (appearanceOnlyChange) {
-                            long tableAppearanceStart = System.nanoTime();
-                            frame.updateAllTableAppearancePreferences();
-                            tableAppearanceMs = elapsedMillis(tableAppearanceStart);
-                        } else {
-                            setupAllTablesMs = frame.setupAllTablesWithTiming();
-                        }
-
-                        long groupsStart = System.nanoTime();
-                        frame.groupSelector.revalidateGroups(); // icons may have
-                        // changed
-                        groupsMs = elapsedMillis(groupsStart);
-
-                        long alternateViewerStart = System.nanoTime();
-                        frame.updateAlternatePdfViewerAction();
-                        alternateViewerMs = elapsedMillis(alternateViewerStart);
-                    }
-
-                    if (legacyExternalProgramsChanged) {
-                        frame.refreshToolbarIcons();
-                    }
-
-                    long updateMs = elapsedMillis(updateStart);
-                    long totalMs = elapsedMillis(preferencesStartNanos);
-                    System.out.println("[Preferences timer] changed=true"
-                            + ", refresh=" + (appearanceOnlyChange ? "appearance"
-                                    : (groupOnlyChange ? "groups" : "full"))
-                            + ", keys=" + changedPreferenceKeySummary(changedPreferenceEntries)
-                            + ", ready=" + readyToCloseMs + " ms"
-                            + ", store=" + storeSettingsMs + " ms"
-                            + ", flush=" + flushMs + " ms"
-                            //                            + ", renderers=" + renderersMs + " ms"
-                            + ", themeNotify=" + themeMs + " ms"
-                            + ", editorColors=" + editorColorsMs + " ms"
-                            + ", tableAppearance=" + tableAppearanceMs + " ms"
-                            + ", tables=" + setupAllTablesMs + " ms"
-                            + ", groups=" + groupsMs + " ms"
-                            + ", alternateViewer=" + alternateViewerMs + " ms"
-                            + ", uiApply=" + updateMs + " ms"
-                            + ", total=" + totalMs + " ms");
-
-                    frame.output(Globals.lang("Preferences recorded."));
+                storing = true;
+                long storeStart = System.nanoTime();
+                for (Component component : components) {
+                    ((PrefsTab) component).storeSettings();
                 }
-            };
-            worker.getWorker().run();
-            worker.getCallBack().update();
+                final long storeSettingsMs = elapsedMillis(storeStart);
+                final Set<String> changedPreferenceEntries = changedPreferenceEntriesSinceOpen();
 
+                lockDialogInput();
+                frame.output(Globals.lang("Saving preferences..."));
+                new SwingWorker<Long, Void>() {
+                    @Override
+                    protected Long doInBackground() throws BackingStoreException, IOException {
+                        long flushStart = System.nanoTime();
+                        Globals.prefs.flushOrThrow();
+                        return elapsedMillis(flushStart);
+                    }
+
+                    @Override
+                    protected void done() {
+                        boolean persisted = false;
+                        try {
+                            long flushMs = get();
+                            persisted = true;
+                            if (!isDisplayable() || !frame.isDisplayable()) {
+                                return;
+                            }
+                            applyPreferenceChanges(changedPreferenceEntries, preferencesStartNanos,
+                                    readyToCloseMs, storeSettingsMs, flushMs);
+                            setVisible(false);
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                            showPreferenceError(Globals.lang("Saving preferences was interrupted.\nSome changes may already have been applied or saved."), ex);
+                        } catch (ExecutionException ex) {
+                            showPreferenceError(Globals.lang("Could not save preferences.\nSome changes may already have been applied or saved.\nPlease correct the problem and try again."),
+                                    ex.getCause() == null ? ex : ex.getCause());
+                        } catch (RuntimeException ex) {
+                            showPreferenceError(persisted
+                                    ? Globals.lang("Preferences were saved, but the interface could not be fully refreshed.")
+                                    : Globals.lang("Could not save preferences.\nSome changes may already have been applied or saved."), ex);
+                        } finally {
+                            finishOperation();
+                        }
+                    }
+                }.execute();
+                handedOff = true;
+            } catch (RuntimeException ex) {
+                showPreferenceError(storing
+                        ? Globals.lang("Could not apply preferences.\nSome changes may already have been applied or saved.")
+                        : Globals.lang("Could not validate preferences."), ex);
+            } finally {
+                if (!handedOff) {
+                    finishOperation();
+                }
+            }
         }
+    }
+
+    private void applyPreferenceChanges(Set<String> changedPreferenceEntries, long preferencesStartNanos,
+            long readyToCloseMs, long storeSettingsMs, long flushMs) {
+        boolean preferencesChanged = changedPreferenceEntries == null
+                || !changedPreferenceEntries.isEmpty();
+        boolean appearanceOnlyChange = preferencesChanged
+                && isAppearanceOnlyPreferenceChange(changedPreferenceEntries);
+        boolean groupOnlyChange = preferencesChanged
+                && isGroupOnlyPreferenceChange(changedPreferenceEntries);
+        boolean menuBarEmbeddingChanged = preferencesChanged
+                && hasPreferenceChanged(changedPreferenceEntries, JabRefPreferences.USE_EMBEDDED_MENU_BAR);
+        boolean legacyExternalProgramsChanged = preferencesChanged
+                && hasPreferenceChanged(changedPreferenceEntries, JabRefPreferences.SHOW_LEGACY_EXTERNAL_PROGRAMS);
+
+        long updateStart = System.nanoTime();
+
+        if (!preferencesChanged) {
+            long updateMs = elapsedMillis(updateStart);
+            long totalMs = elapsedMillis(preferencesStartNanos);
+            System.out.println("[Preferences timer] changed=false"
+                    + ", ready=" + readyToCloseMs + " ms"
+                    + ", store=" + storeSettingsMs + " ms"
+                    + ", flush=" + flushMs + " ms"
+                    + ", uiApply=" + updateMs + " ms"
+                    + ", total=" + totalMs + " ms");
+            frame.output(Globals.lang("Preferences recorded."));
+            return;
+        }
+
+        long themeMs = 0L;
+        long editorColorsMs = 0L;
+        long setupAllTablesMs = 0L;
+        long tableAppearanceMs = 0L;
+        long groupsMs = 0L;
+        long alternateViewerMs = 0L;
+
+        if (groupOnlyChange) {
+            long groupsStart = System.nanoTime();
+            frame.groupSelector.revalidateGroups();
+            groupsMs = elapsedMillis(groupsStart);
+        } else {
+
+            long themeStart = System.nanoTime();
+            ThemeWatcher.notifyThemeChanged();
+            themeMs = elapsedMillis(themeStart);
+
+            if (menuBarEmbeddingChanged) {
+                frame.updateMenuBarEmbeddingPreference();
+            }
+
+            long editorColorsStart = System.nanoTime();
+            GUIGlobals.updateEntryEditorColors();
+            editorColorsMs = elapsedMillis(editorColorsStart);
+
+            if (appearanceOnlyChange) {
+                long tableAppearanceStart = System.nanoTime();
+                frame.updateAllTableAppearancePreferences();
+                tableAppearanceMs = elapsedMillis(tableAppearanceStart);
+            } else {
+                setupAllTablesMs = frame.setupAllTablesWithTiming();
+            }
+
+            long groupsStart = System.nanoTime();
+            frame.groupSelector.revalidateGroups(); // icons may have
+            // changed
+            groupsMs = elapsedMillis(groupsStart);
+
+            long alternateViewerStart = System.nanoTime();
+            frame.updateAlternatePdfViewerAction();
+            alternateViewerMs = elapsedMillis(alternateViewerStart);
+        }
+
+        if (legacyExternalProgramsChanged) {
+            frame.refreshToolbarIcons();
+        }
+
+        long updateMs = elapsedMillis(updateStart);
+        long totalMs = elapsedMillis(preferencesStartNanos);
+        System.out.println("[Preferences timer] changed=true"
+                + ", refresh=" + (appearanceOnlyChange ? "appearance"
+                        : (groupOnlyChange ? "groups" : "full"))
+                + ", keys=" + changedPreferenceKeySummary(changedPreferenceEntries)
+                + ", ready=" + readyToCloseMs + " ms"
+                + ", store=" + storeSettingsMs + " ms"
+                + ", flush=" + flushMs + " ms"
+                + ", themeNotify=" + themeMs + " ms"
+                + ", editorColors=" + editorColorsMs + " ms"
+                + ", tableAppearance=" + tableAppearanceMs + " ms"
+                + ", tables=" + setupAllTablesMs + " ms"
+                + ", groups=" + groupsMs + " ms"
+                + ", alternateViewer=" + alternateViewerMs + " ms"
+                + ", uiApply=" + updateMs + " ms"
+                + ", total=" + totalMs + " ms");
+
+        frame.output(Globals.lang("Preferences recorded."));
     }
 
     public void setValues() {
@@ -579,12 +689,19 @@ public class PrefsDialog3 extends JDialog {
     }
 
     private void cancelAndHide() {
-        ThemeColorPalette.clearSemanticColorsPreview();
-        boolean themeRestored = appearancePrefsTab.cancelThemePreview(frame);
-        if (!themeRestored) {
-            ThemeWatcher.notifyThemeChanged();
+        if (!beginOperation()) {
+            return;
         }
-        setVisible(false);
+        try {
+            ThemeColorPalette.clearSemanticColorsPreview();
+            boolean themeRestored = appearancePrefsTab.cancelThemePreview(frame);
+            if (!themeRestored) {
+                ThemeWatcher.notifyThemeChanged();
+            }
+            setVisible(false);
+        } finally {
+            finishOperation();
+        }
     }
 
     class CancelAction extends AbstractAction {
