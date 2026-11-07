@@ -579,13 +579,7 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
 
                 BasePanel bp = basePanel();
                 if (bp != null) {
-                    groupToggle.setSelected(sidePaneManager.isComponentVisible("groups"));
-                    searchToggle.setSelected(sidePaneManager.isComponentVisible("search"));
-                    previewToggle.setSelected(Globals.prefs.getBoolean("previewEnabled"));
-                    highlightAny
-                            .setSelected(Globals.prefs.getBoolean("highlightGroupsMatchingAny"));
-                    highlightAll
-                            .setSelected(Globals.prefs.getBoolean("highlightGroupsMatchingAll"));
+                    updateToolbarToggleState();
                     Globals.focusListener.setFocused(bp.mainTable);
                     setWindowTitle();
 
@@ -2178,6 +2172,16 @@ public final class JabRefFrame extends JFrame implements OutputPrinter {
         // tlb.add(new JabRefLabel(GUIGlobals.frameTitle+" "+GUIGlobals.version));
 
         tlb.addAction(createActionWithIcon(closeDatabaseAction, "close"));//closeDatabaseAction
+
+        updateToolbarToggleState();
+    }
+
+    private void updateToolbarToggleState() {
+        groupToggle.setSelected(sidePaneManager.isComponentVisible("groups"));
+        searchToggle.setSelected(sidePaneManager.isComponentVisible("search"));
+        previewToggle.setSelected(Globals.prefs.getBoolean("previewEnabled"));
+        highlightAny.setSelected(Globals.prefs.getBoolean("highlightGroupsMatchingAny"));
+        highlightAll.setSelected(Globals.prefs.getBoolean("highlightGroupsMatchingAll"));
     }
 
     /**
